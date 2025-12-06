@@ -173,12 +173,21 @@
 
         <main class="flex-grow p-6 max-w-7xl w-full mx-auto">
             
+            <!-- HIDDEN FILE INPUTS (Global) -->
+            <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
+            <input type="file" id="master-data-upload" accept=".xlsx, .xls" class="hidden" onchange="handleMasterDataUpload(event)">
+
             <!-- ================= SEARCH & INPUT PAGE ================= -->
             <div id="search-page" class="space-y-6">
                 
                 <!-- Search Section -->
                 <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
+                        <button onclick="triggerMasterUpload()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 transition flex items-center gap-2 border border-blue-200">
+                            <i data-lucide="database-backup" class="w-4 h-4"></i> Import Data Induk
+                        </button>
+                    </div>
                     
                     <!-- Updated Live Search Component -->
                     <div class="relative">
@@ -304,18 +313,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800"><i data-lucide="database"></i> Pangkalan Data REKOD</h2>
                         <div class="flex flex-wrap gap-2 items-center">
-                            <!-- Hidden File Input for RECORD Import -->
-                            <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
-                            <!-- Hidden File Input for MASTER DATA Import -->
-                            <input type="file" id="master-data-upload" accept=".xlsx, .xls" class="hidden" onchange="handleMasterDataUpload(event)">
                             
-                            <!-- Master Data Button Group -->
-                            <div class="bg-blue-50 p-1 rounded-lg border border-blue-100 flex gap-2 mr-2">
-                                <button onclick="triggerMasterUpload()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2" title="Upload ke Table Personnel">
-                                    <i data-lucide="database-backup"></i> Import Data Induk
-                                </button>
-                            </div>
-
                             <button onclick="triggerImport()" class="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800 flex items-center gap-2">
                                 <i data-lucide="upload"></i> Import Rekod
                             </button>
@@ -327,6 +325,10 @@
                             </button>
                             <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200">
                                 <i data-lucide="refresh-cw"></i>
+                            </button>
+                            <div class="border-l border-gray-300 mx-1 h-8"></div>
+                            <button onclick="confirmClearDatabase()" class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data">
+                                <i data-lucide="trash-2"></i> Kosongkan
                             </button>
                         </div>
                     </div>
@@ -357,6 +359,28 @@
     <!-- Notification Toast -->
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50">
         Notification message
+    </div>
+
+    <!-- DOUBLE CONFIRMATION MODAL -->
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl max-w-sm w-full text-center border-t-4 border-red-600">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i data-lucide="alert-triangle" class="text-red-600 w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mb-2">Amaran Keras</h3>
+            <p class="text-sm text-gray-500 mb-6">
+                Adakah anda pasti mahu memadam <strong>SEMUA</strong> rekod? <br>
+                Tindakan ini tidak boleh dikembalikan.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                    Batal
+                </button>
+                <button onclick="executeClearDatabase()" class="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700 shadow-lg">
+                    YA, PADAM SEMUA
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -623,7 +647,7 @@
                 document.getElementById('login-page').classList.add('hidden-section');
                 document.getElementById('app-layout').classList.remove('hidden-section');
                 document.getElementById('user-display').textContent = currentUser.email;
-                showPage('search'); // Default page
+                showPage('search'); // Default page is SEARCH
             }, 1000);
         }
 
@@ -817,7 +841,22 @@
         // --- Export Functions ---
         function exportToExcel() {
             if(currentRecords.length === 0) { alert("Tiada data untuk diexport"); return; }
-            const ws = XLSX.utils.json_to_sheet(currentRecords);
+            
+            // Map data to simpler format (No IDs, No Submitted_By)
+            const cleanData = currentRecords.map(r => ({
+                "Tarikh": new Date(r.created_at).toLocaleString('ms-MY'),
+                "IC": r.ic_number,
+                "Nama": r.nama,
+                "Telefon": r.telefon,
+                "Emel": r.emel,
+                "Gred": r.gred,
+                "Kod PTJ": r.kod_ptj,
+                "Jabatan": r.department,
+                "Status": r.confirmation,
+                "Nota": r.notes
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(cleanData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rekod");
             XLSX.writeFile(wb, "Rekod_Log.xlsx");
@@ -841,6 +880,33 @@
                 startY: 20
             });
             doc.save("Rekod_Log.pdf");
+        }
+
+        // --- Clear Database Logic ---
+        function confirmClearDatabase() {
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        async function executeClearDatabase() {
+            closeDeleteModal();
+            showToast("Sedang memadam pangkalan data...");
+            
+            // Delete all records where ID is NOT null (effectively all records)
+            const { error } = await supabase
+                .from('rekod')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Hack to select all rows if policies allow
+
+            if (error) {
+                alert("Gagal memadam: " + error.message);
+            } else {
+                alert("Pangkalan data telah dikosongkan!");
+                fetchRecords();
+            }
         }
 
         // --- Import Functions (Record & Master Data) ---
