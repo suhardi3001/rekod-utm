@@ -50,6 +50,50 @@
             width: 100%;
             max-width: 28rem;
         }
+
+        /* --- ROPE ANIMATION STYLES --- */
+        .rope-container {
+            width: 200px;
+            height: 60px;
+            margin: 0 auto 10px;
+            position: relative;
+        }
+        .rope-path {
+            fill: none;
+            stroke: #9ca3af; /* Gray-400 */
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
+        }
+        .knot-path {
+            fill: none;
+            stroke: #3b82f6; /* Blue-500 */
+            stroke-width: 6;
+            stroke-linecap: round;
+            opacity: 0;
+            transform-origin: center;
+            transform: scale(0.5);
+            transition: all 0.5s ease-out 1s; /* Delays until ropes meet */
+        }
+
+        /* State: Connected */
+        .connected .rope-left {
+            transform: translateX(35px); /* Move right */
+            stroke: #3b82f6;
+        }
+        .connected .rope-right {
+            transform: translateX(-35px); /* Move left */
+            stroke: #3b82f6;
+        }
+        .connected .knot-path {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .connected-text {
+            color: #3b82f6;
+            font-weight: bold;
+            transition: color 0.5s;
+        }
     </style>
 </head>
 <body>
@@ -57,7 +101,22 @@
     <!-- ================= AUTHENTICATION / LOGIN PAGE ================= -->
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-            <div class="text-center mb-8">
+            
+            <!-- Connection Gauge / Rope Animation -->
+            <div id="connection-gauge" class="rope-container">
+                <svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Left Rope (Approaches from left) -->
+                    <path class="rope-path rope-left" d="M -10 30 C 20 40, 40 20, 75 30" />
+                    <!-- Right Rope (Approaches from right) -->
+                    <path class="rope-path rope-right" d="M 210 30 C 180 20, 160 40, 125 30" />
+                    <!-- The Knot (Appears in center) -->
+                    <path class="knot-path" d="M 85 30 Q 100 15 115 30 Q 100 45 85 30" />
+                    <path class="knot-path" d="M 100 20 L 100 40" />
+                </svg>
+                <div class="text-center text-xs text-gray-400 mt-[-5px]" id="connection-status">Menunggu Sambungan...</div>
+            </div>
+
+            <div class="text-center mb-8 mt-4">
                 <h1 class="text-3xl font-bold text-gray-800">Sistem Log Masuk</h1>
                 <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
                 <div id="config-warning" class="hidden mt-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 text-left text-xs">
@@ -293,6 +352,25 @@
             console.log(message);
         }
 
+        // TRIGGER ROPE ANIMATION
+        function triggerRopeTie() {
+            const gauge = document.getElementById('connection-gauge');
+            const statusText = document.getElementById('connection-status');
+            
+            gauge.classList.add('connected');
+            statusText.textContent = "Tersambung!";
+            statusText.classList.remove('text-gray-400');
+            statusText.classList.add('connected-text');
+        }
+
+        // HELPER: Timeout Wrapper for Network Calls
+        async function withTimeout(promise, timeoutMs = 15000, operationName = "Operation") {
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error(`${operationName} Timed Out (${timeoutMs/1000}s). Network might be slow or blocked.`)), timeoutMs)
+            );
+            return Promise.race([promise, timeoutPromise]);
+        }
+
         // Initial check for configuration
         document.addEventListener('DOMContentLoaded', () => {
             logDebug("Checking Configuration...");
@@ -336,16 +414,14 @@
         async function checkAuth() {
             logDebug("Checking Authentication Session...");
             try {
-                // Timeout Race to detect network blocking
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("Connection Timeout (5s)")), 5000)
-                );
-
+                // Use helper to race the session check against 5s timeout
                 logDebug("Sending request to Supabase (getSession)...");
-                const sessionPromise = supabase.auth.getSession();
                 
-                // Race the session check against the 5s timeout
-                const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+                const { data: { session }, error } = await withTimeout(
+                    supabase.auth.getSession(),
+                    5000,
+                    "Session Check"
+                );
 
                 if (error) {
                     logDebug("Session Error: " + error.message);
@@ -353,6 +429,7 @@
                 }
                 if (session) {
                     logDebug("Session Found: " + session.user.email);
+                    triggerRopeTie(); // Trigger animation on success
                     currentUser = session.user;
                     showApp();
                 } else {
@@ -361,9 +438,9 @@
                 }
             } catch (err) {
                 logDebug("CRITICAL ERROR: " + err.message);
-                if (err.message.includes("Timeout")) {
+                if (err.message.includes("Timed Out")) {
                      logDebug("HINT: Semak URL Supabase anda. Pastikan tiada 'space' atau typo. Atau firewall sekolah/pejabat blok connection.");
-                     alert("Connection Timeout: Sistem gagal menghubungi Supabase dalam 5 saat. Sila semak URL atau Internet anda.");
+                     // Don't alert here to avoid spamming on load, just log
                 }
             }
         }
@@ -391,35 +468,48 @@
             loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
             logDebug("Attempting login for: " + email);
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
+            try {
+                // Use helper to timeout after 20 seconds (Cold start protection)
+                const { data, error } = await withTimeout(
+                    supabase.auth.signInWithPassword({ email, password }),
+                    20000, 
+                    "Login"
+                );
 
-            // Reset UI State
-            loginBtn.textContent = "Log Masuk";
-            loginBtn.disabled = false;
-            loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Reset UI State
+                loginBtn.textContent = "Log Masuk";
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
-            if (error) {
+                if (error) {
+                    throw error; // Handle in catch block
+                }
+
+                logDebug("Login SUCCESS. User ID: " + data.user.id);
+                triggerRopeTie(); // Trigger animation on success
+                currentUser = data.user;
+                showApp();
+
+            } catch (error) {
+                // Reset UI State on Error
+                loginBtn.textContent = "Log Masuk";
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
                 logDebug("Login FAILED: " + error.message);
-                console.error("Login Error:", error);
                 
                 let errorMessage = "Log Masuk Gagal: " + error.message;
 
-                // Check for specific Supabase errors
                 if (error.message.includes("Email not confirmed")) {
-                    errorMessage += "\n\nPENTING: Email anda belum disahkan. Sila semak inbox email anda atau minta Admin matikan 'Confirm Email' di Supabase > Auth > Providers.";
+                    errorMessage += "\n\nPENTING: Email anda belum disahkan. Sila semak inbox email anda.";
                 } else if (error.message.includes("Invalid login credentials")) {
-                    errorMessage += "\n\nSalah email atau password. Sila cuba lagi.";
+                    errorMessage += "\n\nSalah email atau password.";
+                } else if (error.message.includes("Timed Out")) {
+                    errorMessage += "\n\nSERVER TIMEOUT: Pangkalan data sedang 'bangun' (waking up) atau internet anda perlahan. Sila cuba lagi dalam 30 saat.";
                 }
 
                 errorDiv.innerText = errorMessage;
                 errorDiv.classList.remove('hidden');
-            } else {
-                logDebug("Login SUCCESS. User ID: " + data.user.id);
-                currentUser = data.user;
-                showApp();
             }
         }
 
@@ -444,26 +534,36 @@
                 alert("Sila masukkan email dan password di dalam kotak untuk mendaftar.");
                 return;
             }
-            
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-            });
-            
-            if(error) {
-                logDebug("Registration FAILED: " + error.message);
-                alert("Gagal Mendaftar: " + error.message);
-            } else {
+
+            try {
+                // Use helper to timeout after 25 seconds (Registration often wakes up DB)
+                const { data, error } = await withTimeout(
+                    supabase.auth.signUp({ email, password }),
+                    25000, 
+                    "Registration"
+                );
+                
+                if(error) {
+                    throw error;
+                }
+
                 if (data.session) {
                     logDebug("Registration SUCCESS (Auto-confirmed). Logging in...");
-                    // Success AND user is auto-confirmed (Email Confirm is OFF)
+                    triggerRopeTie(); // Trigger animation on success
                     currentUser = data.user;
                     showApp();
                     alert("Pendaftaran berjaya! Anda telah log masuk secara automatik.");
                 } else {
                     logDebug("Registration SUCCESS (Email confirmation required).");
-                    // Success BUT email needs confirmation (Email Confirm is ON)
-                    alert("Pendaftaran berjaya! Sila semak email anda untuk pengesahan akaun sebelum log masuk. \n\n(Nota: Jika tiada email diterima, pastikan anda matikan 'Confirm Email' di Supabase Dashboard)");
+                    alert("Pendaftaran berjaya! Sila semak email anda untuk pengesahan akaun.");
+                }
+
+            } catch (error) {
+                logDebug("Registration FAILED: " + error.message);
+                if (error.message.includes("Timed Out")) {
+                    alert("TIMEOUT: Pangkalan data sedang 'tidur' (sleeping). Ia sedang dihidupkan sekarang. Sila tunggu 30 saat dan cuba tekan butang Daftar sekali lagi.");
+                } else {
+                    alert("Gagal Mendaftar: " + error.message);
                 }
             }
         }
@@ -478,10 +578,13 @@
 
         function showApp() {
             logDebug("Switching to App Layout");
-            document.getElementById('login-page').classList.add('hidden-section');
-            document.getElementById('app-layout').classList.remove('hidden-section');
-            document.getElementById('user-display').textContent = currentUser.email;
-            showPage('search'); // Default page
+            // Delay showing app slightly so user sees the rope animation
+            setTimeout(() => {
+                document.getElementById('login-page').classList.add('hidden-section');
+                document.getElementById('app-layout').classList.remove('hidden-section');
+                document.getElementById('user-display').textContent = currentUser.email;
+                showPage('search'); // Default page
+            }, 1000);
         }
 
         function showPage(pageId) {
