@@ -34,12 +34,28 @@
             margin: 0 auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Debug Console Styles */
+        #debug-console {
+            background-color: #1a1a1a;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 1rem;
+            margin-top: 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            width: 100%;
+            max-width: 28rem;
+        }
     </style>
 </head>
 <body>
 
     <!-- ================= AUTHENTICATION / LOGIN PAGE ================= -->
-    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gray-900">
+    <div id="login-page" class="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-800">Sistem Log Masuk</h1>
@@ -66,6 +82,11 @@
             <div class="mt-4 text-center">
                  <button onclick="toggleSignUp()" class="text-sm text-blue-500 hover:underline">Tiada akaun? Daftar disini</button>
             </div>
+        </div>
+
+        <!-- Debug Console for User Feedback -->
+        <div id="debug-console">
+            <div>> System Initialized. Waiting for input...</div>
         </div>
     </div>
 
@@ -261,14 +282,29 @@
         const supabaseUrl = 'https://objxfgosatmasjjifkkg.supabase.co'; 
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw';
 
+        // DEBUG LOGGER
+        function logDebug(message) {
+            const consoleDiv = document.getElementById('debug-console');
+            const time = new Date().toLocaleTimeString();
+            const newLine = document.createElement('div');
+            newLine.innerText = `[${time}] ${message}`;
+            consoleDiv.appendChild(newLine);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            console.log(message);
+        }
+
         // Initial check for configuration
-        if (supabaseUrl === 'YOUR_SUPABASE_PROJECT_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
-            document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
+            logDebug("Checking Configuration...");
+            if (supabaseUrl === 'YOUR_SUPABASE_PROJECT_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
                 const warningDiv = document.getElementById('config-warning');
                 warningDiv.classList.remove('hidden');
+                logDebug("ERROR: Keys not set! Please edit index.html");
                 alert("RALAT CONFIG: Sila buka kod dan masukkan 'supabaseUrl' dan 'supabaseAnonKey' anda.");
-            });
-        }
+            } else {
+                logDebug("Keys detected. attempting to initialize Supabase...");
+            }
+        });
 
         const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
         
@@ -289,20 +325,23 @@
 
         // ================= AUTHENTICATION LOGIC =================
         async function checkAuth() {
+            logDebug("Checking Authentication Session...");
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) {
-                    console.error("Auth Session Error:", error);
+                    logDebug("Session Error: " + error.message);
                     return;
                 }
                 if (session) {
+                    logDebug("Session Found: " + session.user.email);
                     currentUser = session.user;
                     showApp();
                 } else {
+                    logDebug("No Active Session. Showing Login.");
                     showLogin();
                 }
             } catch (err) {
-                console.error("Unexpected Auth Error:", err);
+                logDebug("Unexpected Auth Exception: " + err.message);
             }
         }
 
@@ -317,6 +356,7 @@
             errorDiv.textContent = "";
 
             if (supabaseUrl.includes('YOUR_SUPABASE')) {
+                logDebug("Login blocked: Default keys in use.");
                 errorDiv.textContent = "Ralat: Supabase Keys belum dikemaskini dalam kod.";
                 errorDiv.classList.remove('hidden');
                 return;
@@ -326,6 +366,7 @@
             loginBtn.textContent = "Sedang Memproses...";
             loginBtn.disabled = true;
             loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            logDebug("Attempting login for: " + email);
 
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
@@ -338,6 +379,7 @@
             loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
             if (error) {
+                logDebug("Login FAILED: " + error.message);
                 console.error("Login Error:", error);
                 
                 let errorMessage = "Log Masuk Gagal: " + error.message;
@@ -352,12 +394,14 @@
                 errorDiv.innerText = errorMessage;
                 errorDiv.classList.remove('hidden');
             } else {
+                logDebug("Login SUCCESS. User ID: " + data.user.id);
                 currentUser = data.user;
                 showApp();
             }
         }
 
         async function handleLogout() {
+            logDebug("Logging out...");
             await supabase.auth.signOut();
             window.location.reload();
         }
@@ -366,6 +410,8 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
+            logDebug("Attempting Registration...");
+
             if (supabaseUrl.includes('YOUR_SUPABASE')) {
                 alert("Ralat: Sila kemaskini Supabase Keys dalam kod dahulu.");
                 return;
@@ -382,14 +428,17 @@
             });
             
             if(error) {
+                logDebug("Registration FAILED: " + error.message);
                 alert("Gagal Mendaftar: " + error.message);
             } else {
                 if (data.session) {
+                    logDebug("Registration SUCCESS (Auto-confirmed). Logging in...");
                     // Success AND user is auto-confirmed (Email Confirm is OFF)
                     currentUser = data.user;
                     showApp();
                     alert("Pendaftaran berjaya! Anda telah log masuk secara automatik.");
                 } else {
+                    logDebug("Registration SUCCESS (Email confirmation required).");
                     // Success BUT email needs confirmation (Email Confirm is ON)
                     alert("Pendaftaran berjaya! Sila semak email anda untuk pengesahan akaun sebelum log masuk. \n\n(Nota: Jika tiada email diterima, pastikan anda matikan 'Confirm Email' di Supabase Dashboard)");
                 }
@@ -405,6 +454,7 @@
         }
 
         function showApp() {
+            logDebug("Switching to App Layout");
             document.getElementById('login-page').classList.add('hidden-section');
             document.getElementById('app-layout').classList.remove('hidden-section');
             document.getElementById('user-display').textContent = currentUser.email;
