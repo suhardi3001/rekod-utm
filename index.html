@@ -290,7 +290,7 @@
                             
                             <!-- Dropdown -->
                             <div class="md:col-span-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Status Selesai</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status Pengesahan</label>
                                 <select id="confirmation" class="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                                     <option value="YA">YA</option>
                                     <option value="TIDAK">TIDAK</option>
@@ -300,7 +300,7 @@
 
                         <!-- Notes Box -->
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Perkara / Masalah</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nota Tambahan</label>
                             <textarea id="notes" rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan sebarang nota disini..."></textarea>
                         </div>
 
@@ -347,8 +347,8 @@
                                     <th class="py-3 px-4 text-left">IC</th>
                                     <th class="py-3 px-4 text-left">Nama</th>
                                     <th class="py-3 px-4 text-left">Jabatan</th>
-                                    <th class="py-3 px-4 text-left">Status Selesai</th>
-                                    <th class="py-3 px-4 text-left">Perkara / Masalah</th>
+                                    <th class="py-3 px-4 text-left">Status</th>
+                                    <th class="py-3 px-4 text-left">Nota</th>
                                 </tr>
                             </thead>
                             <tbody class="text-gray-600 font-light" id="table-body">
@@ -928,17 +928,32 @@
             
             const tableName = clearActionType === 'personnel' ? 'personnel' : 'rekod';
             
-            // Delete all records where ID is NOT null (effectively all records)
-            const { error } = await supabase
-                .from(tableName)
-                .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000'); // Hack to select all rows
+            try {
+                // Delete all records where ID is NOT null and SELECT the deleted rows to verify
+                const { data, error } = await supabase
+                    .from(tableName)
+                    .delete()
+                    .neq('id', '00000000-0000-0000-0000-000000000000') // Select all rows
+                    .select(); // IMPORTANT: Return deleted data to check count
 
-            if (error) {
-                alert("Gagal memadam: " + error.message);
-            } else {
-                alert(`Pangkalan data (${tableName}) telah dikosongkan!`);
-                if (tableName === 'rekod') fetchRecords();
+                if (error) {
+                    throw error;
+                }
+
+                if (data && data.length > 0) {
+                    alert(`Berjaya! ${data.length} baris data dalam '${tableName}' telah dipadam.`);
+                    if (tableName === 'rekod') fetchRecords();
+                    if (tableName === 'personnel') {
+                        document.getElementById('global-search').value = '';
+                        document.getElementById('search-results-dropdown').classList.add('hidden');
+                    }
+                } else {
+                    alert(`Tiada data dipadam. \n\nMUNGKIN PUNCA: \n1. Database sudah kosong.\n2. Anda belum tetapkan 'DELETE Policy' di Supabase SQL Editor.\n\nSila run script SQL: CREATE POLICY "Allow delete" ON ${tableName} FOR DELETE USING (true);`);
+                }
+
+            } catch (err) {
+                console.error('Delete Error:', err);
+                alert("Gagal memadam: " + err.message);
             }
         }
 
