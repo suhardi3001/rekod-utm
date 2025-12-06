@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rekod Log</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- SheetJS (Excel Export) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF (PDF Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hidden-section { display: none; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- ================= AUTHENTICATION / LOGIN PAGE ================= -->
+    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gray-900">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Sistem Log Masuk</h1>
+                <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="********">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm hidden"></div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Log Masuk</button>
+            </form>
+            <div class="mt-4 text-center">
+                 <button onclick="toggleSignUp()" class="text-sm text-blue-500 hover:underline">Tiada akaun? Daftar disini</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP LAYOUT ================= -->
+    <div id="app-layout" class="hidden-section min-h-screen flex flex-col">
+        
+        <!-- Navbar -->
+        <nav class="bg-blue-800 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="font-bold text-xl">Sistem Rekod</span>
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <button onclick="showPage('search')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 bg-blue-900 transition" id="nav-search">Carian & Input</button>
+                            <button onclick="showPage('records')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition" id="nav-records">Pangkalan Data Rekod</button>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="user-display" class="text-sm mr-4 text-blue-200"></span>
+                        <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Keluar</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow p-6 max-w-7xl w-full mx-auto">
+            
+            <!-- ================= SEARCH & INPUT PAGE ================= -->
+            <div id="search-page" class="space-y-6">
+                
+                <!-- Search Section -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="search"></i> Carian Pangkalan Data</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="global-search" class="flex-grow px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cari ID, Nama, atau No Telefon...">
+                        <button onclick="performSearch()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Cari</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">* Fungsi ini akan mencari dari pangkalan data utama (simulasi).</p>
+                </div>
+
+                <!-- Input Form Section -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
+                        <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full" id="current-date"></span>
+                    </div>
+
+                    <form id="data-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Textbox 1: IC -->
+                            <div class="relative group">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan (IC)</label>
+                                <div class="relative">
+                                    <input type="text" id="ic" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('ic')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 2: NAMA -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
+                                <div class="relative">
+                                    <input type="text" id="nama" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('nama')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 3: TELEFON -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Telefon</label>
+                                <div class="relative">
+                                    <input type="text" id="telefon" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('telefon')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 4: EMEL -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Emel</label>
+                                <div class="relative">
+                                    <input type="email" id="emel" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('emel')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 5: GRED -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gred Jawatan</label>
+                                <div class="relative">
+                                    <input type="text" id="gred" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('gred')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 6: KOD PTJ -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kod PTJ</label>
+                                <div class="relative">
+                                    <input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('kod_ptj')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Textbox 7: DEPARTMENT -->
+                            <div class="relative md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jabatan / Department</label>
+                                <div class="relative">
+                                    <input type="text" id="department" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
+                                    <button type="button" onclick="enableEdit('department')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                            
+                            <!-- Dropdown -->
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status Pengesahan</label>
+                                <select id="confirmation" class="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="YA">YA</option>
+                                    <option value="TIDAK">TIDAK</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Notes Box -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nota Tambahan</label>
+                            <textarea id="notes" rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan sebarang nota disini..."></textarea>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100 flex justify-end">
+                            <button type="submit" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105 flex items-center gap-2">
+                                <i data-lucide="save"></i> Hantar & Simpan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ================= REKOD DATABASE PAGE ================= -->
+            <div id="records-page" class="hidden-section space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800"><i data-lucide="database"></i> Pangkalan Data REKOD</h2>
+                        <div class="flex gap-2">
+                            <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 flex items-center gap-2">
+                                <i data-lucide="sheet"></i> Export Excel
+                            </button>
+                            <button onclick="exportToPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 flex items-center gap-2">
+                                <i data-lucide="file-down"></i> Export PDF
+                            </button>
+                            <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200">
+                                <i data-lucide="refresh-cw"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full bg-white text-sm" id="records-table">
+                            <thead class="bg-gray-100 text-gray-700 uppercase leading-normal">
+                                <tr>
+                                    <th class="py-3 px-4 text-left">Tarikh/Masa</th>
+                                    <th class="py-3 px-4 text-left">IC</th>
+                                    <th class="py-3 px-4 text-left">Nama</th>
+                                    <th class="py-3 px-4 text-left">Jabatan</th>
+                                    <th class="py-3 px-4 text-left">Status</th>
+                                    <th class="py-3 px-4 text-left">Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 font-light" id="table-body">
+                                <!-- Data will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0">
+        Notification message
+    </div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        // REPLACE THESE WITH YOUR ACTUAL SUPABASE KEYS
+        const supabaseUrl = 'https://objxfgosatmasjjifkkg.supabase.co'; 
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw';
+
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+        
+        // ================= STATE MANAGEMENT =================
+        let currentUser = null;
+
+        // ================= INITIALIZATION =================
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateDateDisplay();
+            checkAuth();
+        });
+
+        function updateDateDisplay() {
+            const now = new Date();
+            document.getElementById('current-date').textContent = now.toLocaleString('ms-MY');
+        }
+
+        // ================= AUTHENTICATION LOGIC =================
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorDiv.textContent = "Login Gagal: " + error.message;
+                errorDiv.classList.remove('hidden');
+            } else {
+                currentUser = data.user;
+                showApp();
+            }
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        async function toggleSignUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if(!email || !password) {
+                alert("Sila masukkan email dan password untuk mendaftar.");
+                return;
+            }
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+            });
+            if(error) alert(error.message);
+            else alert("Pendaftaran berjaya! Sila semak emel anda atau log masuk.");
+        }
+
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+
+        // ================= UI NAVIGATION =================
+        function showLogin() {
+            document.getElementById('login-page').classList.remove('hidden-section');
+            document.getElementById('app-layout').classList.add('hidden-section');
+        }
+
+        function showApp() {
+            document.getElementById('login-page').classList.add('hidden-section');
+            document.getElementById('app-layout').classList.remove('hidden-section');
+            document.getElementById('user-display').textContent = currentUser.email;
+            showPage('search'); // Default page
+        }
+
+        function showPage(pageId) {
+            // Toggle active nav state
+            const navSearch = document.getElementById('nav-search');
+            const navRecords = document.getElementById('nav-records');
+            
+            if (pageId === 'search') {
+                document.getElementById('search-page').classList.remove('hidden-section');
+                document.getElementById('records-page').classList.add('hidden-section');
+                navSearch.classList.add('bg-blue-900');
+                navRecords.classList.remove('bg-blue-900');
+            } else {
+                document.getElementById('search-page').classList.add('hidden-section');
+                document.getElementById('records-page').classList.remove('hidden-section');
+                navSearch.classList.remove('bg-blue-900');
+                navRecords.classList.add('bg-blue-900');
+                fetchRecords(); // Load data when tab is clicked
+            }
+        }
+
+        // ================= FORM FEATURES =================
+        function enableEdit(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.readOnly = false;
+            field.focus();
+            field.classList.remove('bg-gray-50');
+            field.classList.add('bg-white');
+            showToast(`Anda kini boleh menyunting ${fieldId.toUpperCase()}`);
+        }
+
+        function performSearch() {
+            const query = document.getElementById('global-search').value;
+            if (!query) return;
+
+            // SIMULATION: In a real app, you would query Supabase for this data
+            // Since we don't have the external databases (IC, NAMA, etc), 
+            // we will simulate finding a record for demonstration.
+            
+            showToast("Sedang mencari...");
+            
+            setTimeout(() => {
+                // Mock Data Fill
+                document.getElementById('ic').value = query || "800101-14-1234";
+                document.getElementById('nama').value = "Ahmad Bin Abu";
+                document.getElementById('telefon').value = "012-3456789";
+                document.getElementById('emel').value = "ahmad@gov.my";
+                document.getElementById('gred').value = "N41";
+                document.getElementById('kod_ptj').value = "PTJ-101";
+                document.getElementById('department').value = "Jabatan Teknologi Maklumat";
+                
+                showToast("Data dijumpai & diisi!");
+            }, 800);
+        }
+
+        document.getElementById('data-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                ic_number: document.getElementById('ic').value,
+                nama: document.getElementById('nama').value,
+                telefon: document.getElementById('telefon').value,
+                emel: document.getElementById('emel').value,
+                gred: document.getElementById('gred').value,
+                kod_ptj: document.getElementById('kod_ptj').value,
+                department: document.getElementById('department').value,
+                confirmation: document.getElementById('confirmation').value,
+                notes: document.getElementById('notes').value,
+                submitted_by: currentUser.id
+                // Created_at is handled by DB default
+            };
+
+            const { error } = await supabase
+                .from('rekod')
+                .insert([formData]);
+
+            if (error) {
+                alert("Ralat menyimpan: " + error.message);
+            } else {
+                showToast("Rekod berjaya disimpan!");
+                // Clear form but keep date
+                document.getElementById('data-form').reset();
+                updateDateDisplay();
+                
+                // Reset ReadOnly states
+                ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.readOnly = true;
+                    el.classList.add('bg-gray-50');
+                });
+            }
+        });
+
+        // ================= RECORDS & EXPORT =================
+        let currentRecords = [];
+
+        async function fetchRecords() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="loader"></div></td></tr>';
+
+            const { data, error } = await supabase
+                .from('rekod')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
+            } else {
+                currentRecords = data;
+                renderTable(data);
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-200 hover:bg-gray-50";
+                const date = new Date(row.created_at).toLocaleString('ms-MY');
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4 whitespace-nowrap">${date}</td>
+                    <td class="py-3 px-4">${row.ic_number || '-'}</td>
+                    <td class="py-3 px-4 font-medium">${row.nama || '-'}</td>
+                    <td class="py-3 px-4">${row.department || '-'}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs ${row.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${row.confirmation}</span></td>
+                    <td class="py-3 px-4 text-gray-500 text-sm max-w-xs truncate">${row.notes || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportToExcel() {
+            if(currentRecords.length === 0) { alert("Tiada data untuk diexport"); return; }
+            
+            const ws = XLSX.utils.json_to_sheet(currentRecords);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekod");
+            XLSX.writeFile(wb, "Rekod_Log.xlsx");
+        }
+
+        function exportToPDF() {
+            if(currentRecords.length === 0) { alert("Tiada data untuk diexport"); return; }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.text("Laporan Rekod Log", 14, 15);
+            doc.autoTable({
+                head: [['Masa', 'IC', 'Nama', 'Jabatan', 'Status', 'Nota']],
+                body: currentRecords.map(r => [
+                    new Date(r.created_at).toLocaleDateString(),
+                    r.ic_number,
+                    r.nama,
+                    r.department,
+                    r.confirmation,
+                    r.notes
+                ]),
+                startY: 20
+            });
+            doc.save("Rekod_Log.pdf");
+        }
+
+        // ================= UTILS =================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('opacity-0', 'translate-y-20');
+            setTimeout(() => {
+                t.classList.add('opacity-0', 'translate-y-20');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
