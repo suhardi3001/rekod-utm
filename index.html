@@ -384,7 +384,15 @@
             if(error) {
                 alert("Gagal Mendaftar: " + error.message);
             } else {
-                alert("Pendaftaran berjaya! Jika anda tidak dapat log masuk, sila semak email anda untuk pengesahan akaun.");
+                if (data.session) {
+                    // Success AND user is auto-confirmed (Email Confirm is OFF)
+                    currentUser = data.user;
+                    showApp();
+                    alert("Pendaftaran berjaya! Anda telah log masuk secara automatik.");
+                } else {
+                    // Success BUT email needs confirmation (Email Confirm is ON)
+                    alert("Pendaftaran berjaya! Sila semak email anda untuk pengesahan akaun sebelum log masuk. \n\n(Nota: Jika tiada email diterima, pastikan anda matikan 'Confirm Email' di Supabase Dashboard)");
+                }
             }
         }
 
