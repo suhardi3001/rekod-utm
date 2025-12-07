@@ -496,7 +496,25 @@
                                 <button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah Peranti</button>
                             </div>
                         </div>
-            
+                        
+                        <!-- List of current loans -->
+                        <div class="mt-8">
+                            <h6 class="font-bold mb-3">Senarai Pinjaman Aktif</h6>
+                            <div class="overflow-x-auto rounded border">
+                                <table class="min-w-full text-sm" id="active-loans-table">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="p-2 text-left">Peminjam</th>
+                                            <th class="p-2 text-left">Peranti</th>
+                                            <th class="p-2 text-left">Tamat</th>
+                                            <th class="p-2 text-left">Tujuan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="active-loans-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- 4. REKOD PINJAMAN (HISTORY) TAB -->
                     <div id="loan-tab-history" class="loan-tab-content hidden">
