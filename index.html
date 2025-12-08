@@ -969,20 +969,24 @@
             document.getElementById('app-layout').classList.add('hidden-section');
         }
 
-        function showApp() {
-            logDebug("Switching to App Layout");
-            // Delay showing app slightly so user sees the rope animation
-            setTimeout(() => {
-                document.getElementById('login-page').classList.add('hidden-section');
-                document.getElementById('app-layout').classList.remove('hidden-section');
-                document.getElementById('user-display').textContent = currentUser.email;
-                
-                // Initialize default view
-                switchMainTab('call-log'); 
-                
-                window.scrollTo(0,0); // Ensure window scrolls to top
-            }, 1000);
-        }
+function showApp() {
+    logDebug("Switching to App Layout");
+    // Delay showing app slightly so user sees the rope animation
+    setTimeout(() => {
+        document.getElementById('login-page').classList.add('hidden-section');
+        document.getElementById('app-layout').classList.remove('hidden-section');
+        document.getElementById('user-display').textContent = currentUser.email;
+        
+        // --- NEW LINE ADDED HERE ---
+        checkAdminPermissions(); 
+        // ---------------------------
+
+        // Initialize default view
+        switchMainTab('call-log'); 
+        
+        window.scrollTo(0,0); // Ensure window scrolls to top
+    }, 1000);
+}
 // Function to show admin buttons only for specific email
 function checkAdminPermissions() {
     const adminEmail = 'suhardi.alias@moe.gov.my';
