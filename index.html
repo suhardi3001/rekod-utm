@@ -375,15 +375,16 @@
                     <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
                         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                             <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 text-center md:text-left"><i data-lucide="database"></i> Rekod Panggilan dan Emel IGFMAS</h2>
-                            <div class="flex flex-wrap gap-2 items-center justify-center">
-                                <button onclick="triggerImport()" class="bg-gray-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-gray-800 flex items-center gap-2"><i data-lucide="upload"></i> Import</button>
-                                <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-green-700 flex items-center gap-2"><i data-lucide="sheet"></i> Excel</button>
-                                <button onclick="exportToPDF()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-700 flex items-center gap-2"><i data-lucide="file-down"></i> PDF</button>
-                                <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200"><i data-lucide="refresh-cw"></i></button>
-                                <div class="hidden md:block border-l border-gray-300 mx-1 h-8"></div>
-                                <button onclick="confirmClearDatabase()" class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data"><i data-lucide="trash-2"></i> Kosongkan</button>
-                            </div>
-                        </div>
+<div class="flex flex-wrap gap-2 items-center justify-center">
+    <button onclick="triggerImport()" class="admin-only hidden bg-gray-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-gray-800 flex items-center gap-2"><i data-lucide="upload"></i> Import</button>
+    
+    <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-green-700 flex items-center gap-2"><i data-lucide="sheet"></i> Excel</button>
+    <button onclick="exportToPDF()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-700 flex items-center gap-2"><i data-lucide="file-down"></i> PDF</button>
+    <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200"><i data-lucide="refresh-cw"></i></button>
+    <div class="hidden md:block border-l border-gray-300 mx-1 h-8"></div>
+    
+    <button onclick="confirmClearDatabase()" class="admin-only hidden bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data"><i data-lucide="trash-2"></i> Kosongkan</button>
+</div>                        </div>
                         <div class="table-container border border-gray-200 rounded-lg">
                             <!-- UPDATED TABLE DISPLAY -->
                             <table class="min-w-full bg-white text-xs md:text-sm" id="records-table">
