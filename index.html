@@ -373,10 +373,11 @@
                                         <th class="py-3 px-4 text-left">IC</th>
                                         <th class="py-3 px-4 text-left">Nama</th>
                                         <th class="py-3 px-4 text-left">Jabatan</th>
-                                        <th class="py-3 px-4 text-left">Status Selesai</th>
                                         <th class="py-3 px-4 text-left">Perkara / Masalah</th>
                                         <th class="py-3 px-4 text-left">Direkod Oleh</th>
                                         <th class="py-3 px-4 text-left">Tarikh Perubahan Status</th>
+                                        <th class="py-3 px-4 text-left">Status Dikemaskini Oleh</th>
+                                        <th class="py-3 px-4 text-left">Status Selesai</th> <!-- MOVED TO END -->
                                     </tr>
                                 </thead>
                                 <tbody class="text-gray-600 font-light" id="table-body">
@@ -1187,9 +1188,14 @@
         
         async function updateStatus(id, newStatus) {
             const now = new Date().toISOString();
+            // Also update the 'status_updated_by_name' column with current user's email
             const { error } = await supabase
                 .from('rekod')
-                .update({ confirmation: newStatus, status_updated_at: now })
+                .update({ 
+                    confirmation: newStatus, 
+                    status_updated_at: now,
+                    status_updated_by_name: currentUser.email // Record who made the change
+                })
                 .eq('id', id);
 
             if (error) {
@@ -1197,7 +1203,7 @@
                 fetchRecords(); // Revert UI
             } else {
                 showToast("Status dikemaskini!");
-                fetchRecords(); // Refresh to show new date
+                fetchRecords(); // Refresh to show new date and updated by
             }
         }
 
@@ -1206,7 +1212,7 @@
 
         async function fetchRecords() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="loader"></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="loader"></div></td></tr>';
 
             const { data, error } = await supabase
                 .from('rekod')
@@ -1214,7 +1220,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
             } else {
                 currentRecords = data;
                 renderTable(data);
@@ -1226,7 +1232,7 @@
             tbody.innerHTML = '';
 
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
                 return;
             }
 
@@ -1238,6 +1244,8 @@
                 // Use 'perekod' column, fallback to submitted_by ID or '-'
                 const recorder = row.perekod ? row.perekod : (row.submitted_by ? row.submitted_by.substring(0, 8) + '...' : '-');
                 const statusDate = row.status_updated_at ? new Date(row.status_updated_at).toLocaleString('ms-MY') : '-';
+                // Use 'status_updated_by_name' column
+                const statusUpdater = row.status_updated_by_name ? row.status_updated_by_name : '-';
                 
                 const statusSelect = `
                     <select onchange="updateStatus('${row.id}', this.value)" class="border rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1251,10 +1259,11 @@
                     <td class="py-3 px-4">${row.ic_number || '-'}</td>
                     <td class="py-3 px-4 font-medium">${row.nama || '-'}</td>
                     <td class="py-3 px-4">${row.department || '-'}</td>
-                    <td class="py-3 px-4">${statusSelect}</td>
                     <td class="py-3 px-4 text-gray-500 text-sm max-w-xs truncate">${row.notes || '-'}</td>
                     <td class="py-3 px-4 text-xs text-gray-500">${recorder}</td>
                     <td class="py-3 px-4 text-xs text-gray-500">${statusDate}</td>
+                    <td class="py-3 px-4 text-xs text-gray-500">${statusUpdater}</td>
+                    <td class="py-3 px-4">${statusSelect}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1273,10 +1282,11 @@
                 "Gred": r.gred,
                 "Kod PTJ": r.kod_ptj,
                 "Jabatan": r.department,
-                "Status": r.confirmation,
                 "Perkara / Masalah": r.notes,
                 "Direkod Oleh": r.perekod || r.submitted_by,
-                "Tarikh Perubahan Status": r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-'
+                "Tarikh Perubahan Status": r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-',
+                "Status Dikemaskini Oleh": r.status_updated_by_name || '-',
+                "Status": r.confirmation
             }));
 
             const ws = XLSX.utils.json_to_sheet(cleanData);
@@ -1291,20 +1301,21 @@
             const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
             doc.text("Laporan Rekod Log", 14, 15);
             doc.autoTable({
-                head: [['Masa', 'IC', 'Nama', 'Jabatan', 'Status', 'Nota', 'Direkod Oleh', 'Tarikh Status']],
+                head: [['Masa', 'IC', 'Nama', 'Jabatan', 'Nota', 'Direkod Oleh', 'Tarikh Status', 'Status Oleh', 'Status']],
                 body: currentRecords.map(r => [
                     new Date(r.created_at).toLocaleDateString(),
                     r.ic_number,
                     r.nama,
                     r.department,
-                    r.confirmation,
                     r.notes,
                     r.perekod || (r.submitted_by ? r.submitted_by.substring(0,8) : '-'),
-                    r.status_updated_at ? new Date(r.status_updated_at).toLocaleDateString() : '-'
+                    r.status_updated_at ? new Date(r.status_updated_at).toLocaleDateString() : '-',
+                    r.status_updated_by_name || '-',
+                    r.confirmation
                 ]),
                 startY: 20,
                 styles: { fontSize: 8 },
-                columnStyles: { 5: { cellWidth: 40 } } // Limit Note column width
+                columnStyles: { 4: { cellWidth: 40 } } // Limit Note column width
             });
             doc.save("Rekod_Log.pdf");
         }
@@ -1615,35 +1626,6 @@
                         <td class="p-2">${l.device_tag}</td>
                         <td class="p-2">${l.end_date}</td>
                         <td class="p-2">${l.usage_details || '-'}</td>
-                    </tr>
-                `;
-            });
-        }
-        
-        async function loadLoanHistory() {
-            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').order('created_at', { ascending: false });
-            currentLoanHistory = loans || []; // Store for export
-            const tbody = document.getElementById('loan-history-body');
-            tbody.innerHTML = '';
-            
-            if(!loans || loans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Tiada rekod pinjaman.</td></tr>';
-                return;
-            }
-            
-            loans.forEach(l => {
-                const applicationDate = l.created_at ? new Date(l.created_at).toLocaleString() : '-'; // Tarikh Mohon
-                const returnDate = l.return_date ? new Date(l.return_date).toLocaleString() : '-'; // Tarikh Pulang (Sebenar)
-                const statusClass = l.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">${applicationDate}</td>
-                        <td class="p-3 font-medium">${l.user_name}</td>
-                        <td class="p-3">${l.device_tag}</td>
-                        <td class="p-3">${l.start_date} - ${l.end_date}</td>
-                        <td class="p-3">${returnDate}</td>
-                        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusClass}">${l.status}</span></td>
                     </tr>
                 `;
             });
