@@ -376,13 +376,14 @@
                             <table class="min-w-full bg-white text-sm" id="records-table">
                                 <thead class="bg-gray-100 text-gray-700 uppercase leading-normal">
                                     <tr>
-                                        <th class="py-3 px-4 text-left">Tarikh/Masa</th>
+                                        <th class="py-3 px-4 text-left">Tarikh Masa Panggilan / Emel</th>
                                         <th class="py-3 px-4 text-left">IC</th>
                                         <th class="py-3 px-4 text-left">Nama</th>
                                         <th class="py-3 px-4 text-left">Jabatan</th>
                                         <th class="py-3 px-4 text-left">Status Selesai</th>
                                         <th class="py-3 px-4 text-left">Perkara / Masalah</th>
                                         <th class="py-3 px-4 text-left">Direkod Oleh</th>
+                                        <th class="py-3 px-4 text-left">Tarikh Perubahan Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-gray-600 font-light" id="table-body">
@@ -1189,13 +1190,29 @@
                 checkFormValidity();
             }
         });
+        
+        async function updateStatus(id, newStatus) {
+            const now = new Date().toISOString();
+            const { error } = await supabase
+                .from('rekod')
+                .update({ confirmation: newStatus, status_updated_at: now })
+                .eq('id', id);
+
+            if (error) {
+                alert("Gagal mengemaskini status: " + error.message);
+                fetchRecords(); // Revert UI
+            } else {
+                showToast("Status dikemaskini!");
+                fetchRecords(); // Refresh to show new date
+            }
+        }
 
         // ================= RECORDS, EXPORT & IMPORT =================
         let currentRecords = [];
 
         async function fetchRecords() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="loader"></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="loader"></div></td></tr>';
 
             const { data, error } = await supabase
                 .from('rekod')
@@ -1203,7 +1220,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
             } else {
                 currentRecords = data;
                 renderTable(data);
@@ -1215,7 +1232,7 @@
             tbody.innerHTML = '';
 
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
                 return;
             }
 
@@ -1226,15 +1243,24 @@
                 
                 // Use 'perekod' column, fallback to submitted_by ID or '-'
                 const recorder = row.perekod ? row.perekod : (row.submitted_by ? row.submitted_by.substring(0, 8) + '...' : '-');
+                const statusDate = row.status_updated_at ? new Date(row.status_updated_at).toLocaleString('ms-MY') : '-';
+                
+                const statusSelect = `
+                    <select onchange="updateStatus('${row.id}', this.value)" class="border rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="YA" ${row.confirmation === 'YA' ? 'selected' : ''}>YA</option>
+                        <option value="TIDAK" ${row.confirmation === 'TIDAK' ? 'selected' : ''}>TIDAK</option>
+                    </select>
+                `;
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 whitespace-nowrap">${date}</td>
                     <td class="py-3 px-4">${row.ic_number || '-'}</td>
                     <td class="py-3 px-4 font-medium">${row.nama || '-'}</td>
                     <td class="py-3 px-4">${row.department || '-'}</td>
-                    <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs ${row.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${row.confirmation}</span></td>
+                    <td class="py-3 px-4">${statusSelect}</td>
                     <td class="py-3 px-4 text-gray-500 text-sm max-w-xs truncate">${row.notes || '-'}</td>
                     <td class="py-3 px-4 text-xs text-gray-500">${recorder}</td>
+                    <td class="py-3 px-4 text-xs text-gray-500">${statusDate}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1245,7 +1271,7 @@
             if(currentRecords.length === 0) { alert("Tiada data untuk diexport"); return; }
             
             const cleanData = currentRecords.map(r => ({
-                "Tarikh": new Date(r.created_at).toLocaleString('ms-MY'),
+                "Tarikh Masa Panggilan / Emel": new Date(r.created_at).toLocaleString('ms-MY'),
                 "IC": r.ic_number,
                 "Nama": r.nama,
                 "Telefon": r.telefon,
@@ -1254,8 +1280,9 @@
                 "Kod PTJ": r.kod_ptj,
                 "Jabatan": r.department,
                 "Status": r.confirmation,
-                "Nota": r.notes,
-                "Direkod Oleh": r.perekod || r.submitted_by
+                "Perkara / Masalah": r.notes,
+                "Direkod Oleh": r.perekod || r.submitted_by,
+                "Tarikh Perubahan Status": r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-'
             }));
 
             const ws = XLSX.utils.json_to_sheet(cleanData);
@@ -1270,7 +1297,7 @@
             const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
             doc.text("Laporan Rekod Log", 14, 15);
             doc.autoTable({
-                head: [['Masa', 'IC', 'Nama', 'Jabatan', 'Status', 'Nota', 'Direkod Oleh']],
+                head: [['Masa', 'IC', 'Nama', 'Jabatan', 'Status', 'Nota', 'Direkod Oleh', 'Tarikh Status']],
                 body: currentRecords.map(r => [
                     new Date(r.created_at).toLocaleDateString(),
                     r.ic_number,
@@ -1278,7 +1305,8 @@
                     r.department,
                     r.confirmation,
                     r.notes,
-                    r.perekod || (r.submitted_by ? r.submitted_by.substring(0,8) : '-')
+                    r.perekod || (r.submitted_by ? r.submitted_by.substring(0,8) : '-'),
+                    r.status_updated_at ? new Date(r.status_updated_at).toLocaleDateString() : '-'
                 ]),
                 startY: 20,
                 styles: { fontSize: 8 },
