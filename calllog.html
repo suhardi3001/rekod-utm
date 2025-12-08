@@ -1,0 +1,146 @@
+<div class="w-full">
+    <!-- Sub-tabs -->
+    <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
+        <button onclick="switchCallLogTab('search')" id="btn-sub-search" class="px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap">Carian & Input</button>
+        <button onclick="switchCallLogTab('records')" id="btn-sub-records" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Pangkalan Data Rekod</button>
+    </div>
+
+    <!-- SEARCH & INPUT PAGE -->
+    <div id="sub-search-page" class="space-y-6 w-full">
+        <!-- Search Box -->
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
+             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
+                <!-- Global Hidden Inputs for Import -->
+                <input type="file" id="master-data-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleMasterDataUpload(event)">
+                
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button onclick="document.getElementById('master-data-upload').click()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 transition flex items-center gap-2 border border-blue-200 flex-grow md:flex-grow-0 justify-center">
+                        <i data-lucide="database-backup" class="w-4 h-4"></i> Import Data Induk
+                    </button>
+                    <button onclick="confirmClearMasterDatabase()" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-200 transition flex items-center gap-2 border border-red-200 flex-grow md:flex-grow-0 justify-center">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Padam Data Induk
+                    </button>
+                </div>
+            </div>
+            <div class="relative w-full">
+                <div class="flex gap-2">
+                    <input type="text" id="global-search" oninput="handleLiveSearch(this.value)" class="w-full pl-4 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cari Nama, IC, Telefon...">
+                </div>
+                <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-xl rounded-b-lg border border-gray-100 hidden max-h-60 overflow-y-auto mt-1"></div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
+             <h2 class="text-lg font-semibold mb-6 flex items-center gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
+             <form id="data-form" class="space-y-4" onsubmit="return false;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label class="text-sm font-medium">IC</label><input id="ic" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div><label class="text-sm font-medium">Nama</label><input id="nama" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div><label class="text-sm font-medium">Telefon</label><input id="telefon" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div><label class="text-sm font-medium">Emel</label><input id="emel" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div><label class="text-sm font-medium">Gred</label><input id="gred" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div><label class="text-sm font-medium">Kod PTJ</label><input id="kod_ptj" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                    <div class="md:col-span-2"><label class="text-sm font-medium">Jabatan</label><input id="department" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
+                </div>
+
+                <div class="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <label class="block text-sm font-bold text-gray-800 mb-3">Kategori Sistem & Isu <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="system-radio-group">
+                        <!-- Radio buttons generated or static here -->
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border"><input type="radio" name="system_type" value="ecp450" onchange="updateDropdown(this.value); checkFormValidity()"> <span class="text-xs">ECP450</span></label>
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border"><input type="radio" name="system_type" value="ecp400" onchange="updateDropdown(this.value); checkFormValidity()"> <span class="text-xs">ECP400</span></label>
+                        <!-- Add other radios similarly -->
+                    </div>
+                    <div id="issue-dropdown-container" class="hidden">
+                        <select id="issue-dropdown" onchange="checkFormValidity()" class="w-full px-3 py-2 border rounded-lg bg-white"><option value="" disabled selected>Pilih Isu</option></select>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t flex justify-end">
+                    <button type="button" onclick="submitLogRecord()" id="submit-btn" disabled class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg opacity-50 cursor-not-allowed">Hantar & Simpan</button>
+                </div>
+             </form>
+        </div>
+    </div>
+
+    <!-- RECORDS PAGE -->
+    <div id="sub-records-page" class="hidden-section space-y-6 w-full">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
+             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold">Rekod Panggilan</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="fetchRecords()" class="bg-gray-100 px-3 py-2 rounded"><i data-lucide="refresh-cw"></i></button>
+                    <!-- Export buttons here -->
+                </div>
+            </div>
+            <div class="table-container border border-gray-200 rounded-lg">
+                <table class="min-w-full bg-white text-xs md:text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="text-left">Tarikh</th><th class="text-left">IC</th><th class="text-left">Nama</th>
+                            <th class="text-left">Masalah</th><th class="text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Local Logic for Call Log
+    const issueOptions = {
+        "ecp450": ["Ralat HKP", "Ralat Gred", "Lain-lain"],
+        "ecp400": ["Masalah Role", "ID Lock"]
+    };
+
+    window.switchCallLogTab = function(subTabId) {
+        document.getElementById('btn-sub-search').classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+        document.getElementById('btn-sub-records').classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+        document.getElementById('sub-search-page').classList.add('hidden-section');
+        document.getElementById('sub-records-page').classList.add('hidden-section');
+
+        if(subTabId === 'search') {
+            document.getElementById('btn-sub-search').classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            document.getElementById('sub-search-page').classList.remove('hidden-section');
+        } else {
+            document.getElementById('btn-sub-records').classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            document.getElementById('sub-records-page').classList.remove('hidden-section');
+            fetchRecords();
+        }
+    }
+
+    window.updateDropdown = function(sys) {
+        const sel = document.getElementById('issue-dropdown');
+        sel.innerHTML = '<option value="" disabled selected>Pilih Isu</option>';
+        if(issueOptions[sys]) issueOptions[sys].forEach(opt => {
+            const o = document.createElement('option'); o.value=opt; o.text=opt; sel.appendChild(o);
+        });
+        document.getElementById('issue-dropdown-container').classList.remove('hidden');
+    }
+
+    window.checkFormValidity = function() {
+        // Validation logic here
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submit-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    window.submitLogRecord = async function() {
+        // Submission logic
+        alert("Rekod disimpan!");
+    }
+    
+    window.fetchRecords = async function() {
+        // Fetch logic
+        const tbody = document.getElementById('records-table-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        const { data } = await supabase.from('rekod').select('*');
+        tbody.innerHTML = '';
+        if(data) data.forEach(r => {
+            tbody.innerHTML += `<tr><td>${new Date(r.created_at).toLocaleDateString()}</td><td>${r.ic_number}</td><td>${r.nama}</td><td>${r.notes}</td><td>${r.confirmation}</td></tr>`;
+        });
+    }
+</script>
