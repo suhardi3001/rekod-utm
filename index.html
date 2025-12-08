@@ -477,58 +477,63 @@
                     </div>
 
                     <!-- 3. ADMIN TAB -->
-                    <div id="loan-tab-admin" class="loan-tab-content hidden">
-                        <!-- BULK UPLOAD SECTION -->
- <div class="admin-only hidden mb-8 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
-    <h6 class="font-bold text-yellow-800 mb-3 flex items-center gap-2"><i data-lucide="upload-cloud"></i> Bulk Import (Excel)</h6>
-    <div class="flex flex-wrap gap-3">
-        <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
-            <i data-lucide="users"></i> Upload Users
-        </button>
-        <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
-            <i data-lucide="monitor"></i> Upload Inventory
-        </button>
-        <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
-            <i data-lucide="file-clock"></i> Upload History
-        </button>
+<div id="loan-tab-admin" class="loan-tab-content hidden">
+    
+    <div class="admin-only hidden mb-8 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
+        <h6 class="font-bold text-yellow-800 mb-3 flex items-center gap-2"><i data-lucide="upload-cloud"></i> Bulk Import (Excel)</h6>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
+                <i data-lucide="users"></i> Upload Users
+            </button>
+            <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
+                <i data-lucide="monitor"></i> Upload Inventory
+            </button>
+            <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
+                <i data-lucide="file-clock"></i> Upload History
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        
+        <div class="space-y-6">
+            <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
+                <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Pengguna Baru</h6>
+                <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
+                <button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah Pengguna</button>
+            </div>
+
+            <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
+                <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Peranti Baru</h6>
+                <input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset (Cth: NB-01)">
+                <select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2">
+                    <option>Notebook</option><option>Projector</option><option>HDMI Cable</option><option>Webcam</option>
+                </select>
+                <input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri">
+                <button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah Peranti</button>
+            </div>
+        </div>
+
+        <div class="border p-4 rounded-lg bg-white shadow-sm h-full">
+            <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Senarai Pinjaman Aktif</h6>
+            <div class="table-container">
+                <table class="min-w-full text-sm" id="active-loans-table">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr>
+                            <th class="p-2 text-left">Peminjam</th>
+                            <th class="p-2 text-left">Peranti</th>
+                            <th class="p-2 text-left">Tamat</th>
+                            <th class="p-2 text-left">Tujuan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="active-loans-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        
     </div>
 </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="border p-4 rounded-lg bg-gray-50">
-                                <h6 class="font-bold mb-3">Tambah Pengguna Baru</h6>
-                                <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
-                                <button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah Pengguna</button>
-                            </div>
-                            <div class="border p-4 rounded-lg bg-gray-50">
-                                <h6 class="font-bold mb-3">Tambah Peranti Baru</h6>
-                                <input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset (Cth: NB-01)">
-                                <select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2">
-                                    <option>Notebook</option><option>Projector</option><option>HDMI Cable</option><option>Webcam</option>
-                                </select>
-                                <input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri">
-                                <button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah Peranti</button>
-                            </div>
-                        </div>
-                        
-                        <!-- List of current loans -->
-                        <div class="mt-8">
-                            <h6 class="font-bold mb-3">Senarai Pinjaman Aktif</h6>
-                            <div class="table-container border border-gray-200 rounded-lg">
-                                <table class="min-w-full text-sm" id="active-loans-table">
-                                    <thead class="bg-gray-100">
-                                        <tr>
-                                            <th class="p-2 text-left">Peminjam</th>
-                                            <th class="p-2 text-left">Peranti</th>
-                                            <th class="p-2 text-left">Tamat</th>
-                                            <th class="p-2 text-left">Tujuan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="active-loans-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- 4. REKOD PINJAMAN (HISTORY) TAB -->
                     <div id="loan-tab-history" class="loan-tab-content hidden">
                         <div class="mb-4 flex justify-between items-center">
