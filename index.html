@@ -1632,56 +1632,77 @@ function checkAdminPermissions() {
 
 
         // ================= LOAN SYSTEM LOGIC =================
-        async function loadLoanData() {
-            // 1. Fetch Users from 'user_ba'
-            const { data: users } = await supabase.from('user_ba').select('name').order('name');
-            const uList = document.getElementById('userList');
-            uList.innerHTML = '';
-            if(users) users.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u.name;
-                uList.appendChild(opt);
-            });
+async function loadLoanData() {
+    // 1. Fetch Users from 'user_ba' (Sorted Alphabetically)
+    const { data: users } = await supabase
+        .from('user_ba')
+        .select('name')
+        .order('name', { ascending: true }); // Added Sort
 
-            // 2. Fetch Available Devices
-            const { data: devices } = await supabase.from('device_inventory').select('*').eq('status', 'Tersedia');
-            const dSel = document.getElementById('deviceSelect');
-            dSel.innerHTML = '<option value="" disabled selected>Pilih Peranti...</option>';
-            if(devices) devices.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.tag;
-                opt.text = `${d.tag} - ${d.type} (${d.serial})`;
-                dSel.appendChild(opt);
-            });
+    const uList = document.getElementById('userList');
+    uList.innerHTML = '';
+    if(users) users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.name;
+        uList.appendChild(opt);
+    });
 
-            // 3. Fetch Rented Devices for Return
-            const { data: rented } = await supabase.from('device_inventory').select('*').eq('status', 'Dipinjam');
-            const rSel = document.getElementById('returnSelect');
-            rSel.innerHTML = '<option value="" disabled selected>Pilih Peranti Dipinjam...</option>';
-            if(rented) rented.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.tag;
-                opt.text = `${d.tag} - ${d.type}`;
-                rSel.appendChild(opt);
-            });
+    // 2. Fetch Available Devices (Sorted Alphabetically by Tag)
+    const { data: devices } = await supabase
+        .from('device_inventory')
+        .select('*')
+        .eq('status', 'Tersedia')
+        .order('tag', { ascending: true }); // <--- THIS LINE SORTS THE LIST
 
-            // 4. Fetch Active Loans for Admin Table
-            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').eq('status', 'Active');
-            const tbody = document.getElementById('active-loans-body');
-            tbody.innerHTML = '';
-            if(loans) loans.forEach(l => {
-                tbody.innerHTML += `
-                    <tr class="border-b">
-                        <td class="p-2">${l.user_name}</td>
-                        <td class="p-2">${l.device_tag}</td>
-                        <td class="p-2">${l.end_date}</td>
-                        <td class="p-2">${l.usage_details || '-'}</td>
-                    </tr>
-                `;
-            });
-        }
-        
-        async function loadLoanHistory() {
+    const dSel = document.getElementById('deviceSelect');
+    dSel.innerHTML = '<option value="" disabled selected>Pilih Peranti...</option>';
+    if(devices) devices.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.tag;
+        opt.text = `${d.tag} - ${d.type} (${d.serial})`;
+        dSel.appendChild(opt);
+    });
+
+    // 3. Fetch Rented Devices for Return (Sorted Alphabetically)
+    const { data: rented } = await supabase
+        .from('device_inventory')
+        .select('*')
+        .eq('status', 'Dipinjam')
+        .order('tag', { ascending: true }); // Added Sort
+
+    const rSel = document.getElementById('returnSelect');
+    rSel.innerHTML = '<option value="" disabled selected>Pilih Peranti Dipinjam...</option>';
+    if(rented) rented.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.tag;
+        opt.text = `${d.tag} - ${d.type}`;
+        rSel.appendChild(opt);
+    });
+
+    // 4. Fetch Active Loans for Admin Table
+    const { data: loans } = await supabase
+        .from('rekod_pinjaman')
+        .select('*')
+        .eq('status', 'Active')
+        .order('created_at', { ascending: false }); // Show newest loans first
+
+    const tbody = document.getElementById('active-loans-body');
+    tbody.innerHTML = '';
+    if(loans && loans.length > 0) {
+        loans.forEach(l => {
+            tbody.innerHTML += `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-2">${l.user_name}</td>
+                    <td class="p-2 font-medium text-blue-600">${l.device_tag}</td>
+                    <td class="p-2">${l.end_date}</td>
+                    <td class="p-2 text-xs text-gray-500">${l.usage_details || '-'}</td>
+                </tr>
+            `;
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Tiada pinjaman aktif.</td></tr>';
+    }
+}        async function loadLoanHistory() {
             const { data: loans } = await supabase.from('rekod_pinjaman').select('*').order('created_at', { ascending: false });
             currentLoanHistory = loans || []; // Store for export
             const tbody = document.getElementById('loan-history-body');
