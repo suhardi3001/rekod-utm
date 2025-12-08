@@ -49,9 +49,28 @@
             overflow-y: auto;
             border: 1px solid #333;
             width: 100%;
-            max-width: 28rem;
+            max-width: 100%; /* Responsive width */
         }
 
+        /* --- TABLE STYLES FOR RESPONSIVENESS --- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto; /* Enable horizontal scroll on small screens */
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            min-width: 800px; /* Ensure table doesn't squish too much */
+            border-collapse: collapse;
+        }
+        th, td {
+            white-space: normal !important; /* Allow text wrapping */
+            word-wrap: break-word; 
+            overflow-wrap: break-word;
+            vertical-align: top;
+            padding: 0.75rem;
+        }
+        
         /* --- ROPE ANIMATION STYLES --- */
         .rope-container {
             width: 200px;
@@ -97,11 +116,11 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
     <!-- ================= AUTHENTICATION / LOGIN PAGE ================= -->
-    <div id="login-page" class="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+    <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto">
             
             <!-- Connection Gauge / Rope Animation -->
             <div id="connection-gauge" class="rope-container">
@@ -118,7 +137,7 @@
             </div>
 
             <div class="text-center mb-8 mt-4">
-                <h1 class="text-3xl font-bold text-gray-800">Sistem Log Masuk</h1>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Sistem Log Masuk</h1>
                 <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
                 <div id="config-warning" class="hidden mt-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 text-left text-xs">
                     <p class="font-bold">Perhatian:</p>
@@ -145,35 +164,35 @@
         </div>
 
         <!-- Debug Console for User Feedback -->
-        <div id="debug-console">
+        <div id="debug-console" class="w-full max-w-md mt-4">
             <div>> System Initialized. Waiting for input...</div>
         </div>
     </div>
 
     <!-- ================= MAIN APP LAYOUT ================= -->
-    <div id="app-layout" class="hidden-section min-h-screen flex flex-col">
+    <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         
         <!-- Navbar -->
-        <nav class="bg-blue-800 text-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="font-bold text-xl">Sistem Rekod HELPDESK iGFMAS</span>
-                        <div class="ml-10 flex items-baseline space-x-4">
+        <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
+            <div class="w-full px-4 sm:px-6 lg:px-8"> 
+                <div class="flex flex-col md:flex-row items-center justify-between h-auto md:h-16 py-2 md:py-0">
+                    <div class="flex flex-col md:flex-row items-center w-full md:w-auto">
+                        <span class="font-bold text-lg md:text-xl mb-2 md:mb-0 text-center md:text-left">Sistem Rekod HELPDESK iGFMAS</span>
+                        <div class="md:ml-10 flex flex-wrap justify-center gap-2">
                             <!-- NEW: Main Tab 'Call Log' triggers sub-tabs -->
-                            <button onclick="switchMainTab('call-log')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 bg-blue-900 transition" id="nav-call-log">Call Log</button>
-                            <button onclick="switchMainTab('loan')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition" id="nav-loan">Pinjaman ICT</button>
+                            <button onclick="switchMainTab('call-log')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 bg-blue-900 transition flex-grow md:flex-grow-0" id="nav-call-log">Call Log</button>
+                            <button onclick="switchMainTab('loan')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex-grow md:flex-grow-0" id="nav-loan">Pinjaman ICT</button>
                         </div>
                     </div>
-                    <div>
-                        <span id="user-display" class="text-sm mr-4 text-blue-200"></span>
-                        <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Keluar</button>
+                    <div class="mt-2 md:mt-0 flex items-center justify-center w-full md:w-auto">
+                        <span id="user-display" class="text-xs md:text-sm mr-4 text-blue-200 truncate max-w-[150px]"></span>
+                        <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm whitespace-nowrap">Keluar</button>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-grow p-6 max-w-7xl w-full mx-auto">
+        <main class="flex-grow p-4 md:p-6 w-full mx-auto"> 
             
             <!-- HIDDEN FILE INPUTS (Global) -->
             <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
@@ -185,39 +204,39 @@
             <input type="file" id="loan-records-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleLoanRecordsUpload(event)">
 
             <!-- ================= CALL LOG MAIN SECTION ================= -->
-            <div id="call-log-section">
+            <div id="call-log-section" class="w-full">
                 <!-- Sub-tabs for Call Log -->
-                <div class="flex border-b mb-6">
-                    <button onclick="switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 text-blue-600 border-b-2 border-blue-600 font-medium">Carian & Input</button>
-                    <button onclick="switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 text-gray-500 hover:text-blue-600 font-medium">Pangkalan Data Rekod</button>
+                <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
+                    <button onclick="switchCallLogTab('search')" id="btn-sub-search" class="px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap">Carian & Input</button>
+                    <button onclick="switchCallLogTab('records')" id="btn-sub-records" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Pangkalan Data Rekod</button>
                 </div>
 
                 <!-- SUB-TAB 1: SEARCH & INPUT -->
-                <div id="sub-search-page" class="space-y-6">
+                <div id="sub-search-page" class="space-y-6 w-full">
                     <!-- Search Section -->
-                    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                        <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                             <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
-                            <div class="flex gap-2">
-                                <button onclick="triggerMasterUpload()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 transition flex items-center gap-2 border border-blue-200">
+                            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                                <button onclick="triggerMasterUpload()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 transition flex items-center gap-2 border border-blue-200 flex-grow md:flex-grow-0 justify-center">
                                     <i data-lucide="database-backup" class="w-4 h-4"></i> Import Data Induk
                                 </button>
-                                <button onclick="confirmClearMasterDatabase()" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-200 transition flex items-center gap-2 border border-red-200">
+                                <button onclick="confirmClearMasterDatabase()" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-200 transition flex items-center gap-2 border border-red-200 flex-grow md:flex-grow-0 justify-center">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i> Padam Data Induk
                                 </button>
                             </div>
                         </div>
                         
                         <!-- Updated Live Search Component -->
-                        <div class="relative">
-                            <div class="flex gap-2">
-                                <div class="relative flex-grow">
+                        <div class="relative w-full">
+                            <div class="flex flex-col md:flex-row gap-2">
+                                <div class="relative flex-grow w-full">
                                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                         <i data-lucide="search" class="w-5 h-5"></i>
                                     </span>
                                     <input type="text" id="global-search" class="w-full pl-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cari Nama, IC, Telefon, Emel, PTJ atau Jabatan..." autocomplete="off">
                                 </div>
-                                <button onclick="handleLiveSearch(document.getElementById('global-search').value)" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Cari</button>
+                                <button onclick="handleLiveSearch(document.getElementById('global-search').value)" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 w-full md:w-auto">Cari</button>
                             </div>
                             
                             <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-xl rounded-b-lg border border-gray-100 hidden max-h-60 overflow-y-auto mt-1">
@@ -228,10 +247,10 @@
                     </div>
 
                     <!-- Input Form Section -->
-                    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                        <div class="flex justify-between items-center mb-6">
+                    <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
                             <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
-                            <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full" id="current-date"></span>
+                            <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full self-start md:self-auto" id="current-date"></span>
                         </div>
 
                         <form id="data-form" class="space-y-4">
@@ -343,7 +362,7 @@
                             </div>
 
                             <div class="pt-4 border-t border-gray-100 flex justify-end">
-                                <button type="submit" id="submit-btn" disabled class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105 flex items-center gap-2 opacity-50 cursor-not-allowed">
+                                <button type="submit" id="submit-btn" disabled class="w-full md:w-auto bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
                                     <i data-lucide="save"></i> Hantar & Simpan
                                 </button>
                             </div>
@@ -352,32 +371,33 @@
                 </div>
 
                 <!-- SUB-TAB 2: RECORDS -->
-                <div id="sub-records-page" class="hidden-section space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <div id="sub-records-page" class="hidden-section space-y-6 w-full">
+                    <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
                         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                            <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800"><i data-lucide="database"></i> Rekod Panggilan dan Emel IGFMAS</h2>
-                            <div class="flex flex-wrap gap-2 items-center">
-                                <button onclick="triggerImport()" class="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800 flex items-center gap-2"><i data-lucide="upload"></i> Import Rekod</button>
-                                <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 flex items-center gap-2"><i data-lucide="sheet"></i> Export Excel</button>
-                                <button onclick="exportToPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 flex items-center gap-2"><i data-lucide="file-down"></i> Export PDF</button>
+                            <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 text-center md:text-left"><i data-lucide="database"></i> Rekod Panggilan dan Emel IGFMAS</h2>
+                            <div class="flex flex-wrap gap-2 items-center justify-center">
+                                <button onclick="triggerImport()" class="bg-gray-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-gray-800 flex items-center gap-2"><i data-lucide="upload"></i> Import</button>
+                                <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-green-700 flex items-center gap-2"><i data-lucide="sheet"></i> Excel</button>
+                                <button onclick="exportToPDF()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-700 flex items-center gap-2"><i data-lucide="file-down"></i> PDF</button>
                                 <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200"><i data-lucide="refresh-cw"></i></button>
-                                <div class="border-l border-gray-300 mx-1 h-8"></div>
-                                <button onclick="confirmClearDatabase()" class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data"><i data-lucide="trash-2"></i> Kosongkan</button>
+                                <div class="hidden md:block border-l border-gray-300 mx-1 h-8"></div>
+                                <button onclick="confirmClearDatabase()" class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data"><i data-lucide="trash-2"></i> Kosongkan</button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto rounded-lg border border-gray-200">
-                            <table class="min-w-full bg-white text-sm" id="records-table">
+                        <div class="table-container border border-gray-200 rounded-lg">
+                            <!-- UPDATED TABLE DISPLAY -->
+                            <table class="min-w-full bg-white text-xs md:text-sm" id="records-table">
                                 <thead class="bg-gray-100 text-gray-700 uppercase leading-normal">
                                     <tr>
-                                        <th class="py-3 px-4 text-left">Tarikh Masa Panggilan / Emel</th>
-                                        <th class="py-3 px-4 text-left">IC</th>
-                                        <th class="py-3 px-4 text-left">Nama</th>
-                                        <th class="py-3 px-4 text-left">Jabatan</th>
-                                        <th class="py-3 px-4 text-left">Perkara / Masalah</th>
-                                        <th class="py-3 px-4 text-left">Direkod Oleh</th>
-                                        <th class="py-3 px-4 text-left">Tarikh Perubahan Status</th>
-                                        <th class="py-3 px-4 text-left">Status Dikemaskini Oleh</th>
-                                        <th class="py-3 px-4 text-left">Status Selesai</th> <!-- MOVED TO END -->
+                                        <th class="text-left w-32">Tarikh Masa</th>
+                                        <th class="text-left w-32">IC</th>
+                                        <th class="text-left w-40">Nama</th>
+                                        <th class="text-left w-32">Jabatan</th>
+                                        <th class="text-left">Perkara / Masalah</th>
+                                        <th class="text-left w-32">Direkod Oleh</th>
+                                        <th class="text-left w-32">Tarikh Perubahan Status</th>
+                                        <th class="text-left w-32">Status Dikemaskini Oleh</th>
+                                        <th class="text-left w-24">Status Selesai</th> <!-- MOVED TO END -->
                                     </tr>
                                 </thead>
                                 <tbody class="text-gray-600 font-light" id="table-body">
@@ -390,17 +410,17 @@
             </div>
 
             <!-- ================= PINJAMAN ICT PAGE ================= -->
-            <div id="loan-page" class="hidden-section space-y-6">
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+            <div id="loan-page" class="hidden-section space-y-6 w-full">
+                <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 mb-6"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
                     
                     <!-- Sub-tabs for Loan System -->
-                    <div class="flex border-b mb-6">
-                        <button onclick="switchLoanTab('loan-tab-borrow')" id="btn-loan-borrow" class="px-6 py-2 text-blue-600 border-b-2 border-blue-600 font-medium">Pinjam</button>
-                        <button onclick="switchLoanTab('loan-tab-return')" id="btn-loan-return" class="px-6 py-2 text-gray-500 hover:text-blue-600 font-medium">Pulang</button>
-                        <button onclick="switchLoanTab('loan-tab-admin')" id="btn-loan-admin" class="px-6 py-2 text-gray-500 hover:text-blue-600 font-medium">Admin</button>
+                    <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
+                        <button onclick="switchLoanTab('loan-tab-borrow')" id="btn-loan-borrow" class="px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap">Pinjam</button>
+                        <button onclick="switchLoanTab('loan-tab-return')" id="btn-loan-return" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Pulang</button>
+                        <button onclick="switchLoanTab('loan-tab-admin')" id="btn-loan-admin" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Admin</button>
                         <!-- New Tab Button -->
-                        <button onclick="switchLoanTab('loan-tab-history')" id="btn-loan-history" class="px-6 py-2 text-gray-500 hover:text-blue-600 font-medium">Rekod Pinjaman</button>
+                        <button onclick="switchLoanTab('loan-tab-history')" id="btn-loan-history" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Rekod Pinjaman</button>
                     </div>
 
                     <!-- 1. PINJAM TAB -->
@@ -451,7 +471,7 @@
                             <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4">
                                 <option value="" disabled selected>Pilih Peranti Dipinjam...</option>
                             </select>
-                            <button onclick="submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 transition">Sahkan Pulangan</button>
+                            <button onclick="submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 transition w-full md:w-auto">Sahkan Pulangan</button>
                         </div>
                     </div>
 
@@ -461,13 +481,13 @@
                         <div class="mb-8 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
                             <h6 class="font-bold text-yellow-800 mb-3 flex items-center gap-2"><i data-lucide="upload-cloud"></i> Bulk Import (Excel)</h6>
                             <div class="flex flex-wrap gap-3">
-                                <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2">
+                                <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
                                     <i data-lucide="users"></i> Upload Users
                                 </button>
-                                <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2">
+                                <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
                                     <i data-lucide="monitor"></i> Upload Inventory
                                 </button>
-                                <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2">
+                                <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
                                     <i data-lucide="file-clock"></i> Upload History
                                 </button>
                             </div>
@@ -493,7 +513,7 @@
                         <!-- List of current loans -->
                         <div class="mt-8">
                             <h6 class="font-bold mb-3">Senarai Pinjaman Aktif</h6>
-                            <div class="overflow-x-auto rounded border">
+                            <div class="table-container border border-gray-200 rounded-lg">
                                 <table class="min-w-full text-sm" id="active-loans-table">
                                     <thead class="bg-gray-100">
                                         <tr>
@@ -525,16 +545,16 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto rounded border border-gray-200">
+                        <div class="table-container border border-gray-200 rounded-lg">
                             <table class="min-w-full text-sm">
                                 <thead class="bg-gray-100 text-gray-700">
                                     <tr>
-                                        <th class="p-3 text-left">Tarikh Mohon</th>
-                                        <th class="p-3 text-left">Peminjam</th>
-                                        <th class="p-3 text-left">Peranti</th>
-                                        <th class="p-3 text-left">Tempoh (Mula - Tamat)</th>
-                                        <th class="p-3 text-left">Tarikh Pulang (Sebenar)</th>
-                                        <th class="p-3 text-left">Status</th>
+                                        <th class="p-3 text-left w-32">Tarikh Mohon</th>
+                                        <th class="p-3 text-left w-40">Peminjam</th>
+                                        <th class="p-3 text-left w-32">Peranti</th>
+                                        <th class="p-3 text-left w-40">Tempoh (Mula - Tamat)</th>
+                                        <th class="p-3 text-left w-32">Tarikh Pulang (Sebenar)</th>
+                                        <th class="p-3 text-left w-24">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="loan-history-body" class="bg-white">
@@ -556,7 +576,7 @@
     </div>
 
     <!-- DOUBLE CONFIRMATION MODAL -->
-    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
         <div class="bg-white p-8 rounded-lg shadow-2xl max-w-sm w-full text-center border-t-4 border-red-600">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <i data-lucide="alert-triangle" class="text-red-600 w-6 h-6"></i>
@@ -1626,6 +1646,35 @@
                         <td class="p-2">${l.device_tag}</td>
                         <td class="p-2">${l.end_date}</td>
                         <td class="p-2">${l.usage_details || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        async function loadLoanHistory() {
+            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').order('created_at', { ascending: false });
+            currentLoanHistory = loans || []; // Store for export
+            const tbody = document.getElementById('loan-history-body');
+            tbody.innerHTML = '';
+            
+            if(!loans || loans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Tiada rekod pinjaman.</td></tr>';
+                return;
+            }
+            
+            loans.forEach(l => {
+                const applicationDate = l.created_at ? new Date(l.created_at).toLocaleString() : '-'; // Tarikh Mohon
+                const returnDate = l.return_date ? new Date(l.return_date).toLocaleString() : '-'; // Tarikh Pulang (Sebenar)
+                const statusClass = l.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">${applicationDate}</td>
+                        <td class="p-3 font-medium">${l.user_name}</td>
+                        <td class="p-3">${l.device_tag}</td>
+                        <td class="p-3">${l.start_date} - ${l.end_date}</td>
+                        <td class="p-3">${returnDate}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusClass}">${l.status}</span></td>
                     </tr>
                 `;
             });
