@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod Log & Pinjaman (Updated)</title>
+    <title>Sistem Rekod Log & Pinjaman (Final)</title>
     
+    <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
@@ -14,55 +15,24 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        /* UTILS */
         .hidden-section { display: none !important; }
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+            border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* DEBUG CONSOLE */
         #debug-console {
-            background-color: #1a1a1a;
-            color: #00ff00;
-            font-family: monospace;
-            padding: 1rem;
-            margin-top: 2rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            height: 150px;
-            overflow-y: auto;
-            border: 1px solid #333;
-            width: 100%;
-            max-width: 100%;
+            background-color: #1a1a1a; color: #00ff00; font-family: monospace;
+            padding: 1rem; margin-top: 2rem; border-radius: 0.5rem; font-size: 0.75rem;
+            height: 150px; overflow-y: auto; border: 1px solid #333; width: 100%;
         }
 
-        /* TABLES */
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        table {
-            width: 100%;
-            min-width: 800px;
-            border-collapse: collapse;
-        }
-        th, td {
-            white-space: normal !important;
-            word-wrap: break-word; 
-            overflow-wrap: break-word;
-            vertical-align: top;
-            padding: 0.75rem;
-        }
+        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; min-width: 800px; border-collapse: collapse; }
+        th, td { white-space: normal !important; padding: 0.75rem; vertical-align: top; }
 
-        /* LIQUID ANIMATION */
+        /* Animations */
         #liquid-overlay {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 0%;
             background: #1e40af; z-index: 9999; pointer-events: none;
@@ -70,46 +40,36 @@
         }
         #liquid-overlay.active { height: 100%; }
 
-        .liquid-btn {
-            position: relative; overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
+        .liquid-btn { position: relative; overflow: hidden; transition: all 0.5s; }
         .liquid-btn.melting {
             width: 50px !important; border-radius: 50% !important;
-            color: transparent !important; background-color: #e0f2fe;
-            pointer-events: none; padding: 0 !important;
+            color: transparent !important; background-color: #e0f2fe; pointer-events: none; padding: 0 !important;
         }
         .liquid-btn.melting #btn-text { display: none; }
-
         .btn-wave {
             position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%;
             background-color: #3b82f6; border-radius: 40%; opacity: 0;
             transform: rotate(0deg); transition: opacity 0.3s; z-index: 0;
         }
-        .liquid-btn.melting .btn-wave {
-            opacity: 1; animation: spin-wave 2s linear infinite, rise-wave 10s linear forwards; bottom: 0; 
-        }
-        @keyframes spin-wave { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes rise-wave { 0% { bottom: -60%; } 100% { bottom: -10%; } }
+        .liquid-btn.melting .btn-wave { opacity: 1; animation: spin 2s linear infinite, rise 10s linear forwards; bottom: 0; }
+        @keyframes rise { 0% { bottom: -60%; } 100% { bottom: -10%; } }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
+    <!-- ANIMATION OVERLAY -->
     <div id="liquid-overlay">
         <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl opacity-0 transition-opacity duration-300 delay-300" id="splash-text">
             SISTEM REKOD iGFMAS
         </div>
     </div>
 
+    <!-- LOGIN SCREEN -->
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
             <div class="text-center mb-8 mt-4">
                 <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Sistem Rekod </br> Unit Teknologi Maklumat</h1>
                 <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
-                <div id="config-warning" class="hidden mt-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 text-left text-xs">
-                    <p class="font-bold">Perhatian:</p>
-                    <p>Supabase Keys belum ditetapkan.</p>
-                </div>
             </div>
             
             <form id="login-form" class="space-y-6">
@@ -134,9 +94,10 @@
                  <button onclick="toggleSignUp()" class="text-sm text-blue-500 hover:underline">Tiada akaun? Daftar disini</button>
             </div>
         </div>
-        <div id="debug-console" class="w-full max-w-md mt-4"><div>> System Initialized.</div></div>
+        <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting System...</div></div>
     </div>
 
+    <!-- MAIN APP -->
     <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 sm:px-6 lg:px-8"> 
@@ -164,6 +125,7 @@
             <input type="file" id="loan-inventory-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleLoanInventoryUpload(event)">
             <input type="file" id="loan-records-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleLoanRecordsUpload(event)">
 
+            <!-- CALL LOG -->
             <div id="call-log-section" class="w-full">
                 <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
                     <button onclick="switchCallLogTab('search')" id="btn-sub-search" class="px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap">Carian & Input</button>
@@ -183,12 +145,11 @@
                                 </button>
                             </div>
                         </div>
-                        
                         <div class="relative w-full">
                             <div class="flex flex-col md:flex-row gap-2">
                                 <div class="relative flex-grow w-full">
                                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i data-lucide="search" class="w-5 h-5"></i></span>
-                                    <input type="text" id="global-search" class="w-full pl-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cari Nama, IC, Telefon, Emel, PTJ atau Jabatan..." autocomplete="off">
+                                    <input type="text" id="global-search" class="w-full pl-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cari Nama, IC, Telefon, Emel..." autocomplete="off">
                                 </div>
                                 <button onclick="handleLiveSearch(document.getElementById('global-search').value)" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 w-full md:w-auto">Cari</button>
                             </div>
@@ -201,60 +162,16 @@
                             <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
                             <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full self-start md:self-auto" id="current-date"></span>
                         </div>
-
                         <form id="data-form" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="relative group">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan (IC)</label>
-                                    <div class="relative">
-                                        <input type="text" id="ic" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('ic')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
-                                    <div class="relative">
-                                        <input type="text" id="nama" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('nama')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Telefon</label>
-                                    <div class="relative">
-                                        <input type="text" id="telefon" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('telefon')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Emel</label>
-                                    <div class="relative">
-                                        <input type="email" id="emel" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('emel')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Gred Jawatan</label>
-                                    <div class="relative">
-                                        <input type="text" id="gred" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('gred')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kod PTJ</label>
-                                    <div class="relative">
-                                        <input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('kod_ptj')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="relative md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jabatan / Department</label>
-                                    <div class="relative">
-                                        <input type="text" id="department" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" readonly>
-                                        <button type="button" onclick="enableEdit('department')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
+                                <div class="relative group"><label class="block text-sm font-medium text-gray-700 mb-1">IC</label><div class="relative"><input type="text" id="ic" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('ic')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Nama</label><div class="relative"><input type="text" id="nama" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('nama')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label><div class="relative"><input type="text" id="telefon" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('telefon')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Emel</label><div class="relative"><input type="email" id="emel" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('emel')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Gred</label><div class="relative"><input type="text" id="gred" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('gred')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Kod PTJ</label><div class="relative"><input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('kod_ptj')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                <div class="relative md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Jabatan</label><div class="relative"><input type="text" id="department" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('department')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                             </div>
-
                             <div class="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
                                 <label class="block text-sm font-bold text-gray-800 mb-3">Kategori Sistem & Isu <span class="text-red-500">*</span></label>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="system-radio-group">
@@ -268,18 +185,14 @@
                                 </div>
                                 <div id="issue-dropdown-container" class="hidden animate-fade-in">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Isu <span class="text-red-500">*</span></label>
-                                    <select id="issue-dropdown" class="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="" disabled selected>Sila Pilih Isu</option>
-                                    </select>
+                                    <select id="issue-dropdown" class="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"><option value="" disabled selected>Sila Pilih Isu</option></select>
                                 </div>
                                 <div id="other-issue-container" class="mt-3 hidden animate-fade-in">
                                     <input type="text" id="other-issue-input" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Sila nyatakan masalah lain secara spesifik...">
                                 </div>
                             </div>
                             <div class="pt-4 border-t border-gray-100 flex justify-end">
-                                <button type="submit" id="submit-btn" disabled class="w-full md:w-auto bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                                    <i data-lucide="save"></i> Hantar & Simpan
-                                </button>
+                                <button type="submit" id="submit-btn" disabled class="w-full md:w-auto bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"><i data-lucide="save"></i> Hantar & Simpan</button>
                             </div>
                         </form>
                     </div>
@@ -294,24 +207,13 @@
                                 <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-green-700 flex items-center gap-2"><i data-lucide="sheet"></i> Excel</button>
                                 <button onclick="exportToPDF()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-700 flex items-center gap-2"><i data-lucide="file-down"></i> PDF</button>
                                 <button onclick="fetchRecords()" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200"><i data-lucide="refresh-cw"></i></button>
-                                <div class="hidden md:block border-l border-gray-300 mx-1 h-8"></div>
-                                <button onclick="confirmClearDatabase()" class="admin-only hidden bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-200 flex items-center gap-2" title="Padam semua data"><i data-lucide="trash-2"></i> Kosongkan</button>
+                                <button onclick="confirmClearDatabase()" class="admin-only hidden bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-xs md:text-sm hover:bg-red-200 flex items-center gap-2"><i data-lucide="trash-2"></i> Kosongkan</button>
                             </div>
                         </div>
                         <div class="table-container border border-gray-200 rounded-lg">
                             <table class="min-w-full bg-white text-xs md:text-sm" id="records-table">
                                 <thead class="bg-gray-100 text-gray-700 uppercase leading-normal">
-                                    <tr>
-                                        <th class="text-left w-32">Tarikh Masa</th>
-                                        <th class="text-left w-32">IC</th>
-                                        <th class="text-left w-40">Nama</th>
-                                        <th class="text-left w-32">Jabatan</th>
-                                        <th class="text-left">Perkara / Masalah</th>
-                                        <th class="text-left w-32">Direkod Oleh</th>
-                                        <th class="text-left w-32">Status Update</th>
-                                        <th class="text-left w-32">Oleh</th>
-                                        <th class="text-left w-24">Selesai</th>
-                                    </tr>
+                                    <tr><th class="text-left w-32">Tarikh Masa</th><th class="text-left w-32">IC</th><th class="text-left w-40">Nama</th><th class="text-left w-32">Jabatan</th><th class="text-left">Perkara</th><th class="text-left w-32">Direkod Oleh</th><th class="text-left w-24">Status</th></tr>
                                 </thead>
                                 <tbody class="text-gray-600 font-light" id="table-body"></tbody>
                             </table>
@@ -320,10 +222,10 @@
                 </div>
             </div>
 
+            <!-- PINJAMAN ICT -->
             <div id="loan-page" class="hidden-section space-y-6 w-full">
                 <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 mb-6"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
-                    
                     <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
                         <button onclick="switchLoanTab('loan-tab-borrow')" id="btn-loan-borrow" class="px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap">Pinjam</button>
                         <button onclick="switchLoanTab('loan-tab-return')" id="btn-loan-return" class="px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap">Pulang</button>
@@ -334,508 +236,298 @@
                     <div id="loan-tab-borrow" class="loan-tab-content">
                         <form id="loanForm" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pengguna (User BA)</label>
-                                    <input type="text" id="loanUserName" list="userList" class="w-full px-3 py-2 border rounded-lg" placeholder="Cari nama..." required>
-                                    <datalist id="userList"></datalist>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Peranti</label>
-                                    <select id="deviceSelect" class="w-full px-3 py-2 border rounded-lg" required>
-                                        <option value="" disabled selected>Pilih Peranti...</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tarikh Mula</label>
-                                    <input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tarikh Tamat</label>
-                                    <input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required>
-                                </div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-1">Nama Pengguna</label><input type="text" id="loanUserName" list="userList" class="w-full px-3 py-2 border rounded-lg" required><datalist id="userList"></datalist></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilih Peranti</label><select id="deviceSelect" class="w-full px-3 py-2 border rounded-lg" required><option value="" disabled selected>Pilih...</option></select></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-1">Mula</label><input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-1">Tamat</label><input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required></div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kegunaan</label>
-                                <select id="usageType" class="w-full px-3 py-2 border rounded-lg" required>
-                                    <option value="" disabled selected>Sila Pilih...</option>
-                                    <option value="Kegunaan Dalaman">Kegunaan Dalaman (Pejabat/Kampus)</option>
-                                    <option value="Kegunaan Luar">Kegunaan Luar (Remote/Field)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Butiran / Tujuan</label>
-                                <textarea id="usageDetails" rows="2" class="w-full px-3 py-2 border rounded-lg" placeholder="Contoh: Mesyuarat Projek A"></textarea>
-                            </div>
-                            <button type="button" onclick="submitLoan()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">Hantar Permohonan</button>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kegunaan</label><select id="usageType" class="w-full px-3 py-2 border rounded-lg" required><option value="Kegunaan Dalaman">Kegunaan Dalaman</option><option value="Kegunaan Luar">Kegunaan Luar</option></select></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Butiran</label><textarea id="usageDetails" rows="2" class="w-full px-3 py-2 border rounded-lg"></textarea></div>
+                            <button type="button" onclick="submitLoan()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">Hantar</button>
                         </form>
                     </div>
 
                     <div id="loan-tab-return" class="loan-tab-content hidden">
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                             <h5 class="text-lg font-bold text-gray-800 mb-2">Pulangkan Peranti</h5>
-                            <p class="text-sm text-gray-500 mb-4">Pilih peranti yang ingin dipulangkan dari senarai di bawah.</p>
-                            <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4">
-                                <option value="" disabled selected>Pilih Peranti Dipinjam...</option>
-                            </select>
+                            <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4"><option value="" disabled selected>Pilih Peranti...</option></select>
                             <button onclick="submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 transition w-full md:w-auto">Sahkan Pulangan</button>
                         </div>
                     </div>
 
+                    <!-- ADMIN TAB -->
                     <div id="loan-tab-admin" class="loan-tab-content hidden">
                         <div class="mb-8 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
                             <h6 class="font-bold text-yellow-800 mb-3 flex items-center gap-2"><i data-lucide="upload-cloud"></i> Bulk Import & Data Management</h6>
                             <div class="flex flex-wrap gap-3">
                                 <div class="flex items-center gap-1 border-r border-yellow-300 pr-3 mr-2">
-                                    <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded-l text-sm hover:bg-yellow-700 flex items-center gap-2 justify-center">
-                                        <i data-lucide="users"></i> Upload Users
-                                    </button>
-                                    <button onclick="confirmClearUserDatabase()" class="bg-red-500 text-white px-3 py-2 rounded-r text-sm hover:bg-red-600 flex items-center gap-2 justify-center" title="Padam semua pengguna">
-                                        <i data-lucide="trash-2"></i> Clear
-                                    </button>
+                                    <button onclick="triggerLoanUpload('user')" class="bg-yellow-600 text-white px-4 py-2 rounded-l text-sm hover:bg-yellow-700 flex items-center gap-2"><i data-lucide="users"></i> Upload Users</button>
+                                    <button onclick="confirmClearUserDatabase()" class="bg-red-500 text-white px-3 py-2 rounded-r text-sm hover:bg-red-600 flex items-center gap-2" title="Padam semua"><i data-lucide="trash-2"></i> Clear</button>
                                 </div>
-                                <button onclick="checkOverdueLoans()" class="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center shadow-sm">
-                                    <i data-lucide="bell-ring"></i> Semak Lewat & Hantar Emel
-                                </button>
-                                <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
-                                    <i data-lucide="monitor"></i> Upload Inventory
-                                </button>
-                                <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center">
-                                    <i data-lucide="file-clock"></i> Upload History
-                                </button>
+                                <button onclick="checkOverdueLoans()" class="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 flex items-center gap-2"><i data-lucide="bell-ring"></i> Semak Lewat & Hantar Emel</button>
+                                <button onclick="triggerLoanUpload('inventory')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2"><i data-lucide="monitor"></i> Upload Inventory</button>
+                                <button onclick="triggerLoanUpload('records')" class="bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 flex items-center gap-2"><i data-lucide="file-clock"></i> Upload History</button>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             <div class="space-y-6">
-                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
-                                    <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Pengguna Baru</h6>
-                                    <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
-                                    <button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah Pengguna</button>
-                                </div>
-                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
-                                    <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Peranti Baru</h6>
-                                    <input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset (Cth: NB-01)">
-                                    <select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2">
-                                        <option>Notebook</option><option>Projector</option><option>HDMI Cable</option><option>Webcam</option>
-                                    </select>
-                                    <input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri">
-                                    <button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah Peranti</button>
-                                </div>
+                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Pengguna Baru</h6><input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh"><button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah</button></div>
+                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Peranti Baru</h6><input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset"><select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2"><option>Notebook</option><option>Projector</option><option>HDMI Cable</option><option>Webcam</option></select><input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri"><button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah</button></div>
                             </div>
-                            <div class="border p-4 rounded-lg bg-white shadow-sm h-full">
-                                <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Senarai Pinjaman Aktif</h6>
-                                <div class="table-container">
-                                    <table class="min-w-full text-sm" id="active-loans-table">
-                                        <thead class="bg-gray-100 sticky top-0">
-                                            <tr>
-                                                <th class="p-2 text-left">Peminjam</th>
-                                                <th class="p-2 text-left">Peranti</th>
-                                                <th class="p-2 text-left">Tamat</th>
-                                                <th class="p-2 text-left">Tujuan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="active-loans-body"></tbody>
-                                    </table>
-                                </div>
-                            </div>
+                            <div class="border p-4 rounded-lg bg-white shadow-sm h-full"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Senarai Pinjaman Aktif</h6><div class="table-container"><table class="min-w-full text-sm"><thead class="bg-gray-100 sticky top-0"><tr><th class="p-2 text-left">Peminjam</th><th class="p-2 text-left">Peranti</th><th class="p-2 text-left">Tamat</th></tr></thead><tbody id="active-loans-body"></tbody></table></div></div>
                         </div>
                     </div>
 
                     <div id="loan-tab-history" class="loan-tab-content hidden">
-                        <div class="mb-4 flex justify-between items-center">
-                            <h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6>
-                            <div class="flex gap-2">
-                                <button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 flex items-center gap-1"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button>
-                                <button onclick="exportLoanHistoryToPDF()" class="bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700 flex items-center gap-1"><i data-lucide="file-down" class="w-3 h-3"></i> PDF</button>
-                                <button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
-                            </div>
-                        </div>
-                        <div class="table-container border border-gray-200 rounded-lg">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-gray-100 text-gray-700">
-                                    <tr>
-                                        <th class="p-3 text-left w-32">Tarikh Mohon</th>
-                                        <th class="p-3 text-left w-40">Peminjam</th>
-                                        <th class="p-3 text-left w-32">Peranti</th>
-                                        <th class="p-3 text-left w-40">Tempoh</th>
-                                        <th class="p-3 text-left w-32">Tarikh Pulang</th>
-                                        <th class="p-3 text-left w-24">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="loan-history-body" class="bg-white"></tbody>
-                            </table>
-                        </div>
+                        <div class="mb-4 flex justify-between items-center"><h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6><div class="flex gap-2"><button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button><button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button></div></div>
+                        <div class="table-container border border-gray-200 rounded-lg"><table class="min-w-full text-sm"><thead class="bg-gray-100 text-gray-700"><tr><th class="p-3 text-left w-32">Tarikh Mohon</th><th class="p-3 text-left w-40">Peminjam</th><th class="p-3 text-left w-32">Peranti</th><th class="p-3 text-left w-40">Tempoh</th><th class="p-3 text-left w-32">Pulang</th><th class="p-3 text-left w-24">Status</th></tr></thead><tbody id="loan-history-body" class="bg-white"></tbody></table></div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50">Notification message</div>
+    <!-- MODALS -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50"></div>
 
     <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
         <div class="bg-white p-8 rounded-lg shadow-2xl max-w-sm w-full text-center border-t-4 border-red-600">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"><i data-lucide="alert-triangle" class="text-red-600 w-6 h-6"></i></div>
-            <h3 class="text-lg leading-6 font-bold text-gray-900 mb-2" id="modal-title">Amaran Keras</h3>
-            <p class="text-sm text-gray-500 mb-6" id="modal-message">Adakah anda pasti mahu memadam <strong>SEMUA</strong> rekod? <br>Tindakan ini tidak boleh dikembalikan.</p>
-            <div class="flex justify-center gap-4">
-                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Batal</button>
-                <button id="modal-confirm-btn" onclick="executeClearDatabase()" class="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700 shadow-lg">YA, PADAM SEMUA</button>
-            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2" id="modal-title">Amaran</h3>
+            <p class="text-sm text-gray-500 mb-6" id="modal-message">Pasti padam semua?</p>
+            <div class="flex justify-center gap-4"><button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 rounded">Batal</button><button onclick="executeClearDatabase()" class="px-4 py-2 bg-red-600 text-white font-bold rounded">PADAM</button></div>
         </div>
     </div>
 
     <div id="overdue-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
         <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center bg-orange-50 rounded-t-lg">
-                <h3 class="text-lg font-bold text-orange-800 flex items-center gap-2"><i data-lucide="alert-circle"></i> Senarai Lewat Pulang</h3>
-                <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i data-lucide="x"></i></button>
-            </div>
+            <div class="p-4 border-b flex justify-between items-center bg-orange-50"><h3 class="text-lg font-bold text-orange-800">Senarai Lewat</h3><button onclick="document.getElementById('overdue-modal').classList.add('hidden')">X</button></div>
             <div class="p-4 overflow-y-auto flex-grow">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-100 text-gray-700">
-                        <tr><th class="p-2">Nama</th><th class="p-2">Emel (Auto)</th><th class="p-2">Peranti</th><th class="p-2">Tamat</th><th class="p-2 text-center">Tindakan</th></tr>
-                    </thead>
-                    <tbody id="overdue-list-body"></tbody>
-                </table>
-                <div id="no-overdue-msg" class="hidden text-center py-8 text-gray-500">Tiada pinjaman yang lewat tarikh. Tahniah!</div>
-            </div>
-            <div class="p-4 border-t bg-gray-50 text-right">
-                <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Tutup</button>
+                <table class="w-full text-sm text-left"><thead class="bg-gray-100"><tr><th class="p-2">Nama</th><th class="p-2">Emel</th><th class="p-2">Peranti</th><th class="p-2">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead><tbody id="overdue-list-body"></tbody></table>
+                <div id="no-overdue-msg" class="hidden text-center py-8 text-gray-500">Tiada lewat.</div>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPT -->
     <script>
-        // ================= CONFIGURATION =================
         const supabaseUrl = 'https://objxfgosatmasjjifkkg.supabase.co'; 
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw';
 
-        // UTILS & SETUP
-        function logDebug(message) {
-            const consoleDiv = document.getElementById('debug-console');
-            const time = new Date().toLocaleTimeString();
-            const newLine = document.createElement('div');
-            newLine.innerText = `[${time}] ${message}`;
-            consoleDiv.appendChild(newLine);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-            console.log(message);
+        function logDebug(msg, isError=false) {
+            const c = document.getElementById('debug-console'); if(!c) return;
+            const d = document.createElement('div'); d.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            if(isError) d.style.color = '#ff4444'; c.appendChild(d); c.scrollTop = c.scrollHeight;
         }
 
-        async function withTimeout(promise, timeoutMs = 15000, operationName = "Operation") {
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error(`${operationName} Timed Out. Check connection.`)), timeoutMs)
-            );
-            return Promise.race([promise, timeoutPromise]);
+        async function withTimeout(promise, ms=15000) {
+            return Promise.race([promise, new Promise((_,r) => setTimeout(() => r(new Error("Timeout")), ms))]);
         }
 
-        // Initialize Supabase
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-        let currentUser = null;
-        let searchTimeout = null;
-        let currentLoanHistory = [];
-        let clearActionType = ''; // 'rekod', 'personnel', 'user_ba'
+        // --- SAFETY INIT ---
+        let supabase = null, currentUser = null;
+        try {
+            if (!window.supabase) throw new Error("Supabase Library Gagal Dimuatkan (Firewall?).");
+            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+            logDebug("Supabase Init OK.");
+        } catch (e) {
+            setTimeout(()=>logDebug("CRITICAL: "+e.message, true), 500);
+            alert("Ralat Init: " + e.message);
+        }
 
-        // Issue Categories
-        const issueOptions = {
-            "ecp450": ["Sah grey out", "Ralat HKP", "Ralat No telefon", "Ralat Gred", "Tiada dokumen di STH", "Tiada menu dipaparkan / masalah cache", "Salah URL", "Tiada host file", "ID VPN tak boleh masuk", "Push dokumen ke pengesah", "ID telah wujud", "ID lock", "ID tanda seru kuning", "ID tanda seru merah", "Emel salah", "Role tiada", "Pengesah tiada", "Panduan capaian", "Masa tidak 12.12.9999", "Status z-deleted", "Status z-temp", "License tiada", "Role masih ada selepas hapus peranan", "Lain-lain"],
-            "ecp400": ["Masalah role", "Push dokumen", "Masalah FA code", "Masalah BA Code", "ID lock", "Parameter tiada/salah", "Lain-lain"],
-            "hcp400": ["Masalah role", "Masalah FA code", "Masalah BA Code", "ID lock", "Parameter tiada/salah", "Tiada peranan dalam sistem Gaji", "Lain-lain"],
-            "psa400": ["Masalah role", "Masalah FA code", "Masalah BA Code", "ID lock", "Parameter tiada/salah", "Masalah Bussiness partner", "Tiada peranan dalam SOLMAN", "Lain-lain"],
-            "bp1": ["Masalah role", "Masalah FA code", "Masalah BA Code", "ID lock", "Lain-lain"],
-            "bwp": ["Masalah role", "Masalah FA code", "Masalah BA Code", "ID lock", "Lain-lain"],
-            "mycost": ["Masalah role mycost", "ID lock", "Lain-lain"]
-        };
+        let currentRecords = [], currentLoanHistory = [], clearActionType = '';
 
-        // ON LOAD
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            updateDateDisplay();
-            checkAuth();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            if(supabase) checkAuth();
             
+            // Listeners
             document.getElementById('global-search').addEventListener('input', (e) => handleLiveSearch(e.target.value));
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#global-search') && !e.target.closest('#search-results-dropdown')) {
-                    document.getElementById('search-results-dropdown').classList.add('hidden');
-                }
-            });
-
-            document.querySelectorAll('input[name="system_type"]').forEach(radio => {
-                radio.addEventListener('change', (e) => { updateDropdown(e.target.value); checkFormValidity(); });
-            });
-
+            document.querySelectorAll('input, select, textarea').forEach(i => i.addEventListener('input', checkFormValidity));
+            document.querySelectorAll('input[name="system_type"]').forEach(r => r.addEventListener('change', () => { updateDropdown(r.value); checkFormValidity(); }));
             document.getElementById('issue-dropdown').addEventListener('change', (e) => {
-                const other = document.getElementById('other-issue-container');
-                const input = document.getElementById('other-issue-input');
-                if (e.target.value === "Lain-lain") { other.classList.remove('hidden'); input.focus(); }
-                else { other.classList.add('hidden'); input.value = ""; }
+                document.getElementById('other-issue-container').classList.toggle('hidden', e.target.value !== 'Lain-lain');
                 checkFormValidity();
-            });
-
-            document.querySelectorAll('input, select, textarea').forEach(input => {
-                input.addEventListener('input', checkFormValidity);
-                input.addEventListener('change', checkFormValidity);
             });
             checkFormValidity();
         });
 
-        function updateDropdown(type) {
-            const dd = document.getElementById('issue-dropdown');
-            const ddc = document.getElementById('issue-dropdown-container');
-            dd.innerHTML = '<option value="" disabled selected>Sila Pilih Isu</option>';
-            document.getElementById('other-issue-container').classList.add('hidden');
-            if(issueOptions[type]) {
-                issueOptions[type].forEach(i => { const o = document.createElement('option'); o.value=i; o.textContent=i; dd.appendChild(o); });
-                ddc.classList.remove('hidden');
-            } else { ddc.classList.add('hidden'); }
-        }
-
-        function updateDateDisplay() { document.getElementById('current-date').textContent = new Date().toLocaleString('ms-MY'); }
-
-        function checkFormValidity() {
-            const req = ['ic', 'nama', 'telefon', 'emel', 'gred', 'kod_ptj', 'department'];
-            let valid = req.every(id => document.getElementById(id).value.trim());
-            if(!document.querySelector('input[name="system_type"]:checked')) valid = false;
-            const issue = document.getElementById('issue-dropdown').value;
-            if(!issue) valid = false;
-            if(issue === "Lain-lain" && !document.getElementById('other-issue-input').value.trim()) valid = false;
-            
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = !valid;
-            if(valid) btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            else btn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-
-        // ================= AUTH =================
+        // --- AUTH ---
         async function checkAuth() {
             try {
-                const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), 5000, "Auth Check");
-                if (session) { currentUser = session.user; showApp(); }
-                else showLogin();
-            } catch (err) { logDebug("Auth Error: " + err.message); }
+                const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), 5000);
+                if(session) { currentUser = session.user; showApp(); } else showLogin();
+            } catch(e) { logDebug("Auth Check Error: " + e.message, true); showLogin(); }
         }
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('login-btn');
-            btn.classList.add('melting');
-            
+            const email = document.getElementById('email').value, password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn'); btn.classList.add('melting');
             try {
-                const [auth] = await Promise.all([
-                    supabase.auth.signInWithPassword({ email, password }),
-                    new Promise(r => setTimeout(r, 1500))
-                ]);
-                if (auth.error) throw auth.error;
-                
-                const overlay = document.getElementById('liquid-overlay');
-                overlay.classList.add('active');
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if(error) throw error;
+                await new Promise(r => setTimeout(r, 1000));
+                document.getElementById('liquid-overlay').classList.add('active');
                 document.getElementById('splash-text').classList.remove('opacity-0');
-
-                setTimeout(() => {
-                    currentUser = auth.data.user;
-                    showApp();
-                    overlay.style.transform = "translateY(-100%)"; 
-                }, 800);
-            } catch (err) {
+                setTimeout(() => { currentUser = data.user; showApp(); document.getElementById('liquid-overlay').style.transform = "translateY(-100%)"; }, 800);
+            } catch(e) {
                 btn.classList.remove('melting');
-                const errDiv = document.getElementById('login-error');
-                errDiv.innerText = "Login Failed: " + err.message;
-                errDiv.classList.remove('hidden');
+                document.getElementById('login-error').innerText = "Login Failed: " + e.message;
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
         async function handleLogout() { await supabase.auth.signOut(); window.location.reload(); }
-        
         async function toggleSignUp() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if(!email || !password) { alert("Sila masukkan email & password."); return; }
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if(error) alert(error.message);
-            else alert("Pendaftaran berjaya! Sila login.");
+            const e = document.getElementById('email').value, p = document.getElementById('password').value;
+            if(!e || !p) return alert("Isi email & password.");
+            const { error } = await supabase.auth.signUp({email:e, password:p});
+            alert(error ? error.message : "Daftar berjaya. Sila login.");
         }
 
-        function showLogin() {
-            document.getElementById('login-page').classList.remove('hidden-section');
-            document.getElementById('app-layout').classList.add('hidden-section');
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+
+        function showLogin() { document.getElementById('login-page').classList.remove('hidden-section'); document.getElementById('app-layout').classList.add('hidden-section'); }
+        function showApp() { 
+            document.getElementById('login-page').classList.add('hidden-section'); document.getElementById('app-layout').classList.remove('hidden-section'); 
+            document.getElementById('user-display').innerText = currentUser.email; 
+            switchMainTab('call-log'); 
         }
 
-        function showApp() {
-            document.getElementById('login-page').classList.add('hidden-section');
-            document.getElementById('app-layout').classList.remove('hidden-section');
-            document.getElementById('user-display').textContent = currentUser.email;
-            checkAdminPermissions();
-            switchMainTab('call-log');
+        // --- NAV ---
+        function switchMainTab(id) {
+            document.getElementById('call-log-section').classList.toggle('hidden-section', id!=='call-log');
+            document.getElementById('loan-page').classList.toggle('hidden-section', id!=='loan');
+            if(id==='call-log') switchCallLogTab('search'); else { switchLoanTab('loan-tab-borrow'); loadLoanData(); }
+        }
+        function switchCallLogTab(id) {
+            document.getElementById('sub-search-page').classList.toggle('hidden-section', id!=='search');
+            document.getElementById('sub-records-page').classList.toggle('hidden-section', id!=='records');
+            if(id==='records') fetchRecords();
+        }
+        function switchLoanTab(id) {
+            document.querySelectorAll('.loan-tab-content').forEach(e => e.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            if(id==='loan-tab-history') loadLoanHistory();
         }
 
-        function checkAdminPermissions() {
-            if (currentUser && currentUser.email === 'suhardi.alias@moe.gov.my') {
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-            }
-        }
-
-        // ================= NAVIGATION =================
-        function switchMainTab(tabId) {
-            document.getElementById('nav-call-log').classList.toggle('bg-blue-900', tabId === 'call-log');
-            document.getElementById('nav-loan').classList.toggle('bg-blue-900', tabId === 'loan');
-            document.getElementById('call-log-section').classList.toggle('hidden-section', tabId !== 'call-log');
-            document.getElementById('loan-page').classList.toggle('hidden-section', tabId !== 'loan');
-            
-            if (tabId === 'call-log') switchCallLogTab('search');
-            else { switchLoanTab('loan-tab-borrow'); loadLoanData(); }
-        }
-
-        function switchCallLogTab(subId) {
-            const s = document.getElementById('btn-sub-search');
-            const r = document.getElementById('btn-sub-records');
-            s.className = subId==='search' ? "px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap" : "px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap";
-            r.className = subId==='records' ? "px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap" : "px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap";
-            document.getElementById('sub-search-page').classList.toggle('hidden-section', subId !== 'search');
-            document.getElementById('sub-records-page').classList.toggle('hidden-section', subId !== 'records');
-            if(subId==='records') fetchRecords();
-        }
-
-        function switchLoanTab(tabId) {
-            document.querySelectorAll('.loan-tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
-            ['btn-loan-borrow', 'btn-loan-return', 'btn-loan-admin', 'btn-loan-history'].forEach(id => {
-                const btn = document.getElementById(id);
-                btn.className = "px-4 md:px-6 py-2 text-sm md:text-base text-gray-500 hover:text-blue-600 font-medium whitespace-nowrap";
-            });
-            const activeBtn = document.getElementById(tabId.replace('loan-tab-', 'btn-loan-'));
-            activeBtn.className = "px-4 md:px-6 py-2 text-sm md:text-base text-blue-600 border-b-2 border-blue-600 font-medium whitespace-nowrap";
-            if(tabId === 'loan-tab-history') loadLoanHistory();
-        }
-
-        // ================= CALL LOG LOGIC =================
-        function enableEdit(id) {
-            const el = document.getElementById(id); el.readOnly = false; el.classList.replace('bg-gray-50', 'bg-white'); el.focus();
-        }
-        function createNewEntry() {
-            ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(id => { enableEdit(id); document.getElementById(id).value = ''; });
-            document.getElementById('search-results-dropdown').classList.add('hidden');
-            checkFormValidity();
-        }
-
+        // --- LOGIC ---
+        let searchTimeout = null;
         function handleLiveSearch(q) {
             const dd = document.getElementById('search-results-dropdown');
             if(searchTimeout) clearTimeout(searchTimeout);
             if(!q || q.length < 2) { dd.classList.add('hidden'); return; }
             searchTimeout = setTimeout(async () => {
                 dd.classList.remove('hidden'); dd.innerHTML = '<div class="p-3 text-center">Searching...</div>';
-                const { data, error } = await supabase.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`).limit(5);
-                if(!data || data.length === 0) {
-                    dd.innerHTML = `<div class="p-3 text-center"><button onclick="createNewEntry()" class="bg-blue-600 text-white px-4 py-1 rounded text-xs">+ Manual Entry</button></div>`;
-                    return;
-                }
+                const { data } = await supabase.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`).limit(5);
+                if(!data || !data.length) { dd.innerHTML = `<div class="p-3 text-center text-gray-500">Tiada rekod.</div>`; return; }
                 dd.innerHTML = '';
                 data.forEach(p => {
                     const d = document.createElement('div'); d.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b';
-                    d.innerHTML = `<div class="font-bold">${p.nama}</div><div class="text-xs text-gray-500">${p.ic_number} - ${p.department}</div>`;
+                    d.innerHTML = `<div class="font-bold">${p.nama}</div><div class="text-xs text-gray-500">${p.ic_number}</div>`;
                     d.onclick = () => {
-                        ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(k => document.getElementById(k).value = p[k==='ic'?'ic_number':k] || '');
-                        dd.classList.add('hidden'); document.getElementById('global-search').value=''; checkFormValidity();
+                        ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(k => document.getElementById(k).value = p[k==='ic'?'ic_number':k]||'');
+                        dd.classList.add('hidden'); checkFormValidity();
                     };
                     dd.appendChild(d);
                 });
             }, 300);
         }
 
+        function enableEdit(id) { const e = document.getElementById(id); e.readOnly=false; e.classList.replace('bg-gray-50','bg-white'); e.focus(); }
+        function checkFormValidity() {
+            const valid = ['ic','nama','telefon','emel','gred','kod_ptj','department'].every(id=>document.getElementById(id).value.trim()) 
+                && document.querySelector('input[name="system_type"]:checked') 
+                && document.getElementById('issue-dropdown').value;
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = !valid; btn.classList.toggle('opacity-50', !valid);
+        }
+        function updateDropdown(t) {
+            const dd = document.getElementById('issue-dropdown'); dd.innerHTML = '<option value="" disabled selected>Pilih Isu</option>';
+            const opts = {
+                "ecp450": ["Sah grey out", "Ralat HKP", "Ralat No telefon", "Ralat Gred", "Tiada dokumen", "Salah URL", "ID lock", "Emel salah", "Lain-lain"],
+                "ecp400": ["Masalah role", "Push dokumen", "ID lock", "Lain-lain"],
+                "hcp400": ["Masalah role", "ID lock", "Lain-lain"],
+                "psa400": ["Masalah role", "ID lock", "Lain-lain"],
+                "bp1": ["Masalah role", "ID lock", "Lain-lain"],
+                "bwp": ["Masalah role", "ID lock", "Lain-lain"],
+                "mycost": ["Masalah role", "ID lock", "Lain-lain"]
+            };
+            if(opts[t]) opts[t].forEach(i => { const o = document.createElement('option'); o.value=i; o.text=i; dd.appendChild(o); });
+            document.getElementById('issue-dropdown-container').classList.remove('hidden');
+        }
+
+        // --- SUBMIT ---
         document.getElementById('data-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const sys = document.querySelector('input[name="system_type"]:checked').value;
             const iss = document.getElementById('issue-dropdown').value;
             const oth = document.getElementById('other-issue-input').value;
             const note = `${sys} - ${iss}${iss==='Lain-lain' ? ' ('+oth+')' : ''}`;
-            const formData = {
-                ic_number: document.getElementById('ic').value,
-                nama: document.getElementById('nama').value,
-                telefon: document.getElementById('telefon').value,
-                emel: document.getElementById('emel').value,
-                gred: document.getElementById('gred').value,
-                kod_ptj: document.getElementById('kod_ptj').value,
-                department: document.getElementById('department').value,
-                confirmation: 'TIDAK', notes: note, submitted_by: currentUser.id, perekod: currentUser.email
+            const row = {
+                ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value,
+                telefon: document.getElementById('telefon').value, emel: document.getElementById('emel').value,
+                gred: document.getElementById('gred').value, kod_ptj: document.getElementById('kod_ptj').value,
+                department: document.getElementById('department').value, confirmation: 'TIDAK', notes: note,
+                submitted_by: currentUser.id, perekod: currentUser.email
             };
-            const { error } = await supabase.from('rekod').insert([formData]);
-            if(error) alert(error.message);
-            else { showToast("Rekod Disimpan!"); document.getElementById('data-form').reset(); checkFormValidity(); }
+            const { error } = await supabase.from('rekod').insert([row]);
+            if(error) alert(error.message); else { showToast("Disimpan!"); document.getElementById('data-form').reset(); checkFormValidity(); }
         });
 
         async function fetchRecords() {
-            const tb = document.getElementById('table-body'); tb.innerHTML = '<tr><td colspan="9" class="text-center"><div class="loader"></div></td></tr>';
-            const { data, error } = await supabase.from('rekod').select('*').order('created_at', { ascending: false });
-            tb.innerHTML = '';
-            if(!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="9" class="text-center p-4">Tiada rekod.</td></tr>'; return; }
-            currentRecords = data;
+            const tb = document.getElementById('table-body'); tb.innerHTML = '<tr><td colspan="7" class="text-center"><div class="loader"></div></td></tr>';
+            const { data } = await supabase.from('rekod').select('*').order('created_at', { ascending: false });
+            tb.innerHTML = ''; currentRecords = data || [];
+            if(!data || !data.length) { tb.innerHTML = '<tr><td colspan="7" class="text-center">Tiada rekod.</td></tr>'; return; }
             data.forEach(r => {
-                const tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="p-3">${new Date(r.created_at).toLocaleString('ms-MY')}</td>
-                    <td class="p-3">${r.ic_number}</td><td class="p-3 font-medium">${r.nama}</td><td class="p-3">${r.department}</td>
-                    <td class="p-3 text-sm text-gray-500">${r.notes}</td>
-                    <td class="p-3 text-xs">${r.perekod||'-'}</td>
-                    <td class="p-3 text-xs">${r.status_updated_at?new Date(r.status_updated_at).toLocaleString():'-'}</td>
-                    <td class="p-3 text-xs">${r.status_updated_by_name||'-'}</td>
-                    <td class="p-3"><select onchange="updateStatus('${r.id}',this.value)" class="border rounded text-xs"><option ${r.confirmation==='YA'?'selected':''}>YA</option><option ${r.confirmation==='TIDAK'?'selected':''}>TIDAK</option></select></td>
-                `;
-                tb.appendChild(tr);
+                tb.innerHTML += `<tr class="border-b"><td class="p-3">${new Date(r.created_at).toLocaleString()}</td><td class="p-3">${r.ic_number}</td><td class="p-3">${r.nama}</td><td class="p-3">${r.department}</td><td class="p-3 text-sm text-gray-500">${r.notes}</td><td class="p-3 text-xs">${r.perekod||'-'}</td><td class="p-3">${r.confirmation}</td></tr>`;
             });
         }
 
-        async function updateStatus(id, val) {
-            await supabase.from('rekod').update({ confirmation: val, status_updated_at: new Date(), status_updated_by_name: currentUser.email }).eq('id', id);
-            fetchRecords();
-        }
-
-        // ================= LOAN LOGIC =================
+        // --- LOAN ---
         async function loadLoanData() {
-            const { data: users } = await supabase.from('user_ba').select('name').order('name');
+            const { data: u } = await supabase.from('user_ba').select('name').order('name');
             const ul = document.getElementById('userList'); ul.innerHTML = '';
-            if(users) users.forEach(u => { const o = document.createElement('option'); o.value=u.name; ul.appendChild(o); });
+            if(u) u.forEach(i => { const o = document.createElement('option'); o.value=i.name; ul.appendChild(o); });
 
-            const { data: devices } = await supabase.from('device_inventory').select('*').eq('status','Tersedia').order('tag');
-            const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option value="" disabled selected>Pilih Peranti...</option>';
-            if(devices) devices.forEach(d => { const o = document.createElement('option'); o.value=d.tag; o.text=`${d.tag} - ${d.type}`; ds.appendChild(o); });
+            const { data: d } = await supabase.from('device_inventory').select('*').eq('status','Tersedia').order('tag');
+            const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option value="" disabled selected>Pilih...</option>';
+            if(d) d.forEach(i => { const o = document.createElement('option'); o.value=i.tag; o.text=`${i.tag} - ${i.type}`; ds.appendChild(o); });
 
-            const { data: rented } = await supabase.from('device_inventory').select('*').eq('status','Dipinjam').order('tag');
-            const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option value="" disabled selected>Pilih Peranti...</option>';
-            if(rented) rented.forEach(d => { const o = document.createElement('option'); o.value=d.tag; o.text=`${d.tag} - ${d.type}`; rs.appendChild(o); });
+            const { data: r } = await supabase.from('device_inventory').select('*').eq('status','Dipinjam').order('tag');
+            const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option value="" disabled selected>Pilih...</option>';
+            if(r) r.forEach(i => { const o = document.createElement('option'); o.value=i.tag; o.text=`${i.tag} - ${i.type}`; rs.appendChild(o); });
 
-            const { data: active } = await supabase.from('rekod_pinjaman').select('*').eq('status','Active').order('created_at', {ascending:false});
-            const atb = document.getElementById('active-loans-body'); atb.innerHTML = '';
-            if(active) active.forEach(l => {
-                atb.innerHTML += `<tr class="border-b"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.end_date}</td><td class="p-2 text-xs text-gray-500">${l.usage_details||'-'}</td></tr>`;
-            });
+            const { data: a } = await supabase.from('rekod_pinjaman').select('*').eq('status','Active').order('created_at',{ascending:false});
+            const at = document.getElementById('active-loans-body'); at.innerHTML = '';
+            if(a) a.forEach(l => at.innerHTML += `<tr class="border-b"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`);
         }
 
         async function submitLoan() {
             const u = document.getElementById('loanUserName').value, d = document.getElementById('deviceSelect').value, s = document.getElementById('loanStartDate').value, e = document.getElementById('loanEndDate').value, t = document.getElementById('usageType').value;
-            if(!u || !d || !s || !e || !t) { alert("Sila isi semua."); return; }
+            if(!u || !d || !s || !e) return alert("Sila isi semua.");
             const { error } = await supabase.from('rekod_pinjaman').insert([{ user_name: u, device_tag: d, start_date: s, end_date: e, usage_type: t, usage_details: document.getElementById('usageDetails').value, status: 'Active' }]);
             if(!error) { await supabase.from('device_inventory').update({status:'Dipinjam'}).eq('tag',d); alert("Berjaya!"); document.getElementById('loanForm').reset(); loadLoanData(); }
+            else alert(error.message);
         }
 
         async function submitReturn() {
-            const tag = document.getElementById('returnSelect').value; if(!tag) return;
-            const { data: l } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', tag).eq('status','Active').single();
+            const t = document.getElementById('returnSelect').value; if(!t) return;
+            const { data: l } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').single();
             if(l) await supabase.from('rekod_pinjaman').update({status:'Returned', return_date: new Date()}).eq('id',l.id);
-            await supabase.from('device_inventory').update({status:'Tersedia'}).eq('tag',tag);
+            await supabase.from('device_inventory').update({status:'Tersedia'}).eq('tag',t);
             alert("Dipulangkan!"); loadLoanData();
         }
 
         async function loadLoanHistory() {
-            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false});
-            currentLoanHistory = loans || [];
+            const { data } = await supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false});
+            currentLoanHistory = data || [];
             const tb = document.getElementById('loan-history-body'); tb.innerHTML = '';
-            loans.forEach(l => {
-                tb.innerHTML += `<tr class="border-b"><td class="p-3">${new Date(l.created_at).toLocaleDateString()}</td><td class="p-3">${l.user_name}</td><td class="p-3">${l.device_tag}</td><td class="p-3">${l.start_date} - ${l.end_date}</td><td class="p-3">${l.return_date?new Date(l.return_date).toLocaleDateString():'-'}</td><td class="p-3">${l.status}</td></tr>`;
-            });
+            if(data) data.forEach(l => tb.innerHTML += `<tr class="border-b"><td class="p-3">${new Date(l.created_at).toLocaleDateString()}</td><td class="p-3">${l.user_name}</td><td class="p-3">${l.device_tag}</td><td class="p-3">${l.start_date} - ${l.end_date}</td><td class="p-3">${l.return_date?new Date(l.return_date).toLocaleDateString():'-'}</td><td class="p-3">${l.status}</td></tr>`);
         }
 
-        // ================= ADMIN & BULK OPS =================
+        // --- BULK / ADMIN ---
         function triggerImport() { document.getElementById('excel-upload').click(); }
         function triggerMasterUpload() { document.getElementById('master-data-upload').click(); }
         function triggerLoanUpload(t) { 
@@ -843,115 +535,88 @@
             if(t==='inventory') document.getElementById('loan-inventory-upload').click();
             if(t==='records') document.getElementById('loan-records-upload').click();
         }
-        function handleMasterDataUpload(e) { processExcel(e.target.files[0], 'personnel', (r)=>({ic_number:r.IC||r.ic_number, nama:r.Name||r.nama, telefon:r.Phone||r.telefon, emel:r.Email||r.emel, gred:r.Grade||r.gred, kod_ptj:r.KodPTJ||r.kod_ptj, department:r.Department||r.department})); }
-        function handleFileUpload(e) { processExcel(e.target.files[0], 'rekod', (r)=>({ic_number:r.IC, nama:r.Name, confirmation:'TIDAK', notes:r.Notes||r.notes, submitted_by:currentUser.id})); }
-        function handleLoanInventoryUpload(e) { processExcel(e.target.files[0], 'device_inventory', (r)=>({tag:r.Tag||r.tag, type:r.Type||r.type, serial:r.Serial||r.serial, status:'Tersedia'})); }
-        function handleLoanRecordsUpload(e) { processExcel(e.target.files[0], 'rekod_pinjaman', (r)=>({user_name:r.User||r.user_name, device_tag:r.Tag, start_date:r.Start, end_date:r.End, status:r.Status||'Active'})); }
-        
-        // UPDATED USER UPLOAD
         function handleLoanUserUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                    const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                    const inserts = [];
-                    json.forEach(r => {
-                        const keys = Object.keys(r);
-                        let nameVal = r.name || r.Name || r.Nama || r[keys.find(k=>k.match(/name|nama/i))];
-                        let emailVal = r.email || r.Email || r.Emel || r[keys.find(k=>k.match(/email|emel/i))];
-                        if (nameVal && typeof nameVal === 'string') inserts.push({ name: nameVal.trim(), emel: emailVal ? emailVal.trim() : '' });
-                    });
-                    if(inserts.length === 0) { alert("No data found."); return; }
-                    const { error } = await supabase.from('user_ba').insert(inserts);
-                    if(error) alert(error.message); else { alert(`Added ${inserts.length} users.`); loadLoanData(); }
-                } catch(err) { alert("Error parsing Excel."); }
+            const f = event.target.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = async (e) => {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                const ins = [];
+                json.forEach(row => {
+                    const keys = Object.keys(row);
+                    const name = row.name || row.Name || row.Nama || row[keys.find(k=>k.match(/name|nama/i))];
+                    const email = row.email || row.Email || row.Emel || row[keys.find(k=>k.match(/email|emel/i))];
+                    if(name) ins.push({name: name.toString().trim(), emel: email ? email.toString().trim() : ''});
+                });
+                if(ins.length) { 
+                    const { error } = await supabase.from('user_ba').insert(ins);
+                    alert(error ? error.message : `Added ${ins.length} users.`); loadLoanData();
+                } else alert("No valid data.");
                 event.target.value = '';
             };
-            reader.readAsArrayBuffer(file);
+            r.readAsArrayBuffer(f);
         }
+        // Generic handlers for other uploads
+        function handleMasterDataUpload(e) { processExcel(e.target.files[0], 'personnel', r=>({ic_number:r.IC, nama:r.Name, telefon:r.Phone, emel:r.Email, gred:r.Grade, kod_ptj:r.KodPTJ, department:r.Department})); }
+        function handleFileUpload(e) { processExcel(e.target.files[0], 'rekod', r=>({ic_number:r.IC, nama:r.Name, confirmation:'TIDAK', notes:r.Notes, submitted_by:currentUser.id})); }
+        function handleLoanInventoryUpload(e) { processExcel(e.target.files[0], 'device_inventory', r=>({tag:r.Tag, type:r.Type, serial:r.Serial, status:'Tersedia'})); }
+        function handleLoanRecordsUpload(e) { processExcel(e.target.files[0], 'rekod_pinjaman', r=>({user_name:r.User, device_tag:r.Tag, start_date:r.Start, end_date:r.End, status:'Active'})); }
 
-        function processExcel(file, table, mapFn) {
-            if(!file) return; const reader = new FileReader();
-            reader.onload = async (e) => {
-                const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]).map(mapFn);
-                const { error } = await supabase.from(table).insert(data);
-                if(error) alert(error.message); else { showToast("Import Successful!"); if(table==='rekod') fetchRecords(); if(table.includes('inventory')) loadLoanData(); }
+        function processExcel(f, tbl, map) {
+            if(!f) return; const r = new FileReader();
+            r.onload = async (e) => {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                const d = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]).map(map);
+                const { error } = await supabase.from(tbl).insert(d);
+                alert(error ? error.message : "Success!"); if(tbl==='rekod') fetchRecords(); if(tbl.includes('inventory')) loadLoanData();
             };
-            reader.readAsArrayBuffer(file);
+            r.readAsArrayBuffer(f);
         }
 
-        // --- CLEAR DATABASE LOGIC (UPDATED) ---
-        function confirmClearDatabase() { clearActionType='rekod'; openDelModal("Padam REKOD HARIAN?"); }
-        function confirmClearMasterDatabase() { clearActionType='personnel'; openDelModal("Padam DATA INDUK?"); }
-        function confirmClearUserDatabase() { clearActionType='user_ba'; openDelModal("Padam SEMUA PENGGUNA?"); }
-        function openDelModal(t) { document.getElementById('modal-title').innerText=t; document.getElementById('delete-modal').classList.remove('hidden'); }
+        // --- CLEAR DB ---
+        function confirmClearDatabase() { clearActionType='rekod'; document.getElementById('delete-modal').classList.remove('hidden'); }
+        function confirmClearMasterDatabase() { clearActionType='personnel'; document.getElementById('delete-modal').classList.remove('hidden'); }
+        function confirmClearUserDatabase() { clearActionType='user_ba'; document.getElementById('delete-modal').classList.remove('hidden'); }
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
 
         async function executeClearDatabase() {
             closeDeleteModal(); showToast("Deleting...");
-            let table = '', col = 'id';
-            if(clearActionType==='personnel') table='personnel';
-            if(clearActionType==='rekod') table='rekod';
-            if(clearActionType==='user_ba') { table='user_ba'; col='name'; } // FIX: user_ba uses name not id
-            
+            let tbl = clearActionType, col = 'id';
+            if(tbl==='user_ba') col = 'name'; // FIX for user_ba
             try {
-                const { error } = await supabase.from(table).delete().neq(col, 'X_IMPOSSIBLE_VAL');
+                const { error } = await supabase.from(tbl).delete().neq(col, 'X_INVALID');
                 if(error) throw error;
-                alert("Data deleted.");
-                if(table==='rekod') fetchRecords();
-                if(table==='user_ba') loadLoanData();
-            } catch(e) { alert("Delete failed: " + e.message); }
+                alert("Deleted."); if(tbl==='rekod') fetchRecords(); if(tbl==='user_ba') loadLoanData();
+            } catch(e) { alert("Delete failed: "+e.message); }
         }
 
-        // --- OVERDUE EMAIL LOGIC (NEW) ---
+        // --- OVERDUE ---
         async function checkOverdueLoans() {
-            showToast("Checking records...");
-            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').eq('status', 'Active');
+            showToast("Checking...");
+            const { data: loans } = await supabase.from('rekod_pinjaman').select('*').eq('status','Active');
             const { data: users } = await supabase.from('user_ba').select('name, emel');
-            
             const today = new Date(); today.setHours(0,0,0,0);
             const overdue = loans.filter(l => new Date(l.end_date) < today);
             
-            const tbody = document.getElementById('overdue-list-body'); tbody.innerHTML = '';
-            const modal = document.getElementById('overdue-modal');
+            const tb = document.getElementById('overdue-list-body'); tb.innerHTML = '';
             document.getElementById('no-overdue-msg').classList.toggle('hidden', overdue.length > 0);
-
+            
             overdue.forEach(l => {
                 const u = users.find(x => x.name.toLowerCase() === l.user_name.toLowerCase());
                 let email = u && u.emel && u.emel.includes('@') ? u.emel : `${l.user_name.trim().toLowerCase().replace(/[^a-z0-9]/g,'.')}@moe.gov.my`;
                 const subj = encodeURIComponent("PERINGATAN: Pemulangan Peranti ICT");
                 const body = encodeURIComponent(`Salam ${l.user_name},\n\nPinjaman peranti ${l.device_tag} telah tamat pada ${l.end_date}.\nSila pulangkan segera.\n\nTerima kasih.`);
-                
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-orange-50">
-                        <td class="p-2 font-medium">${l.user_name}</td>
-                        <td class="p-2 text-blue-600 text-xs">${email}</td>
-                        <td class="p-2">${l.device_tag}</td>
-                        <td class="p-2 text-red-600 font-bold">${l.end_date}</td>
-                        <td class="p-2 text-center"><a href="mailto:${email}?subject=${subj}&body=${body}" target="_blank" class="bg-orange-600 text-white px-3 py-1 rounded text-xs">Hantar</a></td>
-                    </tr>`;
+                tb.innerHTML += `<tr class="border-b hover:bg-orange-50"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600 text-xs">${email}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600 font-bold">${l.end_date}</td><td class="p-2 text-center"><a href="mailto:${email}?subject=${subj}&body=${body}" target="_blank" class="bg-orange-600 text-white px-3 py-1 rounded text-xs">Hantar</a></td></tr>`;
             });
-            modal.classList.remove('hidden'); lucide.createIcons();
+            document.getElementById('overdue-modal').classList.remove('hidden');
         }
 
-        async function addUser() { 
-            const n = document.getElementById('newUserName').value; if(!n) return; 
-            await supabase.from('user_ba').insert([{name:n}]); alert("User Added"); loadLoanData(); 
-        }
-        async function addDevice() {
-            const t = document.getElementById('newTag').value, s = document.getElementById('newSerial').value; if(!t) return;
-            await supabase.from('device_inventory').insert([{tag:t, type:document.getElementById('newType').value, serial:s, status:'Tersedia'}]);
-            alert("Device Added"); loadLoanData();
-        }
-
-        function showToast(msg) { const t = document.getElementById('toast'); t.innerText=msg; t.classList.remove('opacity-0','translate-y-20'); setTimeout(()=>t.classList.add('opacity-0','translate-y-20'), 3000); }
+        async function addUser() { const n = document.getElementById('newUserName').value; if(n) { await supabase.from('user_ba').insert([{name:n}]); loadLoanData(); } }
+        async function addDevice() { const t = document.getElementById('newTag').value; if(t) { await supabase.from('device_inventory').insert([{tag:t, type:document.getElementById('newType').value, serial:document.getElementById('newSerial').value, status:'Tersedia'}]); loadLoanData(); } }
+        function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.remove('opacity-0','translate-y-20'); setTimeout(()=>t.classList.add('opacity-0','translate-y-20'), 3000); }
         function exportToExcel() { if(currentRecords.length) XLSX.writeFile(XLSX.utils.json_to_sheet(currentRecords), "Log.xlsx"); }
-        function exportToPDF() { if(currentRecords.length) { const doc = new window.jspdf.jsPDF('l'); doc.autoTable({head:[['Date','Name','Dept','Note']], body:currentRecords.map(r=>[r.created_at,r.nama,r.department,r.notes])}); doc.save("Log.pdf"); } }
+        function exportToPDF() { if(currentRecords.length) { const d=new window.jspdf.jsPDF('l'); d.autoTable({head:[['Date','Name','Dept','Note']],body:currentRecords.map(r=>[r.created_at,r.nama,r.department,r.notes])}); d.save("Log.pdf"); } }
         function exportLoanHistoryToExcel() { if(currentLoanHistory.length) XLSX.writeFile(XLSX.utils.json_to_sheet(currentLoanHistory), "Loans.xlsx"); }
-        function exportLoanHistoryToPDF() { if(currentLoanHistory.length) { const doc = new window.jspdf.jsPDF(); doc.autoTable({head:[['Date','User','Device','Status']], body:currentLoanHistory.map(r=>[r.created_at,r.user_name,r.device_tag,r.status])}); doc.save("Loans.pdf"); } }
     </script>
 </body>
 </html>
