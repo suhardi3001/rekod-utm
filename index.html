@@ -1388,50 +1388,66 @@
             document.getElementById('delete-modal').classList.add('hidden');
         }
 
-        async function executeClearDatabase() {
+async function executeClearDatabase() {
             closeDeleteModal();
             showToast("Sedang memadam...");
             
-            // Determine table name based on global variable
+            // Tentukan nama table dan column untuk filter delete
             let tableName = '';
-            if (clearActionType === 'personnel') tableName = 'personnel';
-            else if (clearActionType === 'rekod') tableName = 'rekod';
-            else if (clearActionType === 'user_ba') tableName = 'user_ba';
+            let targetColumn = 'id'; // Default untuk table lain
+            
+            if (clearActionType === 'personnel') {
+                tableName = 'personnel';
+                targetColumn = 'id'; // Table personnel ada ID
+            } else if (clearActionType === 'rekod') {
+                tableName = 'rekod';
+                targetColumn = 'id'; // Table rekod ada ID
+            } else if (clearActionType === 'user_ba') {
+                tableName = 'user_ba';
+                targetColumn = 'name'; // <--- TUKAR: Guna 'name' sebab 'id' tiada
+            }
             
             if (!tableName) return;
 
             try {
-                // Delete all records where ID is NOT null (common Supabase trick to delete all)
-                // For user_ba, we assume there's an ID column or we can use neq(id, 0) if integer
+                // Logic Delete:
+                // Kita guna .neq(column, 'mustahil') untuk select semua row
+                // Contoh: Delete semua row di mana name != 'X_SYSTEM_X' (iaitu semua nama)
+                
                 const { data, error } = await supabase
                     .from(tableName)
                     .delete()
-                    .neq('name', 0) // Try to delete everything (assuming int/uuid ID not 0/null)
-                    // If ID is UUID you might need .neq('id', '00000000-0000-0000-0000-000000000000')
+                    .neq(targetColumn, 'X_MUSTAHIL_ADA_X') 
                     .select();
 
                 if (error) {
-                    // Fallback for UUID specific issues if simple delete fails
-                    // But usually RLS is the blocker, not syntax
                     throw error;
                 }
 
                 alert(`Berjaya! Data dalam '${tableName}' telah dipadam.`);
                 
-                // Refresh UI
+                // Refresh UI ikut table mana yang dipadam
                 if (tableName === 'rekod') fetchRecords();
                 if (tableName === 'personnel') {
                     document.getElementById('global-search').value = '';
                     document.getElementById('search-results-dropdown').classList.add('hidden');
                 }
-                if (tableName === 'user_ba') loadLoanData();
+                if (tableName === 'user_ba') {
+                    loadLoanData(); // Refresh dropdown user
+                }
 
             } catch (err) {
                 console.error('Delete Error:', err);
-                alert("Gagal memadam: " + err.message + "\n\nPastikan Policy 'DELETE' diaktifkan di Supabase.");
+                // Mesej Ralat Mesra Pengguna
+                if (err.message.includes('Policy')) {
+                    alert("Gagal memadam: Ralat 'Policy'.\nSila run SQL yang saya beri tadi di Supabase SQL Editor.");
+                } else if (err.message.includes('column')) {
+                     alert("Gagal memadam: " + err.message + "\nTable ini mungkin tiada column yang dicari.");
+                } else {
+                    alert("Gagal memadam: " + err.message);
+                }
             }
         }
-
         // --- Import Functions (Record & Master Data & Loan System) ---
         function triggerImport() { document.getElementById('excel-upload').click(); }
         function triggerMasterUpload() { document.getElementById('master-data-upload').click(); }
