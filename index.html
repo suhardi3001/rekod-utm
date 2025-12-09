@@ -271,7 +271,13 @@
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             <div class="space-y-6">
-                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Pengguna Baru</h6><input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh"><button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah</button></div>
+                                <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
+                                    <h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Pengguna Baru</h6>
+                                    <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
+                                    <!-- NEW EMAIL INPUT -->
+                                    <input id="newUserEmail" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Emel (Tanpa @moe.gov.my)">
+                                    <button onclick="addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah</button>
+                                </div>
                                 <div class="border p-4 rounded-lg bg-gray-50 shadow-sm"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Tambah Peranti Baru</h6><input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset"><select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2"><option>Notebook</option><option>Projector</option><option>HDMI Cable</option><option>Webcam</option></select><input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri"><button onclick="addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800 transition">Tambah</button></div>
                             </div>
                             <div class="border p-4 rounded-lg bg-white shadow-sm h-full"><h6 class="font-bold mb-3 text-gray-700 border-b pb-2">Senarai Pinjaman Aktif</h6><div class="table-container"><table class="min-w-full text-sm"><thead class="bg-gray-100 sticky top-0"><tr><th class="p-2 text-left">Peminjam</th><th class="p-2 text-left">Peranti</th><th class="p-2 text-left">Tamat</th></tr></thead><tbody id="active-loans-body"></tbody></table></div></div>
@@ -279,8 +285,35 @@
                     </div>
 
                     <div id="loan-tab-history" class="loan-tab-content hidden">
-                        <div class="mb-4 flex justify-between items-center"><h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6><div class="flex gap-2"><button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button><button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button></div></div>
-                        <div class="table-container border border-gray-200 rounded-lg"><table class="min-w-full text-sm"><thead class="bg-gray-100 text-gray-700"><tr><th class="p-3 text-left w-32">Tarikh Mohon</th><th class="p-3 text-left w-40">Peminjam</th><th class="p-3 text-left w-32">Peranti</th><th class="p-3 text-left w-40">Tempoh</th><th class="p-3 text-left w-32">Pulang</th><th class="p-3 text-left w-24">Status</th></tr></thead><tbody id="loan-history-body" class="bg-white"></tbody></table></div>
+                        <div class="mb-4 flex justify-between items-center">
+                            <h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6>
+                            <div class="flex gap-2">
+                                <button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button>
+                                <button onclick="exportLoanHistoryToPDF()" class="bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700"><i data-lucide="file-down" class="w-3 h-3"></i> PDF</button>
+                                <button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+                                
+                                <!-- NEW CLEAR BUTTON -->
+                                <button onclick="confirmClearLoanHistory()" class="admin-only hidden bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded text-xs hover:bg-red-200 flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Clear All</button>
+                            </div>
+                        </div>
+                        <div class="table-container border border-gray-200 rounded-lg">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-100 text-gray-700">
+                                    <tr>
+                                        <th class="p-3 text-left w-32">Tarikh Mohon</th>
+                                        <th class="p-3 text-left w-40">Peminjam</th>
+                                        <th class="p-3 text-left w-32">Peranti</th>
+                                        <th class="p-3 text-left w-40">Tempoh</th>
+                                        <th class="p-3 text-left w-32">Pulang</th>
+                                        <th class="p-3 text-left w-24">Status</th>
+                                        <!-- NEW COLUMNS -->
+                                        <th class="p-3 text-left w-32">Pegawai Pengeluar</th>
+                                        <th class="p-3 text-left w-32">Pegawai Penerima</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="loan-history-body" class="bg-white"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -304,6 +337,11 @@
             <div class="p-4 overflow-y-auto flex-grow">
                 <table class="w-full text-sm text-left"><thead class="bg-gray-100"><tr><th class="p-2">Nama</th><th class="p-2">Emel</th><th class="p-2">Peranti</th><th class="p-2">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead><tbody id="overdue-list-body"></tbody></table>
                 <div id="no-overdue-msg" class="hidden text-center py-8 text-gray-500">Tiada lewat.</div>
+            </div>
+            <!-- BULK SEND BUTTON ADDED HERE -->
+            <div class="p-4 border-t bg-gray-50 flex justify-end gap-2">
+                <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Tutup</button>
+                <button onclick="sendAllOverdueEmails()" class="px-4 py-2 bg-orange-600 text-white font-bold rounded hover:bg-orange-700 flex items-center gap-2"><i data-lucide="mail-plus" class="w-4 h-4"></i> Hantar Semua</button>
             </div>
         </div>
     </div>
@@ -335,6 +373,7 @@
         }
 
         let currentRecords = [], currentLoanHistory = [], clearActionType = '';
+        let currentOverdueList = []; // STORE OVERDUE LIST GLOBALLY
 
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -460,19 +499,22 @@
         // --- SUBMIT ---
         document.getElementById('data-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const sys = document.querySelector('input[name="system_type"]:checked').value;
-            const iss = document.getElementById('issue-dropdown').value;
-            const oth = document.getElementById('other-issue-input').value;
-            const note = `${sys} - ${iss}${iss==='Lain-lain' ? ' ('+oth+')' : ''}`;
-            const row = {
-                ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value,
-                telefon: document.getElementById('telefon').value, emel: document.getElementById('emel').value,
-                gred: document.getElementById('gred').value, kod_ptj: document.getElementById('kod_ptj').value,
-                department: document.getElementById('department').value, confirmation: 'TIDAK', notes: note,
-                submitted_by: currentUser.id, perekod: currentUser.email
-            };
-            const { error } = await supabase.from('rekod').insert([row]);
-            if(error) alert(error.message); else { showToast("Disimpan!"); document.getElementById('data-form').reset(); checkFormValidity(); }
+            try {
+                if(!currentUser) { alert("Sila refresh dan login."); return; }
+                const sys = document.querySelector('input[name="system_type"]:checked').value;
+                const iss = document.getElementById('issue-dropdown').value;
+                const oth = document.getElementById('other-issue-input').value;
+                const note = `${sys} - ${iss}${iss==='Lain-lain' ? ' ('+oth+')' : ''}`;
+                const row = {
+                    ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value,
+                    telefon: document.getElementById('telefon').value, emel: document.getElementById('emel').value,
+                    gred: document.getElementById('gred').value, kod_ptj: document.getElementById('kod_ptj').value,
+                    department: document.getElementById('department').value, confirmation: 'TIDAK', notes: note,
+                    submitted_by: currentUser.id, perekod: currentUser.email
+                };
+                const { error } = await supabase.from('rekod').insert([row]);
+                if(error) alert(error.message); else { showToast("Disimpan!"); document.getElementById('data-form').reset(); checkFormValidity(); }
+            } catch(e) { alert("Ralat: " + e.message); }
         });
 
         async function fetchRecords() {
@@ -504,27 +546,54 @@
             if(a) a.forEach(l => at.innerHTML += `<tr class="border-b"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`);
         }
 
+        // UPDATED SUBMIT LOAN FUNCTION (Safety Checks)
         async function submitLoan() {
-            const u = document.getElementById('loanUserName').value, d = document.getElementById('deviceSelect').value, s = document.getElementById('loanStartDate').value, e = document.getElementById('loanEndDate').value, t = document.getElementById('usageType').value;
-            if(!u || !d || !s || !e) return alert("Sila isi semua.");
-            const { error } = await supabase.from('rekod_pinjaman').insert([{ user_name: u, device_tag: d, start_date: s, end_date: e, usage_type: t, usage_details: document.getElementById('usageDetails').value, status: 'Active' }]);
-            if(!error) { await supabase.from('device_inventory').update({status:'Dipinjam'}).eq('tag',d); alert("Berjaya!"); document.getElementById('loanForm').reset(); loadLoanData(); }
-            else alert(error.message);
+            try {
+                if(!currentUser) { alert("Sila login semula."); return; }
+                const u = document.getElementById('loanUserName').value, d = document.getElementById('deviceSelect').value, s = document.getElementById('loanStartDate').value, e = document.getElementById('loanEndDate').value, t = document.getElementById('usageType').value;
+                if(!u || !d || !s || !e || !t) return alert("Sila isi semua (Nama, Peranti, Tarikh, Jenis).");
+                
+                const { error } = await supabase.from('rekod_pinjaman').insert([{ 
+                    user_name: u, device_tag: d, start_date: s, end_date: e, usage_type: t, 
+                    usage_details: document.getElementById('usageDetails').value, status: 'Active',
+                    pegawai_pengeluar: currentUser.email 
+                }]);
+                
+                if(!error) { await supabase.from('device_inventory').update({status:'Dipinjam'}).eq('tag',d); alert("Berjaya!"); document.getElementById('loanForm').reset(); loadLoanData(); }
+                else alert("Ralat: " + error.message + "\n(Check column 'pegawai_pengeluar')");
+            } catch(err) { alert("System Error: " + err.message); }
         }
 
+        // UPDATED SUBMIT RETURN FUNCTION (Safety Checks)
         async function submitReturn() {
-            const t = document.getElementById('returnSelect').value; if(!t) return;
-            const { data: l } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').single();
-            if(l) await supabase.from('rekod_pinjaman').update({status:'Returned', return_date: new Date()}).eq('id',l.id);
-            await supabase.from('device_inventory').update({status:'Tersedia'}).eq('tag',t);
-            alert("Dipulangkan!"); loadLoanData();
+            try {
+                if(!currentUser) { alert("Sila login semula."); return; }
+                const t = document.getElementById('returnSelect').value; if(!t) return;
+                const { data: l } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').single();
+                if(l) await supabase.from('rekod_pinjaman').update({
+                    status:'Returned', return_date: new Date(), pegawai_penerima: currentUser.email
+                }).eq('id',l.id);
+                await supabase.from('device_inventory').update({status:'Tersedia'}).eq('tag',t);
+                alert("Dipulangkan!"); loadLoanData();
+            } catch(err) { alert("System Error: " + err.message); }
         }
 
         async function loadLoanHistory() {
             const { data } = await supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false});
             currentLoanHistory = data || [];
             const tb = document.getElementById('loan-history-body'); tb.innerHTML = '';
-            if(data) data.forEach(l => tb.innerHTML += `<tr class="border-b"><td class="p-3">${new Date(l.created_at).toLocaleDateString()}</td><td class="p-3">${l.user_name}</td><td class="p-3">${l.device_tag}</td><td class="p-3">${l.start_date} - ${l.end_date}</td><td class="p-3">${l.return_date?new Date(l.return_date).toLocaleDateString():'-'}</td><td class="p-3">${l.status}</td></tr>`);
+            if(data) data.forEach(l => {
+                tb.innerHTML += `<tr class="border-b">
+                    <td class="p-3">${new Date(l.created_at).toLocaleDateString()}</td>
+                    <td class="p-3">${l.user_name}</td>
+                    <td class="p-3">${l.device_tag}</td>
+                    <td class="p-3">${l.start_date} - ${l.end_date}</td>
+                    <td class="p-3">${l.return_date?new Date(l.return_date).toLocaleDateString():'-'}</td>
+                    <td class="p-3">${l.status}</td>
+                    <td class="p-3 text-xs text-gray-600">${l.pegawai_pengeluar || '-'}</td>
+                    <td class="p-3 text-xs text-gray-600">${l.pegawai_penerima || '-'}</td>
+                </tr>`
+            });
         }
 
         // --- BULK / ADMIN ---
@@ -574,20 +643,40 @@
         }
 
         // --- CLEAR DB ---
-        function confirmClearDatabase() { clearActionType='rekod'; document.getElementById('delete-modal').classList.remove('hidden'); }
-        function confirmClearMasterDatabase() { clearActionType='personnel'; document.getElementById('delete-modal').classList.remove('hidden'); }
-        function confirmClearUserDatabase() { clearActionType='user_ba'; document.getElementById('delete-modal').classList.remove('hidden'); }
+        function confirmClearDatabase() { clearActionType='rekod'; openDelModal("Padam REKOD HARIAN?", "Adakah anda pasti? Semua log panggilan akan dipadam."); }
+        function confirmClearMasterDatabase() { clearActionType='personnel'; openDelModal("Padam DATA INDUK?", "Carian tidak akan berfungsi sehingga data diupload semula."); }
+        function confirmClearUserDatabase() { clearActionType='user_ba'; openDelModal("Padam SEMUA PENGGUNA?", "Senarai nama peminjam akan kosong."); }
+        function confirmClearLoanHistory() { clearActionType='rekod_pinjaman'; openDelModal("Padam SEJARAH PINJAMAN?", "Adakah anda pasti mahu memadam <strong>SEMUA REKOD PINJAMAN</strong>? Data pemulangan dan status akan hilang."); }
+
+        function openDelModal(title, msg) {
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-message').innerHTML = msg;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+        
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
 
         async function executeClearDatabase() {
             closeDeleteModal(); showToast("Deleting...");
             let tbl = clearActionType, col = 'id';
             if(tbl==='user_ba') col = 'name'; // FIX for user_ba
+            
             try {
-                const { error } = await supabase.from(tbl).delete().neq(col, 'X_INVALID');
+                // Generic delete all strategy
+                const { error } = await supabase.from(tbl).delete().neq(col, 'X_IMPOSSIBLE_VAL'); // Deletes everything if col is not 'X...'
+                
                 if(error) throw error;
-                alert("Deleted."); if(tbl==='rekod') fetchRecords(); if(tbl==='user_ba') loadLoanData();
-            } catch(e) { alert("Delete failed: "+e.message); }
+                alert("Berjaya dipadam.");
+                
+                if(tbl==='rekod') fetchRecords();
+                if(tbl==='user_ba') loadLoanData();
+                if(tbl==='rekod_pinjaman') loadLoanHistory();
+                if(tbl==='personnel') {
+                     document.getElementById('global-search').value = '';
+                     document.getElementById('search-results-dropdown').classList.add('hidden');
+                }
+
+            } catch(e) { alert("Gagal memadam: "+e.message); }
         }
 
         // --- OVERDUE ---
@@ -598,12 +687,26 @@
             const today = new Date(); today.setHours(0,0,0,0);
             const overdue = loans.filter(l => new Date(l.end_date) < today);
             
+            // Store for bulk sending
+            currentOverdueList = [];
+
             const tb = document.getElementById('overdue-list-body'); tb.innerHTML = '';
             document.getElementById('no-overdue-msg').classList.toggle('hidden', overdue.length > 0);
             
             overdue.forEach(l => {
                 const u = users.find(x => x.name.toLowerCase() === l.user_name.toLowerCase());
-                let email = u && u.emel && u.emel.includes('@') ? u.emel : `${l.user_name.trim().toLowerCase().replace(/[^a-z0-9]/g,'.')}@moe.gov.my`;
+                
+                // UPDATED EMAIL LOGIC
+                let email = '';
+                if (u && u.emel && u.emel.trim() !== '') {
+                    email = u.emel.includes('@') ? u.emel : u.emel.trim() + '@moe.gov.my';
+                } else {
+                    email = `${l.user_name.trim().toLowerCase().replace(/[^a-z0-9]/g,'.')}@moe.gov.my`;
+                }
+                
+                // Push email to list
+                currentOverdueList.push(email);
+
                 const subj = encodeURIComponent("PERINGATAN: Pemulangan Peranti ICT");
                 const body = encodeURIComponent(`Salam ${l.user_name},\n\nPinjaman peranti ${l.device_tag} telah tamat pada ${l.end_date}.\nSila pulangkan segera.\n\nTerima kasih.`);
                 tb.innerHTML += `<tr class="border-b hover:bg-orange-50"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600 text-xs">${email}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600 font-bold">${l.end_date}</td><td class="p-2 text-center"><a href="mailto:${email}?subject=${subj}&body=${body}" target="_blank" class="bg-orange-600 text-white px-3 py-1 rounded text-xs">Hantar</a></td></tr>`;
@@ -611,12 +714,84 @@
             document.getElementById('overdue-modal').classList.remove('hidden');
         }
 
-        async function addUser() { const n = document.getElementById('newUserName').value; if(n) { await supabase.from('user_ba').insert([{name:n}]); loadLoanData(); } }
+        function sendAllOverdueEmails() {
+            if (!currentOverdueList || currentOverdueList.length === 0) {
+                alert("Tiada penerima dalam senarai. Sila pastikan senarai tidak kosong.");
+                return;
+            }
+            
+            // Remove duplicates to avoid spamming the same person
+            const uniqueEmails = [...new Set(currentOverdueList)];
+            const recipients = uniqueEmails.join(','); // Join with comma for standard 'To' field
+            
+            const subject = encodeURIComponent("PERINGATAN PUKAL: Pemulangan Peranti ICT");
+            const body = encodeURIComponent(
+                "Salam Sejahtera Tuan/Puan,\n\n" +
+                "Merujuk kepada rekod kami, anda mempunyai pinjaman peranti ICT yang telah tamat tempoh.\n" +
+                "Sila pulangkan peranti tersebut ke Unit IT dengan segera.\n\n" +
+                "Sekiranya anda telah memulangkan peranti, sila abaikan emel ini.\n\n" +
+                "Terima kasih.\nUnit Teknologi Maklumat"
+            );
+
+            // Robust Mailto Trigger (Using recipients directly in the address part)
+            const link = document.createElement('a');
+            link.href = `mailto:${recipients}?subject=${subject}&body=${body}`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => document.body.removeChild(link), 100);
+        }
+
+        async function addUser() { 
+            const n = document.getElementById('newUserName').value; 
+            const e = document.getElementById('newUserEmail').value; // Get email
+            if(!n) return; 
+            
+            // Insert name AND email
+            const { error } = await supabase.from('user_ba').insert([{name:n, emel: e}]);
+            
+            if(error) alert("Ralat: " + error.message);
+            else { 
+                alert("User Added"); 
+                document.getElementById('newUserName').value = ''; 
+                document.getElementById('newUserEmail').value = ''; // Clear email input
+                loadLoanData(); 
+            } 
+        }
+        
         async function addDevice() { const t = document.getElementById('newTag').value; if(t) { await supabase.from('device_inventory').insert([{tag:t, type:document.getElementById('newType').value, serial:document.getElementById('newSerial').value, status:'Tersedia'}]); loadLoanData(); } }
         function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.remove('opacity-0','translate-y-20'); setTimeout(()=>t.classList.add('opacity-0','translate-y-20'), 3000); }
         function exportToExcel() { if(currentRecords.length) XLSX.writeFile(XLSX.utils.json_to_sheet(currentRecords), "Log.xlsx"); }
         function exportToPDF() { if(currentRecords.length) { const d=new window.jspdf.jsPDF('l'); d.autoTable({head:[['Date','Name','Dept','Note']],body:currentRecords.map(r=>[r.created_at,r.nama,r.department,r.notes])}); d.save("Log.pdf"); } }
-        function exportLoanHistoryToExcel() { if(currentLoanHistory.length) XLSX.writeFile(XLSX.utils.json_to_sheet(currentLoanHistory), "Loans.xlsx"); }
+        
+        // UPDATED EXPORT FUNCTIONS TO INCLUDE PEGAWAI
+        function exportLoanHistoryToExcel() { 
+            if(currentLoanHistory.length) {
+                const data = currentLoanHistory.map(l => ({
+                    ...l,
+                    Pegawai_Pengeluar: l.pegawai_pengeluar,
+                    Pegawai_Penerima: l.pegawai_penerima
+                }));
+                XLSX.writeFile(XLSX.utils.json_to_sheet(data), "Loans.xlsx"); 
+            }
+        }
+        function exportLoanHistoryToPDF() { 
+            if(currentLoanHistory.length) { 
+                const d = new window.jspdf.jsPDF(); 
+                d.autoTable({
+                    head:[['Date','User','Device','Status','Pengeluar','Penerima']], 
+                    body:currentLoanHistory.map(r=>[
+                        new Date(r.created_at).toLocaleDateString(),
+                        r.user_name,
+                        r.device_tag,
+                        r.status,
+                        r.pegawai_pengeluar || '-',
+                        r.pegawai_penerima || '-'
+                    ])
+                }); 
+                d.save("Loans.pdf"); 
+            } 
+        }
     </script>
 </body>
 </html>
