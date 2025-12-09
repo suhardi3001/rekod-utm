@@ -1406,7 +1406,7 @@
                 const { data, error } = await supabase
                     .from(tableName)
                     .delete()
-                    .neq('id', 0) // Try to delete everything (assuming int/uuid ID not 0/null)
+                    .neq('name', 0) // Try to delete everything (assuming int/uuid ID not 0/null)
                     // If ID is UUID you might need .neq('id', '00000000-0000-0000-0000-000000000000')
                     .select();
 
