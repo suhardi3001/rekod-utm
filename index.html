@@ -305,7 +305,7 @@
                     </div>
 
                     <div id="loan-tab-history" class="loan-tab-content hidden">
-                        <div class="mb-4 flex justify-between items-center"><h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6><div class="flex gap-2"><button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button><button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button></div></div>
+                        <div class="mb-4 flex justify-between items-center"><h6 class="font-bold text-gray-700">Sejarah Pinjaman</h6><div class="flex gap-2"><button onclick="exportLoanHistoryToExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i data-lucide="sheet" class="w-3 h-3"></i> Excel</button><button onclick="exportLoanHistoryToPDF()" class="bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700"><i data-lucide="file-down" class="w-3 h-3"></i> PDF</button><button onclick="loadLoanHistory()" class="bg-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 text-xs"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button></div></div>
                         <div class="table-container border border-gray-200 rounded-lg">
                             <table class="min-w-full text-sm">
                                 <thead class="bg-gray-100 text-gray-700">
@@ -929,9 +929,17 @@
             currentLoanHistory = loans || [];
             tb.innerHTML = '';
             
+            const today = new Date(); 
+            today.setHours(0,0,0,0); // normalize time for correct comparison
+
             if(loans) loans.forEach(l => {
+                // Check Overdue Status
+                const endDate = new Date(l.end_date);
+                const isOverdue = l.status === 'Active' && endDate < today;
+                const overdueClass = isOverdue ? 'bg-red-100 text-red-900 font-bold' : 'hover:bg-gray-50';
+
                 tb.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
+                <tr class="border-b ${overdueClass}">
                     <td class="p-3 align-top">${new Date(l.created_at).toLocaleDateString()}</td>
                     <td class="p-3 align-top font-medium">${l.user_name}</td>
                     <td class="p-3 align-top text-blue-600">${l.device_tag}</td>
@@ -1148,22 +1156,93 @@
                 return;
             }
 
-            const dataToExport = currentLoanHistory.map(l => ({
-                "Tarikh Mohon": new Date(l.created_at).toLocaleDateString('ms-MY'),
-                "Peminjam": l.user_name,
-                "Tag Peranti": l.device_tag,
-                "Mula": l.start_date,
-                "Tamat": l.end_date,
-                "Dikeluarkan Oleh": resolveName(l.issued_by),
-                "Tarikh Pulang": l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
-                "Diterima Oleh": resolveName(l.received_by),
-                "Status": l.status
-            }));
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const dataToExport = currentLoanHistory.map(l => {
+                // Check if Active & Overdue
+                const endDate = new Date(l.end_date);
+                const isOverdue = l.status === 'Active' && endDate < today;
+                
+                // Highlight text for Excel since colors are limited in basic JS export
+                const statusText = isOverdue ? "Active (LEWAT)" : l.status;
+
+                return {
+                    "Tarikh Mohon": new Date(l.created_at).toLocaleDateString('ms-MY'),
+                    "Peminjam": l.user_name,
+                    "Tag Peranti": l.device_tag,
+                    "Mula": l.start_date,
+                    "Tamat": l.end_date,
+                    "Dikeluarkan Oleh": resolveName(l.issued_by),
+                    "Tarikh Pulang": l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
+                    "Diterima Oleh": resolveName(l.received_by),
+                    "Status": statusText
+                };
+            });
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Sejarah Pinjaman");
             XLSX.writeFile(wb, `Sejarah_Pinjaman_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportLoanHistoryToPDF() {
+            if (!currentLoanHistory || currentLoanHistory.length === 0) {
+                alert("Tiada rekod sejarah pinjaman untuk diexport.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.setFontSize(14); doc.text("Laporan Sejarah Pinjaman ICT", 14, 15);
+            doc.setFontSize(10); doc.text(`Dijana pada: ${new Date().toLocaleString('ms-MY')}`, 14, 22);
+
+            const tableColumn = ["Tarikh Mohon", "Peminjam", "Peranti", "Mula", "Tamat", "Dikeluarkan", "Pulang", "Diterima", "Status"];
+            const tableRows = [];
+            const today = new Date(); 
+            today.setHours(0,0,0,0);
+
+            currentLoanHistory.forEach(l => {
+                tableRows.push([
+                    new Date(l.created_at).toLocaleDateString('ms-MY'),
+                    l.user_name,
+                    l.device_tag,
+                    l.start_date,
+                    l.end_date,
+                    resolveName(l.issued_by),
+                    l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
+                    resolveName(l.received_by),
+                    l.status
+                ]);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 28,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [30, 64, 175] },
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        // Check original data based on row index
+                        const originalRecord = currentLoanHistory[data.row.index];
+                        if (originalRecord) {
+                            const endDate = new Date(originalRecord.end_date);
+                            const isOverdue = originalRecord.status === 'Active' && endDate < today;
+                            
+                            // If overdue, color row red
+                            if (isOverdue) {
+                                data.cell.styles.fillColor = [254, 202, 202]; // bg-red-200
+                                data.cell.styles.textColor = [153, 27, 27];   // text-red-800
+                                data.cell.styles.fontStyle = 'bold';
+                            }
+                        }
+                    }
+                }
+            });
+
+            doc.save(`Sejarah_Pinjaman_${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
 </body>
