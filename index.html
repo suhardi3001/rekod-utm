@@ -34,27 +34,72 @@
         table { width: 100%; min-width: 800px; border-collapse: collapse; }
         th, td { white-space: normal !important; padding: 0.75rem; vertical-align: top; }
 
-        /* Animations */
-        #liquid-overlay {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 0%;
-            background: #1e40af; z-index: 9999; pointer-events: none;
-            transition: height 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+        /* --- NETFLIX STYLE LOGIN ANIMATION --- */
+        .login-btn-anim {
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
-        #liquid-overlay.active { height: 100%; }
+        
+        /* Loading State: Netflix Style "UTM" */
+        .login-btn-anim.loading {
+            background-color: #000000 !important; /* Netflix Black */
+            color: transparent !important; /* Hide "Log Masuk" */
+            pointer-events: none;
+            border: 1px solid #1a1a1a;
+            /* Do not shrink width so text fits */
+        }
+        
+        .login-btn-anim.loading::after {
+            content: "UTM";
+            position: absolute;
+            color: #E50914; /* Netflix Red */
+            font-family: 'Arial Black', 'Arial', sans-serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            animation: netflix-zoom 2s ease-in-out infinite;
+            text-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+        }
 
-        .liquid-btn { position: relative; overflow: hidden; transition: all 0.5s; }
-        .liquid-btn.melting {
-            width: 50px !important; border-radius: 50% !important;
-            color: transparent !important; background-color: #e0f2fe; pointer-events: none; padding: 0 !important;
+        @keyframes netflix-zoom {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 25px rgba(229, 9, 20, 1); }
+            100% { transform: scale(1); opacity: 0.8; }
         }
-        .liquid-btn.melting #btn-text { display: none; }
-        .btn-wave {
-            position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%;
-            background-color: #3b82f6; border-radius: 40%; opacity: 0;
-            transform: rotate(0deg); transition: opacity 0.3s; z-index: 0;
+
+        /* Success State: Green Checkmark */
+        .login-btn-anim.success {
+            width: 50px !important; /* Shrink to circle only on success */
+            border-radius: 50px !important;
+            background-color: #22c55e !important; /* Green-500 */
+            color: transparent !important;
+            pointer-events: none;
         }
-        .liquid-btn.melting .btn-wave { opacity: 1; animation: spin 2s linear infinite, rise 10s linear forwards; bottom: 0; }
-        @keyframes rise { 0% { bottom: -60%; } 100% { bottom: -10%; } }
+
+        .login-btn-anim.success::after {
+            content: ""; /* Remove UTM text */
+            display: none;
+        }
+
+        .login-btn-anim.success::before {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 24px;
+            border-right: 4px solid white;
+            border-bottom: 4px solid white;
+            transform: rotate(45deg) translate(-2px, -2px);
+            animation: checkmark 0.3s ease-in-out forwards;
+        }
+
+        @keyframes checkmark {
+            0% { opacity: 0; transform: rotate(45deg) scale(0.5) translate(-2px, -2px); }
+            100% { opacity: 1; transform: rotate(45deg) scale(1) translate(-2px, -2px); }
+        }
 
         /* Active Tab Styles */
         .tab-active-main { background-color: #1e3a8a !important; /* blue-900 */ }
@@ -64,13 +109,6 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-
-    <!-- ANIMATION OVERLAY -->
-    <div id="liquid-overlay">
-        <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl opacity-0 transition-opacity duration-300 delay-300" id="splash-text">
-            SISTEM REKOD iGFMAS
-        </div>
-    </div>
 
     <!-- LOGIN SCREEN -->
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -91,10 +129,9 @@
                 </div>
                 <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded border border-red-200 whitespace-pre-line"></div>
                 
-                <div class="flex justify-center w-full">
-                    <button type="submit" id="login-btn" class="liquid-btn relative w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center h-[50px]">
-                        <span class="z-10 relative" id="btn-text">Log Masuk</span>
-                        <span class="btn-wave"></span>
+                <div class="flex justify-center w-full h-[60px]"> <!-- Fixed height container for button -->
+                    <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 h-[50px]">
+                        <span id="btn-text">Log Masuk</span>
                     </button>
                 </div>
             </form>
@@ -419,16 +456,32 @@
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('email').value, password = document.getElementById('password').value;
-            const btn = document.getElementById('login-btn'); btn.classList.add('melting');
+            const btn = document.getElementById('login-btn'); 
+            
+            // Start Animation
+            btn.classList.add('loading');
+            
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if(error) throw error;
-                await new Promise(r => setTimeout(r, 1000));
-                document.getElementById('liquid-overlay').classList.add('active');
-                document.getElementById('splash-text').classList.remove('opacity-0');
-                setTimeout(() => { currentUser = data.user; showApp(); document.getElementById('liquid-overlay').style.transform = "translateY(-100%)"; }, 800);
+                
+                // Show Success State
+                setTimeout(() => {
+                    btn.classList.remove('loading');
+                    btn.classList.add('success');
+                    
+                    // Trigger Page Transition after success
+                    setTimeout(() => { 
+                        currentUser = data.user; 
+                        showApp(); 
+                        // Reset button state for next logout/login
+                        btn.classList.remove('success');
+                    }, 2000);
+                }, 1000); // Fake load time for visual
+
             } catch(e) {
-                btn.classList.remove('melting');
+                // Reset Button on Error
+                btn.classList.remove('loading');
                 document.getElementById('login-error').innerText = "Login Failed: " + e.message;
                 document.getElementById('login-error').classList.remove('hidden');
             }
