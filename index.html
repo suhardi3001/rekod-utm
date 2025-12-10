@@ -379,6 +379,20 @@
         let currentRecords = [], currentLoanHistory = [], clearActionType = '';
         let cachedUserMap = {}; // Global cache for user mapping
 
+        // --- GLOBAL HELPER: RESOLVE NAME ---
+        const resolveName = (val) => {
+            if(!val) return '-';
+            // 1. Check map
+            if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
+            // 2. Fallback: Format email if it looks like one
+            if(val.includes('@')) {
+                // "ali.abu@moe.gov.my" -> "Ali Abu"
+                return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            }
+            // 3. Last resort: Return raw value (e.g. UUID)
+            return val;
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof lucide !== 'undefined') lucide.createIcons();
             if(supabase) checkAuth();
@@ -705,20 +719,6 @@
                     return;
                 }
 
-                // Helper to resolve name from email/uuid
-                const resolveName = (val) => {
-                    if(!val) return '-';
-                    // 1. Check map
-                    if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-                    // 2. Fallback: Format email if it looks like one
-                    if(val.includes('@')) {
-                        // "ali.abu@moe.gov.my" -> "Ali Abu"
-                        return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                    }
-                    // 3. Last resort: Return raw value (e.g. UUID)
-                    return val;
-                };
-
                 records.forEach(r => {
                     const statusClass = r.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
                     const updatedDate = r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-';
@@ -895,19 +895,35 @@
         }
 
         async function loadLoanHistory() {
-            const { data } = await supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false});
-            currentLoanHistory = data || [];
-            const tb = document.getElementById('loan-history-body'); tb.innerHTML = '';
-            if(data) data.forEach(l => {
+            const tb = document.getElementById('loan-history-body'); 
+            tb.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loader"></div></td></tr>';
+
+            // Fetch loans and users in parallel to build name map
+            const [ { data: loans }, { data: users } ] = await Promise.all([
+                supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false}),
+                supabase.from('user_ba').select('name, emel')
+            ]);
+            
+            // Update global cache
+            if(users) {
+                users.forEach(u => {
+                    if(u.emel) cachedUserMap[u.emel.toLowerCase()] = u.name;
+                });
+            }
+
+            currentLoanHistory = loans || [];
+            tb.innerHTML = '';
+            
+            if(loans) loans.forEach(l => {
                 tb.innerHTML += `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="p-3 align-top">${new Date(l.created_at).toLocaleDateString()}</td>
                     <td class="p-3 align-top font-medium">${l.user_name}</td>
                     <td class="p-3 align-top text-blue-600">${l.device_tag}</td>
                     <td class="p-3 align-top text-xs">${l.start_date} - ${l.end_date}</td>
-                    <td class="p-3 align-top text-xs text-gray-500">${l.issued_by || '-'}</td>
+                    <td class="p-3 align-top text-xs text-blue-700 font-semibold">${resolveName(l.issued_by)}</td>
                     <td class="p-3 align-top">${l.return_date?new Date(l.return_date).toLocaleDateString():'-'}</td>
-                    <td class="p-3 align-top text-xs text-gray-500">${l.received_by || '-'}</td>
+                    <td class="p-3 align-top text-xs text-gray-500">${resolveName(l.received_by)}</td>
                     <td class="p-3 align-top"><span class="px-2 py-1 rounded text-xs ${l.status==='Active'?'bg-green-100 text-green-800':'bg-gray-200 text-gray-800'}">${l.status}</span></td>
                 </tr>`;
             });
@@ -1020,14 +1036,6 @@
                 return;
             }
 
-            // Helper to reuse resolution logic
-            const resolveName = (val) => {
-                if(!val) return '-';
-                if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-                if(val.includes('@')) return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                return val;
-            };
-
             const dataToExport = currentRecords.map(r => ({
                 "Tarikh & Masa": new Date(r.created_at).toLocaleString('ms-MY'),
                 "No. K/P": r.ic_number,
@@ -1051,13 +1059,6 @@
                 alert("Tiada rekod untuk diexport. Sila muat semula data.");
                 return;
             }
-
-            const resolveName = (val) => {
-                if(!val) return '-';
-                if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-                if(val.includes('@')) return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                return val;
-            };
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'mm', 'a4'); 
@@ -1102,9 +1103,9 @@
                 "Tag Peranti": l.device_tag,
                 "Mula": l.start_date,
                 "Tamat": l.end_date,
-                "Dikeluarkan Oleh": l.issued_by || '-',
+                "Dikeluarkan Oleh": resolveName(l.issued_by),
                 "Tarikh Pulang": l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
-                "Diterima Oleh": l.received_by || '-',
+                "Diterima Oleh": resolveName(l.received_by),
                 "Status": l.status
             }));
 
