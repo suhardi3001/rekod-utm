@@ -604,14 +604,35 @@
                 
                 let { error } = await supabase.from('rekod').insert([row]);
 
-                // FAIL-SAFE FOR MISSING 'perekod' COLUMN
-                if (error && error.message && error.message.toLowerCase().includes("column") && error.message.includes("perekod")) {
-                    alert("AMARAN: Kolum 'perekod' tidak wujud dalam database 'rekod'. Sistem akan cuba simpan tanpa maklumat ini. Sila tambah kolum 'perekod' (text) di Supabase untuk mengelakkan ralat ini pada masa hadapan.");
+                // FAIL-SAFE FOR MISSING COLUMNS (submitted_by / perekod)
+                if (error && error.message && error.message.toLowerCase().includes("column")) {
+                    let safeRow = { ...row };
+                    let retryNeeded = false;
+
+                    if (error.message.includes("submitted_by")) {
+                        alert("AMARAN: Kolum 'submitted_by' tiada. Menyimpan data tanpa ID pengguna.");
+                        delete safeRow.submitted_by;
+                        retryNeeded = true;
+                    }
                     
-                    const safeRow = { ...row };
-                    delete safeRow.perekod;
-                    const retry = await supabase.from('rekod').insert([safeRow]);
-                    error = retry.error;
+                    if (error.message.includes("perekod")) {
+                        alert("AMARAN: Kolum 'perekod' tiada. Menyimpan data tanpa emel pengguna.");
+                        delete safeRow.perekod;
+                        retryNeeded = true;
+                    }
+
+                    if (retryNeeded) {
+                        const retry = await supabase.from('rekod').insert([safeRow]);
+                        error = retry.error;
+                        
+                        // Double-check: If we fixed one but the other is ALSO missing (database usually returns first error it finds)
+                        if (error && error.message.toLowerCase().includes("column")) {
+                             if (error.message.includes("perekod")) delete safeRow.perekod;
+                             if (error.message.includes("submitted_by")) delete safeRow.submitted_by;
+                             const finalRetry = await supabase.from('rekod').insert([safeRow]);
+                             error = finalRetry.error;
+                        }
+                    }
                 }
 
                 if(error) throw error;
@@ -1011,4 +1032,3 @@
     </script>
 </body>
 </html>
-</script>
