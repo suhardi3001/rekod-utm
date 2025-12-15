@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod Log & Pinjaman (Final)</title>
+    <title>Sistem Rekod Log & Pinjaman (Final v2)</title>
     
-    <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF and AutoTable for PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
+        /* Base Font Size Variable for Scaling */
+        :root { --base-font-size: 16px; }
+        html { font-size: var(--base-font-size); }
+
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .hidden-section { display: none !important; }
         .loader {
@@ -44,19 +45,17 @@
             overflow: hidden;
         }
         
-        /* Loading State: Netflix Style "UTM" */
         .login-btn-anim.loading {
-            background-color: #000000 !important; /* Netflix Black */
-            color: transparent !important; /* Hide "Log Masuk" */
+            background-color: #000000 !important;
+            color: transparent !important;
             pointer-events: none;
             border: 1px solid #1a1a1a;
-            /* Do not shrink width so text fits */
         }
         
         .login-btn-anim.loading::after {
             content: "UTM";
             position: absolute;
-            color: #E50914; /* Netflix Red */
+            color: #E50914;
             font-family: 'Arial Black', 'Arial', sans-serif;
             font-weight: 900;
             font-size: 1.8rem;
@@ -71,19 +70,15 @@
             100% { transform: scale(1); opacity: 0.8; }
         }
 
-        /* Success State: Green Checkmark */
         .login-btn-anim.success {
-            width: 50px !important; /* Shrink to circle only on success */
+            width: 50px !important;
             border-radius: 50px !important;
-            background-color: #22c55e !important; /* Green-500 */
+            background-color: #22c55e !important;
             color: transparent !important;
             pointer-events: none;
         }
 
-        .login-btn-anim.success::after {
-            content: ""; /* Remove UTM text */
-            display: none;
-        }
+        .login-btn-anim.success::after { content: ""; display: none; }
 
         .login-btn-anim.success::before {
             content: "";
@@ -101,16 +96,28 @@
             100% { opacity: 1; transform: rotate(45deg) scale(1) translate(-2px, -2px); }
         }
 
-        /* Active Tab Styles */
-        .tab-active-main { background-color: #1e3a8a !important; /* blue-900 */ }
+        .tab-active-main { background-color: #1e3a8a !important; }
         .tab-inactive-main { background-color: transparent; }
         .tab-active-sub { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
         .tab-inactive-sub { color: #6b7280; border-bottom: 2px solid transparent; }
+        
+        /* Font Control Buttons */
+        .font-ctrl-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .font-ctrl-btn:hover { background: rgba(255,255,255,0.4); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <!-- LOGIN SCREEN -->
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
             <div class="text-center mb-8 mt-4">
@@ -129,7 +136,7 @@
                 </div>
                 <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded border border-red-200 whitespace-pre-line"></div>
                 
-                <div class="flex justify-center w-full h-[60px]"> <!-- Fixed height container for button -->
+                <div class="flex justify-center w-full h-[60px]"> 
                     <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 h-[50px]">
                         <span id="btn-text">Log Masuk</span>
                     </button>
@@ -142,15 +149,20 @@
         <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting System...</div></div>
     </div>
 
-    <!-- MAIN APP -->
     <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 sm:px-6 lg:px-8"> 
                 <div class="flex flex-col md:flex-row items-center justify-between h-auto md:h-16 py-2 md:py-0">
                     <div class="flex flex-col md:flex-row items-center w-full md:w-auto">
-                        <span class="font-bold text-lg md:text-xl mb-2 md:mb-0 text-center md:text-left">Sistem Rekod<br>Unit Teknologi Maklumat</span>
-                        <div class="md:ml-10 flex flex-wrap justify-center gap-2">
-                            <!-- Main Tabs -->
+                        <span class="font-bold text-lg md:text-xl mb-2 md:mb-0 text-center md:text-left mr-4">Sistem Rekod<br>Unit Teknologi Maklumat</span>
+                        
+                        <div class="flex gap-1 mr-6">
+                            <button onclick="adjustFontSize(-1)" class="font-ctrl-btn" title="Kecilkan Font">A-</button>
+                            <button onclick="adjustFontSize(0)" class="font-ctrl-btn" title="Reset Font">R</button>
+                            <button onclick="adjustFontSize(1)" class="font-ctrl-btn" title="Besarkan Font">A+</button>
+                        </div>
+
+                        <div class="md:ml-4 flex flex-wrap justify-center gap-2">
                             <button onclick="switchMainTab('call-log')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex-grow md:flex-grow-0 tab-active-main" id="nav-call-log">Call Log</button>
                             <button onclick="switchMainTab('loan')" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex-grow md:flex-grow-0 tab-inactive-main" id="nav-loan">Pinjaman ICT</button>
                         </div>
@@ -171,10 +183,8 @@
             <input type="file" id="loan-inventory-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleLoanInventoryUpload(event)">
             <input type="file" id="loan-records-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleLoanRecordsUpload(event)">
 
-            <!-- CALL LOG -->
             <div id="call-log-section" class="w-full">
                 <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
-                    <!-- Call Log Sub Tabs -->
                     <button onclick="switchCallLogTab('search')" id="btn-sub-search" class="px-4 md:px-6 py-2 text-sm md:text-base font-medium whitespace-nowrap tab-active-sub">Carian & Input</button>
                     <button onclick="switchCallLogTab('records')" id="btn-sub-records" class="px-4 md:px-6 py-2 text-sm md:text-base font-medium whitespace-nowrap tab-inactive-sub hover:text-blue-600">Pangkalan Data Rekod</button>
                 </div>
@@ -210,6 +220,8 @@
                             <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full self-start md:self-auto" id="current-date"></span>
                         </div>
                         <form id="data-form" class="space-y-4">
+                            <input type="hidden" id="is-new-user" value="false">
+                            
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="relative group"><label class="block text-sm font-medium text-gray-700 mb-1">IC</label><div class="relative"><input type="text" id="ic" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('ic')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                 <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Nama</label><div class="relative"><input type="text" id="nama" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('nama')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
@@ -219,6 +231,12 @@
                                 <div class="relative"><label class="block text-sm font-medium text-gray-700 mb-1">Kod PTJ</label><div class="relative"><input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('kod_ptj')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                 <div class="relative md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Jabatan</label><div class="relative"><input type="text" id="department" class="w-full px-3 py-2 border rounded-lg bg-gray-50 read-only:text-gray-500" readonly><button type="button" onclick="enableEdit('department')" class="absolute right-2 top-2 text-gray-400 hover:text-blue-600"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                             </div>
+                            
+                            <div class="flex items-center space-x-2 mt-2">
+                                <input type="checkbox" id="save-to-master" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="save-to-master" class="text-sm text-gray-600">Simpan perubahan profil ke Data Induk (Master Data)</label>
+                            </div>
+
                             <div class="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
                                 <label class="block text-sm font-bold text-gray-800 mb-3">Kategori Sistem & Isu <span class="text-red-500">*</span></label>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="system-radio-group">
@@ -279,12 +297,10 @@
                 </div>
             </div>
 
-            <!-- PINJAMAN ICT -->
             <div id="loan-page" class="hidden-section space-y-6 w-full">
                 <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 mb-6"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
                     <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
-                        <!-- Loan Sub Tabs -->
                         <button onclick="switchLoanTab('loan-tab-borrow')" id="btn-loan-borrow" class="px-4 md:px-6 py-2 text-sm md:text-base font-medium whitespace-nowrap tab-active-sub">Pinjam</button>
                         <button onclick="switchLoanTab('loan-tab-return')" id="btn-loan-return" class="px-4 md:px-6 py-2 text-sm md:text-base font-medium whitespace-nowrap tab-inactive-sub hover:text-blue-600">Pulang</button>
                         <button onclick="switchLoanTab('loan-tab-admin')" id="btn-loan-admin" class="px-4 md:px-6 py-2 text-sm md:text-base font-medium whitespace-nowrap tab-inactive-sub hover:text-blue-600">Admin</button>
@@ -313,7 +329,6 @@
                         </div>
                     </div>
 
-                    <!-- ADMIN TAB -->
                     <div id="loan-tab-admin" class="loan-tab-content hidden">
                         <div class="mb-8 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
                             <h6 class="font-bold text-yellow-800 mb-3 flex items-center gap-2"><i data-lucide="upload-cloud"></i> Bulk Import & Data Management</h6>
@@ -366,7 +381,6 @@
         </main>
     </div>
 
-    <!-- MODALS -->
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50"></div>
 
     <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
@@ -387,7 +401,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT -->
     <script>
         const supabaseUrl = 'https://objxfgosatmasjjifkkg.supabase.co'; 
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw';
@@ -414,19 +427,30 @@
         }
 
         let currentRecords = [], currentLoanHistory = [], clearActionType = '';
-        let cachedUserMap = {}; // Global cache for user mapping
+        let cachedUserMap = {}; 
+        let currentFontSize = 16; // Base px
+
+        // --- FONT SIZE CONTROL ---
+        function adjustFontSize(delta) {
+            if(delta === 0) {
+                currentFontSize = 16;
+            } else {
+                currentFontSize += delta;
+            }
+            // Clamp min/max for sanity
+            if(currentFontSize < 12) currentFontSize = 12;
+            if(currentFontSize > 26) currentFontSize = 26; // "Max" limit
+            
+            document.documentElement.style.fontSize = currentFontSize + 'px';
+        }
 
         // --- GLOBAL HELPER: RESOLVE NAME ---
         const resolveName = (val) => {
             if(!val) return '-';
-            // 1. Check map
             if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-            // 2. Fallback: Format email if it looks like one
             if(val.includes('@')) {
-                // "ali.abu@moe.gov.my" -> "Ali Abu"
                 return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             }
-            // 3. Last resort: Return raw value (e.g. UUID)
             return val;
         };
 
@@ -457,30 +481,21 @@
             e.preventDefault();
             const email = document.getElementById('email').value, password = document.getElementById('password').value;
             const btn = document.getElementById('login-btn'); 
-            
-            // Start Animation
             btn.classList.add('loading');
             
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if(error) throw error;
-                
-                // Show Success State
                 setTimeout(() => {
                     btn.classList.remove('loading');
                     btn.classList.add('success');
-                    
-                    // Trigger Page Transition after success
                     setTimeout(() => { 
                         currentUser = data.user; 
                         showApp(); 
-                        // Reset button state for next logout/login
                         btn.classList.remove('success');
                     }, 2000);
-                }, 1000); // Fake load time for visual
-
+                }, 1000);
             } catch(e) {
-                // Reset Button on Error
                 btn.classList.remove('loading');
                 document.getElementById('login-error').innerText = "Login Failed: " + e.message;
                 document.getElementById('login-error').classList.remove('hidden');
@@ -502,19 +517,14 @@
             document.getElementById('login-page').classList.add('hidden-section'); document.getElementById('app-layout').classList.remove('hidden-section'); 
             document.getElementById('user-display').innerText = currentUser.email; 
             switchMainTab('call-log');
-            checkAdminAccess(); // Trigger admin check on load
+            checkAdminAccess();
         }
 
         function checkAdminAccess() {
             const allowedAdmin = 'suhardi.alias@moe.gov.my';
             const isAdmin = currentUser && currentUser.email === allowedAdmin;
-
             document.querySelectorAll('.admin-only').forEach(el => {
-                if (isAdmin) {
-                    el.classList.remove('hidden');
-                } else {
-                    el.classList.add('hidden');
-                }
+                if (isAdmin) el.classList.remove('hidden'); else el.classList.add('hidden');
             });
         }
 
@@ -522,8 +532,6 @@
         function switchMainTab(id) {
             document.getElementById('call-log-section').classList.toggle('hidden-section', id!=='call-log');
             document.getElementById('loan-page').classList.toggle('hidden-section', id!=='loan');
-            
-            // Highlight Logic
             const btn1 = document.getElementById('nav-call-log');
             const btn2 = document.getElementById('nav-loan');
             if(id === 'call-log') {
@@ -541,10 +549,8 @@
         function switchCallLogTab(id) {
             document.getElementById('sub-search-page').classList.toggle('hidden-section', id!=='search');
             document.getElementById('sub-records-page').classList.toggle('hidden-section', id!=='records');
-            
             const btnSearch = document.getElementById('btn-sub-search');
             const btnRec = document.getElementById('btn-sub-records');
-            
             if(id === 'search') {
                 btnSearch.classList.add('tab-active-sub'); btnSearch.classList.remove('tab-inactive-sub', 'hover:text-blue-600');
                 btnRec.classList.add('tab-inactive-sub', 'hover:text-blue-600'); btnRec.classList.remove('tab-active-sub');
@@ -558,42 +564,62 @@
         function switchLoanTab(id) {
             document.querySelectorAll('.loan-tab-content').forEach(e => e.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            
-            // Tab Group Logic
             ['btn-loan-borrow', 'btn-loan-return', 'btn-loan-admin', 'btn-loan-history'].forEach(btnId => {
                 const btn = document.getElementById(btnId);
                 const isSelected = btnId === ('btn-' + id);
                 if(isSelected) {
-                    btn.classList.add('tab-active-sub');
-                    btn.classList.remove('tab-inactive-sub', 'hover:text-blue-600');
+                    btn.classList.add('tab-active-sub'); btn.classList.remove('tab-inactive-sub', 'hover:text-blue-600');
                 } else {
-                    btn.classList.add('tab-inactive-sub', 'hover:text-blue-600');
-                    btn.classList.remove('tab-active-sub');
+                    btn.classList.add('tab-inactive-sub', 'hover:text-blue-600'); btn.classList.remove('tab-active-sub');
                 }
             });
-
             if(id==='loan-tab-history') loadLoanHistory();
         }
 
-        // --- LOGIC ---
+        // --- SEARCH LOGIC UPDATED ---
         let searchTimeout = null;
         function handleLiveSearch(q) {
             const dd = document.getElementById('search-results-dropdown');
             if(searchTimeout) clearTimeout(searchTimeout);
             if(!q || q.length < 2) { dd.classList.add('hidden'); return; }
+            
             searchTimeout = setTimeout(async () => {
                 dd.classList.remove('hidden'); dd.innerHTML = '<div class="p-3 text-center">Searching...</div>';
                 
-                // UPDATED QUERY: Now searches nama, ic_number, kod_ptj, and department
                 const { data } = await supabase.from('personnel').select('*')
                     .or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%,department.ilike.%${q}%`)
                     .limit(5);
 
-                if(!data || !data.length) { dd.innerHTML = `<div class="p-3 text-center text-gray-500">Tiada rekod.</div>`; return; }
                 dd.innerHTML = '';
+
+                // ADDED: Logic to show "Add New User" if empty or just as an option
+                if(!data || !data.length) { 
+                     // Show "Add New" button
+                     const d = document.createElement('div');
+                     d.className = 'p-3 hover:bg-green-50 cursor-pointer border-b text-green-700 font-bold';
+                     d.innerHTML = `<i data-lucide="plus-circle" class="inline w-4 h-4 mr-2"></i>Tiada Rekod. Tambah "${q}"?`;
+                     d.onclick = () => {
+                         // Reset form for clean entry
+                         document.getElementById('data-form').reset();
+                         // Pre-fill Name with query
+                         document.getElementById('nama').value = q.toUpperCase();
+                         // Unlock all fields
+                         ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(k => enableEdit(k));
+                         
+                         // Mark as New User for saving logic
+                         document.getElementById('is-new-user').value = "true";
+                         
+                         dd.classList.add('hidden');
+                         checkFormValidity();
+                         if(typeof lucide!=='undefined') lucide.createIcons();
+                     };
+                     dd.appendChild(d);
+                     if(typeof lucide!=='undefined') lucide.createIcons();
+                     return; 
+                }
+
                 data.forEach(p => {
                     const d = document.createElement('div'); d.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b';
-                    // Enhanced display to show Dept/PTJ in dropdown so user knows what they found
                     d.innerHTML = `
                         <div class="font-bold text-sm">${p.nama}</div>
                         <div class="flex justify-between items-center mt-1">
@@ -604,6 +630,7 @@
                     `;
                     d.onclick = () => {
                         ['ic','nama','telefon','emel','gred','kod_ptj','department'].forEach(k => document.getElementById(k).value = p[k==='ic'?'ic_number':k]||'');
+                        document.getElementById('is-new-user').value = "false"; // Not new
                         dd.classList.add('hidden'); checkFormValidity();
                     };
                     dd.appendChild(d);
@@ -614,30 +641,19 @@
         function enableEdit(id) { const e = document.getElementById(id); e.readOnly=false; e.classList.replace('bg-gray-50','bg-white'); e.focus(); }
         
         function checkFormValidity() {
-            // 1. Check all text inputs
             const validText = ['ic','nama','telefon','emel','gred','kod_ptj','department'].every(id => {
                 const el = document.getElementById(id);
                 return el && el.value.trim() !== '';
             });
-
-            // 2. Check radio button (System)
             const validSystem = document.querySelector('input[name="system_type"]:checked') !== null;
-
-            // 3. Check dropdown (Issue)
             const validIssue = document.getElementById('issue-dropdown').value !== '';
-
-            const valid = validText && validSystem && validIssue;
             const btn = document.getElementById('submit-btn');
-
-            // Toggle Button State
-            btn.disabled = !valid;
+            btn.disabled = !(validText && validSystem && validIssue);
             
-            if (valid) {
-                // ENABLED STATE
+            if (!btn.disabled) {
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.classList.add('cursor-pointer', 'hover:scale-105', 'shadow-md');
             } else {
-                // DISABLED STATE
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
                 btn.classList.remove('cursor-pointer', 'hover:scale-105', 'shadow-md');
             }
@@ -658,95 +674,52 @@
             document.getElementById('issue-dropdown-container').classList.remove('hidden');
         }
 
-        // --- SUBMIT ---
+        // --- SUBMIT WITH MASTER DATA SAVE ---
         document.getElementById('data-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Safety Auth Check
-            if (!currentUser) {
-                await checkAuth();
-                if (!currentUser) {
-                    alert("Sesi tamat. Sila log masuk semula.");
-                    window.location.reload();
-                    return;
-                }
-            }
+            if (!currentUser) { await checkAuth(); if (!currentUser) return alert("Sesi tamat. Login semula."); }
 
             try {
                 const sysRadio = document.querySelector('input[name="system_type"]:checked');
-                if (!sysRadio) return alert("Sila pilih Kategori Sistem.");
-                
                 const sys = sysRadio.value;
                 const iss = document.getElementById('issue-dropdown').value;
-                if (!iss) return alert("Sila pilih Jenis Isu.");
-
                 const oth = document.getElementById('other-issue-input').value;
                 const note = `${sys} - ${iss}${iss==='Lain-lain' ? ' ('+oth+')' : ''}`;
                 
+                const icVal = document.getElementById('ic').value;
+                const nameVal = document.getElementById('nama').value;
+                const telVal = document.getElementById('telefon').value;
+                const emelVal = document.getElementById('emel').value;
+                const gredVal = document.getElementById('gred').value;
+                const ptjVal = document.getElementById('kod_ptj').value;
+                const deptVal = document.getElementById('department').value;
+                
+                // 1. Save Log Record
                 const row = {
-                    ic_number: document.getElementById('ic').value, 
-                    nama: document.getElementById('nama').value,
-                    telefon: document.getElementById('telefon').value, 
-                    emel: document.getElementById('emel').value,
-                    gred: document.getElementById('gred').value, 
-                    kod_ptj: document.getElementById('kod_ptj').value,
-                    department: document.getElementById('department').value, 
-                    confirmation: 'TIDAK', 
-                    notes: note,
-                    submitted_by: currentUser.id, 
-                    perekod: currentUser.email
+                    ic_number: icVal, nama: nameVal, telefon: telVal, emel: emelVal,
+                    gred: gredVal, kod_ptj: ptjVal, department: deptVal, 
+                    confirmation: 'TIDAK', notes: note, submitted_by: currentUser.id, perekod: currentUser.email
                 };
                 
                 let { error } = await supabase.from('rekod').insert([row]);
-
-                // FAIL-SAFE FOR MISSING COLUMNS OR WRONG TYPE (submitted_by / perekod)
-                if (error && error.message) {
-                    const msg = error.message.toLowerCase();
-                    let safeRow = { ...row };
-                    let retryNeeded = false;
-
-                    // CASE 1: Missing columns
-                    if (msg.includes("column") && msg.includes("submitted_by")) {
-                        delete safeRow.submitted_by;
-                        retryNeeded = true;
-                    }
-                    if (msg.includes("column") && msg.includes("perekod")) {
-                        delete safeRow.perekod;
-                        retryNeeded = true;
-                    }
-
-                    // CASE 2: Invalid UUID syntax (e.g. email passed to UUID column)
-                    if (msg.includes("invalid input syntax for type uuid")) {
-                        // If the error message mentions the email, then 'perekod' (which holds email) is likely set to UUID type
-                        if (msg.includes(currentUser.email)) {
-                            alert("SISTEM REPAIR: Kolum 'perekod' salah jenis (UUID). Menukar kepada ID pengguna untuk simpanan sementara.");
-                            safeRow.perekod = currentUser.id; // Send valid UUID instead of email
-                            retryNeeded = true;
-                        }
-                    }
-
-                    if (retryNeeded) {
-                        const retry = await supabase.from('rekod').insert([safeRow]);
-                        error = retry.error;
-                        
-                        // Double-check loop if multiple issues exist
-                        if (error && error.message) {
-                             const msg2 = error.message.toLowerCase();
-                             if (msg2.includes("column") && msg2.includes("perekod")) delete safeRow.perekod;
-                             if (msg2.includes("column") && msg2.includes("submitted_by")) delete safeRow.submitted_by;
-                             const finalRetry = await supabase.from('rekod').insert([safeRow]);
-                             error = finalRetry.error;
-                        }
-                    }
+                
+                // --- ADDED: Auto-Save to Master Data (personnel) ---
+                const saveToMaster = document.getElementById('save-to-master').checked;
+                if(saveToMaster && !error) {
+                    await saveToMasterData({
+                        ic_number: icVal, nama: nameVal, telefon: telVal, 
+                        emel: emelVal, gred: gredVal, kod_ptj: ptjVal, department: deptVal
+                    });
                 }
 
                 if(error) throw error;
                 
-                showToast("Disimpan!"); 
+                showToast("Disimpan (+ Data Induk Dikemaskini)!"); 
                 document.getElementById('data-form').reset(); 
-                // Reset manual UI states if needed
                 document.getElementById('issue-dropdown-container').classList.add('hidden');
                 document.getElementById('other-issue-container').classList.add('hidden');
+                // Reset New User flag
+                document.getElementById('is-new-user').value = 'false';
                 checkFormValidity();
 
             } catch (err) {
@@ -755,40 +728,44 @@
             }
         });
 
-        // --- FETCH RECORDS & UPDATE STATUS ---
+        async function saveToMasterData(dataObj) {
+            // Check if user exists by IC
+            const { data: existing } = await supabase.from('personnel').select('id').eq('ic_number', dataObj.ic_number).maybeSingle();
+            
+            if (existing) {
+                // Update
+                await supabase.from('personnel').update(dataObj).eq('ic_number', dataObj.ic_number);
+                logDebug("Master Data Updated for " + dataObj.ic_number);
+            } else {
+                // Insert New
+                await supabase.from('personnel').insert([dataObj]);
+                logDebug("New Master Data Created for " + dataObj.ic_number);
+            }
+        }
+
+        // --- FETCH RECORDS ---
         async function fetchRecords() {
             const tb = document.getElementById('table-body');
             tb.innerHTML = '<tr><td colspan="9" class="text-center"><div class="loader"></div></td></tr>';
 
             try {
-                // Fetch both records and user directory (Parallel for speed)
                 const [ { data: records, error: err1 }, { data: users, error: err2 } ] = await Promise.all([
                     supabase.from('rekod').select('*').order('created_at', { ascending: false }),
                     supabase.from('user_ba').select('name, emel')
                 ]);
 
                 if(err1) throw err1;
-
-                // Build User Map for Quick Lookup
                 cachedUserMap = {};
-                if(users) {
-                    users.forEach(u => {
-                        if(u.emel) cachedUserMap[u.emel.toLowerCase()] = u.name;
-                    });
-                }
+                if(users) users.forEach(u => { if(u.emel) cachedUserMap[u.emel.toLowerCase()] = u.name; });
 
                 currentRecords = records || [];
                 tb.innerHTML = '';
 
-                if(!records || !records.length) {
-                    tb.innerHTML = '<tr><td colspan="9" class="text-center">Tiada rekod.</td></tr>';
-                    return;
-                }
+                if(!records || !records.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center">Tiada rekod.</td></tr>'; return; }
 
                 records.forEach(r => {
                     const statusClass = r.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
                     const updatedDate = r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-';
-                    
                     const recName = resolveName(r.perekod);
                     const updName = resolveName(r.status_updated_by);
 
@@ -810,33 +787,13 @@
                             <td class="p-3 text-xs text-gray-500">${updName}</td>
                         </tr>`;
                 });
-            } catch(e) {
-                console.error(e);
-                tb.innerHTML = `<tr><td colspan="9" class="text-center text-red-500">Ralat Memuatkan Data: ${e.message}</td></tr>`;
-            }
+            } catch(e) { tb.innerHTML = `<tr><td colspan="9" class="text-center text-red-500">Ralat: ${e.message}</td></tr>`; }
         }
 
         async function updateRecordStatus(id, newValue) {
-            if(!currentUser) return alert("Sila login semula.");
-
-            // Prepare Update Payload
-            const updatePayload = {
-                confirmation: newValue,
-                status_updated_at: new Date(),
-                status_updated_by: currentUser.email
-            };
-
-            let { error } = await supabase.from('rekod').update(updatePayload).eq('id', id);
-
-            // ERROR HANDLING IF COLUMNS MISSING
-            if(error && error.message && error.message.toLowerCase().includes("column")) {
-                alert("WARNING: Status updated, but tracking failed. Please add columns 'status_updated_at' (timestamp) and 'status_updated_by' (text) to 'rekod' table.");
-                
-                // Fallback: Just update status without tracking info
-                await supabase.from('rekod').update({confirmation: newValue}).eq('id', id);
-            }
-
-            // Refresh table to show updated date/user/color
+            if(!currentUser) return alert("Login semula.");
+            const updatePayload = { confirmation: newValue, status_updated_at: new Date(), status_updated_by: currentUser.email };
+            await supabase.from('rekod').update(updatePayload).eq('id', id);
             fetchRecords(); 
         }
 
@@ -856,21 +813,13 @@
 
             const { data: a } = await supabase.from('rekod_pinjaman').select('*').eq('status','Active').order('created_at',{ascending:false});
             const at = document.getElementById('active-loans-body'); at.innerHTML = '';
-            
-            // --- UPDATED: Check for overdue items ---
             const today = new Date(); today.setHours(0,0,0,0);
 
             if(a) a.forEach(l => {
                 const endDate = new Date(l.end_date);
                 const isOverdue = endDate < today;
                 const overdueClass = isOverdue ? 'text-red-600 font-bold bg-red-50' : '';
-                
-                at.innerHTML += `
-                <tr class="border-b ${overdueClass}">
-                    <td class="p-2">${l.user_name}</td>
-                    <td class="p-2 text-blue-600">${l.device_tag}</td>
-                    <td class="p-2">${l.end_date}</td>
-                </tr>`;
+                at.innerHTML += `<tr class="border-b ${overdueClass}"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`;
             });
         }
 
@@ -883,136 +832,54 @@
                 const t = document.getElementById('usageType').value;
                 
                 if(!u || !d || !s || !e) return alert("Sila isi semua.");
+                if (new Date(s) > new Date(e)) return alert("Ralat: Tarikh Mula tidak boleh selepas Tarikh Tamat.");
+                if (!currentUser) { await checkAuth(); if(!currentUser) return alert("Login semula."); }
                 
-                // --- NEW LOGIC START ---
-                // Validate that Start Date is not after End Date
-                if (new Date(s) > new Date(e)) {
-                    return alert("Ralat: Tarikh Mula tidak boleh selepas Tarikh Tamat.");
-                }
-                // --- NEW LOGIC END ---
-
-                // Get Issuer (Ensure we have a valid user)
-                if (!currentUser) {
-                    await checkAuth(); // Try to refresh auth if missing
-                    if(!currentUser) return alert("Sila login semula.");
-                }
-                const issuer = currentUser.email;
-
-                // Basic Payload
                 const payload = { 
-                    user_name: u, 
-                    device_tag: d, 
-                    start_date: s, 
-                    end_date: e, 
-                    usage_type: t, 
-                    usage_details: document.getElementById('usageDetails').value, 
-                    status: 'Active',
-                    issued_by: issuer
+                    user_name: u, device_tag: d, start_date: s, end_date: e, 
+                    usage_type: t, usage_details: document.getElementById('usageDetails').value, 
+                    status: 'Active', issued_by: currentUser.email
                 };
 
                 let { error } = await supabase.from('rekod_pinjaman').insert([payload]);
-
-                // EXPLICIT ERROR HANDLING FOR MISSING COLUMNS
-                if (error && error.message && error.message.toLowerCase().includes("column")) {
-                    alert("RALAT: Kolum 'issued_by' tidak wujud dalam database. Sila tambah kolum 'issued_by' (text) dalam table 'rekod_pinjaman' di Supabase untuk merekod nama admin.");
-                    
-                    // Fallback: Try saving without the column so the loan still works
-                    logDebug("Retrying without 'issued_by' column...", true);
-                    const safePayload = { ...payload }; delete safePayload.issued_by;
-                    const retry = await supabase.from('rekod_pinjaman').insert([safePayload]);
-                    error = retry.error;
-                }
-
                 if(!error) { 
                     await supabase.from('device_inventory').update({status:'Dipinjam'}).eq('tag',d); 
-                    alert("Berjaya! Pinjaman direkod."); document.getElementById('loanForm').reset(); loadLoanData(); 
-                } else {
-                    alert("Ralat Simpan: " + error.message);
-                }
-            } catch(e) {
-                alert("Critical Error: " + e.message);
-            }
+                    alert("Berjaya!"); document.getElementById('loanForm').reset(); loadLoanData(); 
+                } else alert("Ralat: " + error.message);
+            } catch(e) { alert("Error: " + e.message); }
         }
 
         async function submitReturn() {
             try {
                 const t = document.getElementById('returnSelect').value; if(!t) return;
-                
-                const { data: l, error: fetchError } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').maybeSingle();
-                
-                if(fetchError) return alert("Ralat Carian: " + fetchError.message);
-
+                const { data: l } = await supabase.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').maybeSingle();
                 if(l) {
-                     // Get Receiver (Ensure we have a valid user)
-                    if (!currentUser) {
-                        await checkAuth();
-                        if(!currentUser) return alert("Sila login semula.");
-                    }
-                    const receiver = currentUser.email;
-                    
-                    const updatePayload = { 
-                        status: 'Returned', 
-                        return_date: new Date(),
-                        received_by: receiver 
-                    };
-                    
+                    if (!currentUser) { await checkAuth(); if(!currentUser) return alert("Login semula."); }
+                    const updatePayload = { status: 'Returned', return_date: new Date(), received_by: currentUser.email };
                     let { error } = await supabase.from('rekod_pinjaman').update(updatePayload).eq('id', l.id);
-
-                     // EXPLICIT ERROR HANDLING FOR MISSING COLUMNS
-                    if (error && error.message && error.message.toLowerCase().includes("column")) {
-                        alert("RALAT: Kolum 'received_by' tidak wujud dalam database. Sila tambah kolum 'received_by' (text) dalam table 'rekod_pinjaman' di Supabase.");
-                        
-                         // Fallback
-                        logDebug("Retrying without 'received_by' column...", true);
-                        const safePayload = { ...updatePayload }; delete safePayload.received_by;
-                        const retry = await supabase.from('rekod_pinjaman').update(safePayload).eq('id', l.id);
-                        error = retry.error;
-                    }
-
-                    if(error) return alert("Ralat Update: " + error.message);
-
+                    if(error) return alert("Ralat: " + error.message);
                     await supabase.from('device_inventory').update({status:'Tersedia'}).eq('tag', t);
-                    alert("Dipulangkan!"); 
-                    loadLoanData();
-                } else {
-                    alert("Tiada rekod pinjaman aktif dijumpai untuk peranti ini.");
-                }
-            } catch(e) {
-                alert("Critical Error: " + e.message);
-            }
+                    alert("Dipulangkan!"); loadLoanData();
+                } else alert("Tiada rekod aktif.");
+            } catch(e) { alert("Error: " + e.message); }
         }
 
         async function loadLoanHistory() {
-            const tb = document.getElementById('loan-history-body'); 
-            tb.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loader"></div></td></tr>';
-
-            // Fetch loans and users in parallel to build name map
+            const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loader"></div></td></tr>';
             const [ { data: loans }, { data: users } ] = await Promise.all([
                 supabase.from('rekod_pinjaman').select('*').order('created_at',{ascending:false}),
                 supabase.from('user_ba').select('name, emel')
             ]);
-            
-            // Update global cache
-            if(users) {
-                users.forEach(u => {
-                    if(u.emel) cachedUserMap[u.emel.toLowerCase()] = u.name;
-                });
-            }
-
+            if(users) users.forEach(u => { if(u.emel) cachedUserMap[u.emel.toLowerCase()] = u.name; });
             currentLoanHistory = loans || [];
             tb.innerHTML = '';
-            
-            const today = new Date(); 
-            today.setHours(0,0,0,0); // normalize time for correct comparison
+            const today = new Date(); today.setHours(0,0,0,0);
 
             if(loans) loans.forEach(l => {
-                // Check Overdue Status
                 const endDate = new Date(l.end_date);
                 const isOverdue = l.status === 'Active' && endDate < today;
                 const overdueClass = isOverdue ? 'bg-red-100 text-red-900 font-bold' : 'hover:bg-gray-50';
-
-                tb.innerHTML += `
-                <tr class="border-b ${overdueClass}">
+                tb.innerHTML += `<tr class="border-b ${overdueClass}">
                     <td class="p-3 align-top">${new Date(l.created_at).toLocaleDateString()}</td>
                     <td class="p-3 align-top font-medium">${l.user_name}</td>
                     <td class="p-3 align-top text-blue-600">${l.device_tag}</td>
@@ -1046,15 +913,11 @@
                     const email = row.email || row.Email || row.Emel || row[keys.find(k=>k.match(/email|emel/i))];
                     if(name) ins.push({name: name.toString().trim(), emel: email ? email.toString().trim() : ''});
                 });
-                if(ins.length) { 
-                    const { error } = await supabase.from('user_ba').insert(ins);
-                    alert(error ? error.message : `Added ${ins.length} users.`); loadLoanData();
-                } else alert("No valid data.");
+                if(ins.length) { const { error } = await supabase.from('user_ba').insert(ins); alert(error ? error.message : `Added ${ins.length} users.`); loadLoanData(); } 
                 event.target.value = '';
             };
             r.readAsArrayBuffer(f);
         }
-        // Generic handlers for other uploads
         function handleMasterDataUpload(e) { processExcel(e.target.files[0], 'personnel', r=>({ic_number:r.IC, nama:r.Name, telefon:r.Phone, emel:r.Email, gred:r.Grade, kod_ptj:r.KodPTJ, department:r.Department})); }
         function handleFileUpload(e) { processExcel(e.target.files[0], 'rekod', r=>({ic_number:r.IC, nama:r.Name, confirmation:'TIDAK', notes:r.Notes, submitted_by:currentUser.id})); }
         function handleLoanInventoryUpload(e) { processExcel(e.target.files[0], 'device_inventory', r=>({tag:r.Tag, type:r.Type, serial:r.Serial, status:'Tersedia'})); }
@@ -1071,16 +934,14 @@
             r.readAsArrayBuffer(f);
         }
 
-        // --- CLEAR DB ---
         function confirmClearDatabase() { clearActionType='rekod'; document.getElementById('delete-modal').classList.remove('hidden'); }
         function confirmClearMasterDatabase() { clearActionType='personnel'; document.getElementById('delete-modal').classList.remove('hidden'); }
         function confirmClearUserDatabase() { clearActionType='user_ba'; document.getElementById('delete-modal').classList.remove('hidden'); }
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
-
         async function executeClearDatabase() {
             closeDeleteModal(); showToast("Deleting...");
             let tbl = clearActionType, col = 'id';
-            if(tbl==='user_ba') col = 'name'; // FIX for user_ba
+            if(tbl==='user_ba') col = 'name'; 
             try {
                 const { error } = await supabase.from(tbl).delete().neq(col, 'X_INVALID');
                 if(error) throw error;
@@ -1088,7 +949,6 @@
             } catch(e) { alert("Delete failed: "+e.message); }
         }
 
-        // --- OVERDUE ---
         async function checkOverdueLoans() {
             showToast("Checking...");
             const { data: loans } = await supabase.from('rekod_pinjaman').select('*').eq('status','Active');
@@ -1100,12 +960,7 @@
             document.getElementById('no-overdue-msg').classList.toggle('hidden', overdue.length > 0);
             
             overdue.forEach(l => {
-                // --- UPDATED EMAIL LOGIC ---
                 const u = users.find(x => x.name.toLowerCase() === l.user_name.toLowerCase());
-                
-                // Prioritize user_ba email. If stored without domain (e.g. 'ali'), append @moe.gov.my. 
-                // If it already has '@', treat as full email.
-                // Fallback: If not in user_ba, create from username.
                 let email = '';
                 if (u && u.emel) {
                     const storedEmel = u.emel.trim();
@@ -1113,18 +968,11 @@
                 } else {
                     email = `${l.user_name.trim().toLowerCase().replace(/[^a-z0-9]/g,'.')}@moe.gov.my`;
                 }
-
                 const subj = encodeURIComponent("PERINGATAN: Pemulangan Peranti ICT");
-                
-                // --- UPDATED MESSAGE CONTENT (Less harsh) ---
                 const msgBody = `Salam Sejahtera ${l.user_name},\n\n` +
-                                `Merujuk perkara di atas, rekod kami menunjukkan tempoh pinjaman peranti (${l.device_tag}) telah berakhir pada ${new Date(l.end_date).toLocaleDateString('ms-MY')}.\n\n` +
-                                `Mohon kerjasama tuan/puan untuk menguruskan pemulangan peranti tersebut ke Unit IT.\n\n` +
-                                `Sekiranya pemulangan telah dibuat, sila abaikan notifikasi ini.\n\n` +
-                                `Terima kasih.`;
-                
+                                `Tempoh pinjaman peranti (${l.device_tag}) telah berakhir pada ${new Date(l.end_date).toLocaleDateString('ms-MY')}.\n` +
+                                `Mohon pulangkan segera.\n\nTerima kasih.`;
                 const body = encodeURIComponent(msgBody);
-                
                 tb.innerHTML += `<tr class="border-b hover:bg-orange-50"><td class="p-2">${l.user_name}</td><td class="p-2 text-blue-600 text-xs">${email}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600 font-bold">${l.end_date}</td><td class="p-2 text-center"><a href="mailto:${email}?subject=${subj}&body=${body}" target="_blank" class="bg-orange-600 text-white px-3 py-1 rounded text-xs">Hantar</a></td></tr>`;
             });
             document.getElementById('overdue-modal').classList.remove('hidden');
@@ -1132,189 +980,50 @@
 
         async function addUser() { 
             const n = document.getElementById('newUserName').value; 
-            const e = document.getElementById('newUserEmail').value; // Get email
+            const e = document.getElementById('newUserEmail').value; 
             if(n) { 
                 await supabase.from('user_ba').insert([{name:n, emel: e}]); 
-                loadLoanData(); 
-                alert("Pengguna ditambah!");
-                document.getElementById('newUserName').value = '';
-                document.getElementById('newUserEmail').value = '';
+                loadLoanData(); alert("Pengguna ditambah!");
+                document.getElementById('newUserName').value = ''; document.getElementById('newUserEmail').value = '';
             } 
         }
 
         async function addDevice() { const t = document.getElementById('newTag').value; if(t) { await supabase.from('device_inventory').insert([{tag:t, type:document.getElementById('newType').value, serial:document.getElementById('newSerial').value, status:'Tersedia'}]); loadLoanData(); } }
         function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.remove('opacity-0','translate-y-20'); setTimeout(()=>t.classList.add('opacity-0','translate-y-20'), 3000); }
         
-        // --- UPDATED EXPORT FUNCTIONS ---
-
         function exportToExcel() {
-            if (!currentRecords || currentRecords.length === 0) {
-                alert("Tiada rekod untuk diexport. Sila muat semula data.");
-                return;
-            }
-
-            // Helper to reuse resolution logic
-            const resolveName = (val) => {
-                if(!val) return '-';
-                if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-                if(val.includes('@')) return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                return val;
-            };
-
+            if (!currentRecords.length) return alert("Tiada data.");
             const dataToExport = currentRecords.map(r => ({
-                "Tarikh & Masa": new Date(r.created_at).toLocaleString('ms-MY'),
-                "No. K/P": r.ic_number,
-                "Nama Pegawai": r.nama,
-                "Jabatan": r.department,
-                "Butiran Masalah": r.notes,
-                "Direkod Oleh": resolveName(r.perekod),
-                "Pengesahan": r.confirmation || 'TIDAK',
-                "Tarikh Kemaskini": r.status_updated_at ? new Date(r.status_updated_at).toLocaleString('ms-MY') : '-',
-                "Dikemaskini Oleh": resolveName(r.status_updated_by)
+                "Tarikh": new Date(r.created_at).toLocaleString('ms-MY'), "IC": r.ic_number, "Nama": r.nama, "Jab": r.department,
+                "Nota": r.notes, "Oleh": resolveName(r.perekod), "Status": r.confirmation||'TIDAK'
             }));
-            const ws = XLSX.utils.json_to_sheet(dataToExport);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Rekod Log");
-            ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 30}, {wch: 20}, {wch: 40}, {wch: 20}, {wch: 10}, {wch: 20}, {wch: 20}];
-            XLSX.writeFile(wb, `Log_Aduan_ICT_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(dataToExport); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekod Log"); XLSX.writeFile(wb, `Log_Aduan_ICT_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         function exportToPDF() {
-            if (!currentRecords || currentRecords.length === 0) {
-                alert("Tiada rekod untuk diexport. Sila muat semula data.");
-                return;
-            }
-
-            const resolveName = (val) => {
-                if(!val) return '-';
-                if(cachedUserMap[val.toLowerCase()]) return cachedUserMap[val.toLowerCase()];
-                if(val.includes('@')) return val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                return val;
-            };
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4'); 
-            doc.setFontSize(14); doc.text("Laporan Rekod Aduan & Panggilan ICT", 14, 15);
-            doc.setFontSize(10); doc.text(`Dijana pada: ${new Date().toLocaleString('ms-MY')}`, 14, 22);
-            
-            const tableColumn = ["Tarikh", "IC", "Nama", "Jabatan", "Perkara", "Perekod", "Status", "Kemaskini", "Oleh"];
-            
+            if (!currentRecords.length) return alert("Tiada data.");
+            const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4'); 
+            doc.text("Laporan Rekod Aduan", 14, 15);
             const tableRows = currentRecords.map(r => [
-                new Date(r.created_at).toLocaleDateString('ms-MY'), 
-                r.ic_number, 
-                r.nama, 
-                r.department, 
-                r.notes, 
-                resolveName(r.perekod), 
-                r.confirmation || 'TIDAK',
-                r.status_updated_at ? new Date(r.status_updated_at).toLocaleDateString('ms-MY') : '-',
-                resolveName(r.status_updated_by)
+                new Date(r.created_at).toLocaleDateString('ms-MY'), r.ic_number, r.nama, r.department, r.notes, resolveName(r.perekod), r.confirmation || 'TIDAK'
             ]);
-
-            doc.autoTable({ 
-                head: [tableColumn], 
-                body: tableRows, 
-                startY: 28, 
-                theme: 'grid', 
-                styles: { fontSize: 7, cellPadding: 2 }, 
-                headStyles: { fillColor: [30, 64, 175] } 
-            });
-            
-            doc.save(`Laporan_Log_ICT_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.autoTable({ head: [["Tarikh", "IC", "Nama", "Jabatan", "Perkara", "Perekod", "Status"]], body: tableRows, startY: 20 });
+            doc.save(`Laporan_Log_${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
         function exportLoanHistoryToExcel() {
-            if (!currentLoanHistory || currentLoanHistory.length === 0) {
-                alert("Tiada rekod sejarah pinjaman untuk diexport.");
-                return;
-            }
-
-            const today = new Date();
-            today.setHours(0,0,0,0);
-
-            const dataToExport = currentLoanHistory.map(l => {
-                // Check if Active & Overdue
-                const endDate = new Date(l.end_date);
-                const isOverdue = l.status === 'Active' && endDate < today;
-                
-                // Highlight text for Excel since colors are limited in basic JS export
-                const statusText = isOverdue ? "Active (LEWAT)" : l.status;
-
-                return {
-                    "Tarikh Mohon": new Date(l.created_at).toLocaleDateString('ms-MY'),
-                    "Peminjam": l.user_name,
-                    "Tag Peranti": l.device_tag,
-                    "Mula": l.start_date,
-                    "Tamat": l.end_date,
-                    "Dikeluarkan Oleh": resolveName(l.issued_by),
-                    "Tarikh Pulang": l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
-                    "Diterima Oleh": resolveName(l.received_by),
-                    "Status": statusText
-                };
-            });
-
-            const ws = XLSX.utils.json_to_sheet(dataToExport);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sejarah Pinjaman");
-            XLSX.writeFile(wb, `Sejarah_Pinjaman_${new Date().toISOString().split('T')[0]}.xlsx`);
+            if (!currentLoanHistory.length) return alert("Tiada data.");
+            const ws = XLSX.utils.json_to_sheet(currentLoanHistory); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sejarah Pinjaman"); XLSX.writeFile(wb, `Pinjaman_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         function exportLoanHistoryToPDF() {
-            if (!currentLoanHistory || currentLoanHistory.length === 0) {
-                alert("Tiada rekod sejarah pinjaman untuk diexport.");
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            doc.setFontSize(14); doc.text("Laporan Sejarah Pinjaman ICT", 14, 15);
-            doc.setFontSize(10); doc.text(`Dijana pada: ${new Date().toLocaleString('ms-MY')}`, 14, 22);
-
-            const tableColumn = ["Tarikh Mohon", "Peminjam", "Peranti", "Mula", "Tamat", "Dikeluarkan", "Pulang", "Diterima", "Status"];
-            const tableRows = [];
-            const today = new Date(); 
-            today.setHours(0,0,0,0);
-
-            currentLoanHistory.forEach(l => {
-                tableRows.push([
-                    new Date(l.created_at).toLocaleDateString('ms-MY'),
-                    l.user_name,
-                    l.device_tag,
-                    l.start_date,
-                    l.end_date,
-                    resolveName(l.issued_by),
-                    l.return_date ? new Date(l.return_date).toLocaleDateString('ms-MY') : '-',
-                    resolveName(l.received_by),
-                    l.status
-                ]);
-            });
-
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: 28,
-                theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 2 },
-                headStyles: { fillColor: [30, 64, 175] },
-                didParseCell: function(data) {
-                    if (data.section === 'body') {
-                        // Check original data based on row index
-                        const originalRecord = currentLoanHistory[data.row.index];
-                        if (originalRecord) {
-                            const endDate = new Date(originalRecord.end_date);
-                            const isOverdue = originalRecord.status === 'Active' && endDate < today;
-                            
-                            // If overdue, color row red
-                            if (isOverdue) {
-                                data.cell.styles.fillColor = [254, 202, 202]; // bg-red-200
-                                data.cell.styles.textColor = [153, 27, 27];   // text-red-800
-                                data.cell.styles.fontStyle = 'bold';
-                            }
-                        }
-                    }
-                }
-            });
-
+            if (!currentLoanHistory.length) return alert("Tiada data.");
+            const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
+            doc.text("Laporan Sejarah Pinjaman", 14, 15);
+            const rows = currentLoanHistory.map(l => [l.created_at, l.user_name, l.device_tag, l.start_date, l.end_date, l.status]);
+            doc.autoTable({ head: [["Tarikh", "Peminjam", "Peranti", "Mula", "Tamat", "Status"]], body: rows, startY: 20 });
             doc.save(`Sejarah_Pinjaman_${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
