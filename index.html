@@ -479,9 +479,18 @@
                  document.getElementById('no-overdue-msg').classList.toggle('hidden', overdue.length > 0);
                  overdue.forEach(l => {
                      const u = users.find(x => x.name.toLowerCase() === l.user_name.toLowerCase());
-                     const email = u && u.emel ? u.emel : '';
-                     const subject = encodeURIComponent("PERINGATAN: Pulangkan Peranti ICT");
-                     const body = encodeURIComponent(`Salam ${l.user_name},\n\nSila pulangkan ${l.device_tag}. Tarikh tamat: ${l.end_date}.\n\nTerima Kasih.`);
+                     let email = u && u.emel ? u.emel : '';
+                     // Auto-append domain if missing
+                     if (email && !email.includes('@')) email += '@moe.gov.my';
+                     else if (!email) email = `${l.user_name.replace(/\s+/g,'.').toLowerCase()}@moe.gov.my`; // Fallback attempt
+
+                     const subject = encodeURIComponent("PERINGATAN MESRA: Pemulangan Peranti ICT");
+                     const bodyText = `Salam Sejahtera ${l.user_name},\n\n` +
+                                      `Adalah dimaklumkan bahawa tempoh pinjaman peranti (${l.device_tag}) telah berakhir pada ${l.end_date}.\n\n` +
+                                      `Mohon jasa baik tuan/puan untuk memulangkan peranti tersebut ke Unit ICT bagi kegunaan pihak lain.\n\n` +
+                                      `Sekian, terima kasih.`;
+                     const body = encodeURIComponent(bodyText);
+                     
                      tb.innerHTML += `<tr class="border-b hover:bg-orange-50"><td class="p-2">${l.user_name}</td><td class="p-2 text-xs">${email}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600">${l.end_date}</td><td class="p-2 text-center"><a href="mailto:${email}?subject=${subject}&body=${body}" target="_blank" class="bg-orange-600 text-white px-3 py-1 rounded text-xs">Email</a></td></tr>`;
                  });
                  document.getElementById('overdue-modal').classList.remove('hidden');
