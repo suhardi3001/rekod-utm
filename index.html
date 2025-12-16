@@ -488,7 +488,7 @@
                 if (!query || query.length < 2) { dd.classList.add('hidden'); return; }
                 STATE.searchTimeout = setTimeout(async () => {
                     dd.classList.remove('hidden'); dd.innerHTML = '<div class="p-2 text-center text-xs">Loading...</div>';
-                    const { data } = await supabase.from('personnel').select('*').or(`nama.ilike.%${query}%,ic_number.ilike.%${query}%,department.ilike.%${query}%`).limit(5);
+                    const { data } = await supabase.from('personnel').select('*').or(`nama.ilike.%${query}%,ic_number.ilike.%${query}%,kod_ptj.ilike.%${query}%`).limit(5);
                     dd.innerHTML = '';
                     if (!data || data.length === 0) { const item = document.createElement('div'); item.className = "p-3 hover:bg-green-50 text-green-700 cursor-pointer text-sm font-bold border-b"; item.innerHTML = `+ Tiada Rekod. Tambah "${query}"?`; item.onclick = () => CallLog.prepareNewUser(query); dd.appendChild(item); return; }
                     data.forEach(p => { const item = document.createElement('div'); item.className = "p-3 hover:bg-blue-50 cursor-pointer border-b"; item.innerHTML = `<div class="font-bold text-sm">${p.nama}</div><div class="text-xs text-gray-500">${p.ic_number} | ${p.department}</div>`; item.onclick = () => CallLog.fillForm(p); dd.appendChild(item); });
