@@ -131,14 +131,14 @@
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
                 <div class="flex items-center mb-2 md:mb-0">
-                    <span class="font-bold text-lg mr-6">Sistem Rekod</br>UTM</span>
+                    <span class="font-bold text-lg mr-6">Sistem Rekod UTM</span>
                     <div class="flex gap-1">
                         <button onclick="UI.adjustFontSize(-1)" class="bg-white/20 px-2 rounded hover:bg-white/40">A-</button>
                         <button onclick="UI.adjustFontSize(1)" class="bg-white/20 px-2 rounded hover:bg-white/40">A+</button>
                     </div>
                     <div class="ml-6 flex gap-2">
                         <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium tab-inactive-main">Pinjaman</button>
+                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium tab-inactive-main">Pinjaman ICT</button>
                     </div>
                 </div>
                 <div class="flex items-center text-sm">
@@ -153,8 +153,8 @@
             <!-- MODULE 1: CALL LOG -->
             <div id="call-log-section" class="w-full">
                 <div class="flex border-b mb-6">
-                    <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">Perekodan Call Log</button>
-                    <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">Rekod Call Log</button>
+                    <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">INPUT</button>
+                    <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">REKOD</button>
                 </div>
 
                 <!-- Input Form -->
