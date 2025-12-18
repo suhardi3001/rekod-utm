@@ -243,7 +243,7 @@
                 </div>
             </div>
 
-            <!-- MODULE 2: LOAN SYSTEM (RESTORED CONTENT) -->
+            <!-- MODULE 2: LOAN SYSTEM -->
             <div id="loan-page" class="hidden-section w-full">
                 <div class="bg-white p-6 rounded-lg shadow border">
                     <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
@@ -261,12 +261,12 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label class="block text-sm font-medium mb-1">Nama Pengguna</label><input type="text" id="loanUserName" list="userList" class="w-full px-3 py-2 border rounded-lg" required><datalist id="userList"></datalist></div>
                                 <div><label class="block text-sm font-medium mb-1">Pilih Peranti</label><select id="deviceSelect" class="w-full px-3 py-2 border rounded-lg" required><option value="" disabled selected>Pilih...</option></select></div>
-                                <div><label class="block text-sm font-medium mb-1">Mula</label><input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required></div>
-                                <div><label class="block text-sm font-medium mb-1">Tamat</label><input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required></div>
+                                <div><label class="block text-sm font-medium mb-1">Tarikh Mula</label><input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required></div>
+                                <div><label class="block text-sm font-medium mb-1">Tarikh Tamat</label><input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required></div>
                             </div>
                             <div><label class="block text-sm font-medium mb-1">Jenis Kegunaan</label><select id="usageType" class="w-full px-3 py-2 border rounded-lg" required><option value="Kegunaan Dalaman">Kegunaan Dalaman</option><option value="Kegunaan Luar">Kegunaan Luar</option></select></div>
                             <div><label class="block text-sm font-medium mb-1">Butiran</label><textarea id="usageDetails" rows="2" class="w-full px-3 py-2 border rounded-lg"></textarea></div>
-                            <button type="button" onclick="Loan.submit()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700">Hantar</button>
+                            <button type="button" onclick="Loan.submit()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700">Hantar Permohonan</button>
                         </form>
                     </div>
 
@@ -274,8 +274,9 @@
                     <div id="loan-tab-return" class="loan-tab-content hidden">
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                             <h5 class="text-lg font-bold text-gray-800 mb-2">Pulangkan Peranti</h5>
-                            <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4"><option value="" disabled selected>Pilih Peranti...</option></select>
-                            <button type="button" onclick="Loan.submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700">Sahkan Pulangan</button>
+                            <p class="text-xs text-gray-500 mb-4">Sila pilih peranti yang sedang dipinjam di bawah</p>
+                            <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4"><option value="" disabled selected>Pilih Peranti & Peminjam...</option></select>
+                            <button type="button" onclick="Loan.submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 block mx-auto">Sahkan Pulangan</button>
                         </div>
                     </div>
 
@@ -287,7 +288,6 @@
                                 <div class="border p-4 rounded-lg bg-gray-50">
                                     <h6 class="font-bold mb-3 border-b pb-2">Tambah Pengguna</h6>
                                     <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
-                                    <input id="newUserEmail" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Alamat Emel">
                                     <button onclick="Loan.addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah</button>
                                 </div>
                                 <div class="border p-4 rounded-lg bg-gray-50">
@@ -324,7 +324,7 @@
     <div id="overdue-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
         <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-orange-50"><h3 class="text-lg font-bold text-orange-800">Senarai Lewat</h3><button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="text-gray-600 hover:text-gray-900 font-bold">X</button></div>
-            <div class="p-4 overflow-y-auto flex-grow"><table class="w-full text-sm text-left"><thead class="bg-gray-100"><tr><th class="p-2">Nama</th><th class="p-2">Emel</th><th class="p-2">Peranti</th><th class="p-2 text-center">Tindakan</th></tr></thead><tbody id="overdue-list-body"></tbody></table></div>
+            <div class="p-4 overflow-y-auto flex-grow"><table class="w-full text-sm text-left"><thead class="bg-gray-100"><tr><th class="p-2">Nama</th><th class="p-2">Peranti</th><th class="p-2">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead><tbody id="overdue-list-body"></tbody></table></div>
         </div>
     </div>
 
@@ -405,7 +405,6 @@
 
         const CallLog = {
             options: { komunikasi: [], sistem: [], perkara: [] },
-
             init: async () => {
                 if (!STATE.currentUser) return;
                 const defaults = {
@@ -426,7 +425,6 @@
                 } catch (e) { CallLog.options = defaults; }
                 CallLog.renderOptions();
             },
-
             renderOptions: () => {
                 const conK = document.getElementById('container-komunikasi'); conK.innerHTML = '';
                 CallLog.options.komunikasi.forEach(k => {
@@ -450,13 +448,11 @@
                 });
                 selP.onchange = CallLog.checkValidity;
             },
-
             toggleInput: (id) => {
                 const el = document.getElementById('add-input-' + id);
                 el.classList.toggle('hidden');
                 if(!el.classList.contains('hidden')) document.getElementById('input-new-'+id).focus();
             },
-
             saveOnEnter: async (e, type) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -468,7 +464,6 @@
                     }
                 }
             },
-
             handleSearch: (query) => {
                 const dd = document.getElementById('search-results-dropdown'); if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
                 if (!query || query.length < 2) { dd.classList.add('hidden'); return; }
@@ -526,7 +521,6 @@
         const Records = {
             userMap: {},
             currentRecords: [],
-            // RESTORED: Column configuration with "Dikemaskini" columns
             columns: [
                 { id: 'created_at', label: 'Tarikh Event' },
                 { id: 'nama_ic', label: 'Nama / IC' },
@@ -539,116 +533,59 @@
                 { id: 'updated_by', label: 'Dikemaskini Oleh' },
                 { id: 'status', label: 'Status Selesai' }
             ],
-
-            init: () => {
-                Records.renderHeader();
-                Records.fetch();
-            },
-
+            init: () => { Records.renderHeader(); Records.fetch(); },
             renderHeader: () => {
-                const thead = document.getElementById('records-table-head');
-                thead.innerHTML = '';
+                const thead = document.getElementById('records-table-head'); thead.innerHTML = '';
                 const tr = document.createElement('tr');
-                
                 Records.columns.forEach((col, index) => {
-                    const th = document.createElement('th');
-                    th.className = "p-3 text-left draggable-header select-none border-r border-gray-200 last:border-0 text-xs";
-                    th.draggable = true;
-                    th.dataset.index = index;
-                    
-                    const span = document.createElement('span');
-                    span.contentEditable = true;
-                    span.innerText = col.label;
-                    span.className = "cursor-text focus:cursor-text w-full block";
-                    span.onblur = (e) => { Records.columns[index].label = e.target.innerText; };
-                    span.onmousedown = (e) => e.stopPropagation(); 
+                    const th = document.createElement('th'); th.className = "p-3 text-left draggable-header select-none border-r border-gray-200 last:border-0 text-xs"; th.draggable = true; th.dataset.index = index;
+                    const span = document.createElement('span'); span.contentEditable = true; span.innerText = col.label; span.className = "cursor-text focus:cursor-text w-full block";
+                    span.onblur = (e) => { Records.columns[index].label = e.target.innerText; }; span.onmousedown = (e) => e.stopPropagation(); 
                     th.appendChild(span);
-
-                    th.addEventListener('dragstart', Records.handleDragStart);
-                    th.addEventListener('dragover', Records.handleDragOver);
-                    th.addEventListener('dragleave', Records.handleDragLeave);
-                    th.addEventListener('drop', Records.handleDrop);
+                    th.addEventListener('dragstart', Records.handleDragStart); th.addEventListener('dragover', Records.handleDragOver); th.addEventListener('dragleave', Records.handleDragLeave); th.addEventListener('drop', Records.handleDrop);
                     tr.appendChild(th);
                 });
                 thead.appendChild(tr);
             },
-
             dragSrcIndex: null,
-            handleDragStart: (e) => {
-                Records.dragSrcIndex = e.target.closest('th').dataset.index;
-                e.dataTransfer.effectAllowed = 'move';
-                e.target.style.opacity = '0.4';
-            },
-            handleDragOver: (e) => {
-                if (e.preventDefault) e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                const th = e.target.closest('th');
-                if (th) th.classList.add('drag-over');
-                return false;
-            },
-            handleDragLeave: (e) => {
-                const th = e.target.closest('th');
-                if (th) th.classList.remove('drag-over');
-            },
+            handleDragStart: (e) => { Records.dragSrcIndex = e.target.closest('th').dataset.index; e.dataTransfer.effectAllowed = 'move'; e.target.style.opacity = '0.4'; },
+            handleDragOver: (e) => { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const th = e.target.closest('th'); if (th) th.classList.add('drag-over'); return false; },
+            handleDragLeave: (e) => { const th = e.target.closest('th'); if (th) th.classList.remove('drag-over'); },
             handleDrop: (e) => {
                 if (e.stopPropagation) e.stopPropagation();
-                const th = e.target.closest('th');
-                if (!th) return;
-                th.classList.remove('drag-over');
-                document.querySelectorAll('.draggable-header').forEach(el => el.style.opacity = '1');
-                const dragIndex = parseInt(Records.dragSrcIndex);
-                const dropIndex = parseInt(th.dataset.index);
+                const th = e.target.closest('th'); if (!th) return;
+                th.classList.remove('drag-over'); document.querySelectorAll('.draggable-header').forEach(el => el.style.opacity = '1');
+                const dragIndex = parseInt(Records.dragSrcIndex); const dropIndex = parseInt(th.dataset.index);
                 if (dragIndex !== dropIndex) {
-                    const item = Records.columns.splice(dragIndex, 1)[0];
-                    Records.columns.splice(dropIndex, 0, item);
-                    Records.renderHeader();
-                    Records.renderBody(); 
+                    const item = Records.columns.splice(dragIndex, 1)[0]; Records.columns.splice(dropIndex, 0, item);
+                    Records.renderHeader(); Records.renderBody(); 
                 }
                 return false;
             },
-
             fetch: async () => {
-                const tbody = document.getElementById('records-table-body'); 
-                tbody.innerHTML = '<tr><td colspan="100%" class="text-center p-4"><div class="loader"></div></td></tr>';
+                const tbody = document.getElementById('records-table-body'); tbody.innerHTML = '<tr><td colspan="100%" class="text-center p-4"><div class="loader"></div></td></tr>';
                 try {
-                    const [ { data: records }, { data: users } ] = await Promise.all([ 
-                        sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100), 
-                        sbClient.from('user_ba').select('name, emel') 
-                    ]);
+                    const [ { data: records }, { data: users } ] = await Promise.all([ sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100), sbClient.from('user_ba').select('name, emel') ]);
                     if(users) users.forEach(u => { if(u.emel) Records.userMap[u.emel.toLowerCase()] = u.name; });
-                    Records.currentRecords = records || [];
-                    Records.renderBody();
+                    Records.currentRecords = records || []; Records.renderBody();
                 } catch (e) { tbody.innerHTML = `<tr><td colspan="100%" class="p-4">Error: ${e.message}</td></tr>`; }
             },
-
             renderBody: () => {
-                const tbody = document.getElementById('records-table-body');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById('records-table-body'); tbody.innerHTML = '';
                 if(!Records.currentRecords.length) { tbody.innerHTML = '<tr><td colspan="100%" class="text-center p-4">Tiada rekod.</td></tr>'; return; }
-
                 Records.currentRecords.forEach(r => {
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b hover:bg-gray-50 align-top";
-
+                    const tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50 align-top";
                     Records.columns.forEach(col => {
-                        const td = document.createElement('td');
-                        td.className = "p-3";
+                        const td = document.createElement('td'); td.className = "p-3";
                         switch(col.id) {
                             case 'created_at': td.className += " text-xs"; td.innerText = Utils.formatDate(r.created_at); break;
                             case 'nama_ic': td.innerHTML = `<div class="font-bold text-gray-800 text-xs">${r.nama}</div><div class="text-[10px] text-gray-500">${r.ic_number}</div>`; break;
                             case 'department': td.className += " text-[10px] max-w-[150px] truncate"; td.innerText = r.department; break;
                             case 'komunikasi':
-                                const selectKom = document.createElement('select');
-                                selectKom.className = "border rounded px-2 py-1 text-[10px] bg-white text-blue-700 w-full";
+                                const selectKom = document.createElement('select'); selectKom.className = "border rounded px-2 py-1 text-[10px] bg-white text-blue-700 w-full";
                                 const komOpts = CallLog.options.komunikasi.length ? CallLog.options.komunikasi : ["Email", "Call", "WhatsApp", "Walk-in"];
-                                komOpts.forEach(opt => {
-                                    const option = document.createElement('option');
-                                    option.value = opt; option.text = opt;
-                                    if(opt === r.komunikasi) option.selected = true;
-                                    selectKom.appendChild(option);
-                                });
-                                selectKom.onchange = (e) => Records.updateField(r.id, 'komunikasi', e.target.value);
-                                td.appendChild(selectKom);
+                                komOpts.forEach(opt => { const option = document.createElement('option'); option.value = opt; option.text = opt; if(opt === r.komunikasi) option.selected = true; selectKom.appendChild(option); });
+                                selectKom.onchange = (e) => Records.updateField(r.id, 'komunikasi', e.target.value); td.appendChild(selectKom);
                                 break;
                             case 'sistem': td.className += " text-[10px] font-bold text-gray-600"; td.innerText = r.sistem || '-'; break;
                             case 'perkara': td.className += " text-[10px]"; td.innerText = r.perkara || '-'; break;
@@ -656,11 +593,9 @@
                             case 'updated_at': td.className += " text-[10px] text-gray-500"; td.innerText = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-'; break;
                             case 'updated_by': td.className += " text-[10px] text-blue-700 font-medium"; td.innerText = r.status_updated_by ? (Records.userMap[r.status_updated_by.toLowerCase()] || r.status_updated_by.split('@')[0]) : '-'; break;
                             case 'status':
-                                const selectStatus = document.createElement('select');
-                                selectStatus.className = `border rounded px-2 py-1 text-[10px] font-bold ${r.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} w-full`;
+                                const selectStatus = document.createElement('select'); selectStatus.className = `border rounded px-2 py-1 text-[10px] font-bold ${r.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} w-full`;
                                 selectStatus.innerHTML = `<option value="YA" ${r.confirmation === 'YA' ? 'selected' : ''}>YA</option><option value="TIDAK" ${r.confirmation !== 'YA' ? 'selected' : ''}>TIDAK</option>`;
-                                selectStatus.onchange = (e) => Records.updateField(r.id, 'confirmation', e.target.value);
-                                td.appendChild(selectStatus);
+                                selectStatus.onchange = (e) => Records.updateField(r.id, 'confirmation', e.target.value); td.appendChild(selectStatus);
                                 break;
                             default: td.innerText = '-';
                         }
@@ -669,7 +604,6 @@
                     tbody.appendChild(tr);
                 });
             },
-
             updateField: async (id, field, val) => {
                 if(!STATE.currentUser) return;
                 const updateData = {}; updateData[field] = val;
@@ -690,45 +624,89 @@
                     if(t===id) { btn.classList.add('tab-active-sub'); btn.classList.remove('tab-inactive-sub'); } 
                     else { btn.classList.add('tab-inactive-sub'); btn.classList.remove('tab-active-sub'); } 
                 });
-                if(id === 'borrow') { const today = new Date().toISOString().split('T')[0]; document.getElementById('loanStartDate').value = today; document.getElementById('loanEndDate').value = today; }
+                const today = new Date().toISOString().split('T')[0];
+                if(id === 'borrow') { 
+                    document.getElementById('loanStartDate').min = today; 
+                    document.getElementById('loanStartDate').value = today;
+                    document.getElementById('loanEndDate').min = today;
+                    document.getElementById('loanEndDate').value = today;
+                }
                 if(id === 'history') Loan.loadHistory();
             },
             loadData: async () => {
+                // 1. Load Peminjam List
                 const { data: u } = await sbClient.from('user_ba').select('name').order('name'); 
                 const ul = document.getElementById('userList'); ul.innerHTML = ''; 
                 if(u) u.forEach(i => ul.appendChild(new Option(i.name, i.name)));
                 
-                const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia'); 
-                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option disabled selected>Select Device...</option>'; 
-                if(d) d.forEach(i => ds.appendChild(new Option(i.tag, i.tag)));
+                // 2. Load Tersedia Devices (Sorted by Tag, Showing Tag-Type-Serial)
+                const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag', { ascending: true }); 
+                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option disabled selected>Pilih Peranti...</option>'; 
+                if(d) d.forEach(i => {
+                    const label = `${i.tag} - ${i.type} (${i.serial || 'No Serial'})`;
+                    ds.appendChild(new Option(label, i.tag));
+                });
                 
-                const { data: r } = await sbClient.from('device_inventory').select('*').eq('status','Dipinjam'); 
-                const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option disabled selected>Pilih Peranti...</option>'; 
-                if(r) r.forEach(i => rs.appendChild(new Option(i.tag, i.tag)));
+                // 3. Load Dipinjam Devices with Loaned User Name for Return Dropdown
+                const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
+                const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option disabled selected>Pilih Peranti & Peminjam...</option>'; 
+                if(activeLoans) activeLoans.forEach(l => {
+                    rs.appendChild(new Option(`${l.device_tag} - [Dipinjam oleh: ${l.user_name}]`, l.device_tag));
+                });
 
                 Loan.loadActive();
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
                 const tb = document.getElementById('active-loans-body'); tb.innerHTML = '';
-                if(data) data.forEach(l => { tb.innerHTML += `<tr class="border-b"><td class="p-2">${l.user_name}</td><td class="p-2 font-bold">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`; });
+                const todayStr = new Date().toISOString().split('T')[0];
+                if(data) data.forEach(l => { 
+                    // Highlight red if end_date is before today
+                    const isLate = l.end_date < todayStr;
+                    tb.innerHTML += `<tr class="border-b ${isLate ? 'bg-red-50 text-red-700 font-bold' : ''}"><td class="p-2">${l.user_name}</td><td class="p-2">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`; 
+                });
             },
             submit: async () => {
-                const u = document.getElementById('loanUserName').value, d = document.getElementById('deviceSelect').value, s = document.getElementById('loanStartDate').value, e = document.getElementById('loanEndDate').value;
-                if(!u || !d || !s || !e) return alert("Isi semua info.");
-                const { error } = await sbClient.from('rekod_pinjaman').insert([{ user_name: u, device_tag: d, start_date: s, end_date: e, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email }]);
-                if(!error) { await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', d); Utils.showToast("Berjaya Pinjam!"); Loan.loadData(); document.getElementById('loanForm').reset(); }
+                const u = document.getElementById('loanUserName').value;
+                const d = document.getElementById('deviceSelect').value;
+                const s = document.getElementById('loanStartDate').value;
+                const e = document.getElementById('loanEndDate').value;
+                if(!u || !d || !s || !e) return alert("Sila isi semua maklumat.");
+
+                // Date Validation
+                const today = new Date().toISOString().split('T')[0];
+                if (s < today) return alert("Tarikh Mula tidak boleh sebelum tarikh hari ini.");
+                if (e < s) return alert("Tarikh Tamat tidak boleh sebelum Tarikh Mula.");
+
+                const { error } = await sbClient.from('rekod_pinjaman').insert([{ 
+                    user_name: u, device_tag: d, start_date: s, end_date: e, 
+                    usage_type: document.getElementById('usageType').value, 
+                    usage_details: document.getElementById('usageDetails').value, 
+                    status: 'Active', issued_by: STATE.currentUser.email 
+                }]);
+                if(!error) { 
+                    await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', d); 
+                    Utils.showToast("Berjaya Pinjam!"); Loan.loadData(); document.getElementById('loanForm').reset(); 
+                }
             },
             submitReturn: async () => {
-                const t = document.getElementById('returnSelect').value; if(!t) return;
+                const t = document.getElementById('returnSelect').value; if(!t) return alert("Sila pilih peranti.");
                 const { data } = await sbClient.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').maybeSingle();
-                if(data) { await sbClient.from('rekod_pinjaman').update({ status: 'Returned', return_date: new Date(), received_by: STATE.currentUser.email }).eq('id', data.id); await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t); Utils.showToast("Dipulangkan!"); Loan.loadData(); }
+                if(data) { 
+                    await sbClient.from('rekod_pinjaman').update({ status: 'Returned', return_date: new Date(), received_by: STATE.currentUser.email }).eq('id', data.id); 
+                    await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t); 
+                    Utils.showToast("Berjaya Dipulangkan!"); Loan.loadData(); 
+                }
             },
             loadHistory: async () => {
-                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
+                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="5" class="text-center p-4">Sila tunggu...</td></tr>';
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
                 tb.innerHTML = '';
-                if(data) data.forEach(l => { tb.innerHTML += `<tr class="border-b text-xs"><td class="p-2">${Utils.formatDate(l.created_at)}</td><td class="p-2 font-bold">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.start_date} - ${l.end_date}</td><td class="p-2 font-medium">${l.status}</td></tr>`; });
+                if(data) data.forEach(l => { 
+                    // Highlight if return_date > end_date (next day late)
+                    const isLate = l.return_date && l.return_date.split('T')[0] > l.end_date;
+                    tb.innerHTML += `<tr class="border-b text-xs ${isLate ? 'text-red-600 font-bold bg-red-50' : ''}"><td class="p-2">${Utils.formatDate(l.created_at)}</td><td class="p-2 font-bold">${l.user_name}</td><td class="p-2 text-blue-600">${l.device_tag}</td><td class="p-2">${l.start_date} - ${l.end_date}</td><td class="p-2 font-medium">${l.status}</td></tr>`; 
+                });
             },
             checkOverdueLoans: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
@@ -738,15 +716,15 @@
                 if(overdue.length) {
                     overdue.forEach(l => { tb.innerHTML += `<tr class="border-b"><td>${l.user_name}</td><td>${l.device_tag}</td><td class="text-red-600">${l.end_date}</td><td class="text-center"><button class="bg-orange-500 text-white px-2 py-1 rounded">Email</button></td></tr>`; });
                     document.getElementById('overdue-modal').classList.remove('hidden');
-                } else { Utils.showToast("Tiada barang lewat."); }
+                } else { Utils.showToast("Tiada rekod lewat setakat ini."); }
             },
             addUser: async () => { 
                 const n = document.getElementById('newUserName').value; 
-                if(n) { await sbClient.from('user_ba').insert([{name:n}]); Loan.loadData(); document.getElementById('newUserName').value=''; } 
+                if(n) { await sbClient.from('user_ba').insert([{name:n}]); Loan.loadData(); document.getElementById('newUserName').value=''; Utils.showToast("Peminjam ditambahkan."); } 
             },
             addDevice: async () => { 
                 const t = document.getElementById('newTag').value, tp = document.getElementById('newType').value, s = document.getElementById('newSerial').value;
-                if(t) { await sbClient.from('device_inventory').insert([{tag:t, type:tp, serial:s, status:'Tersedia'}]); Loan.loadData(); document.getElementById('newTag').value=''; }
+                if(t) { await sbClient.from('device_inventory').insert([{tag:t, type:tp, serial:s, status:'Tersedia'}]); Loan.loadData(); document.getElementById('newTag').value=''; Utils.showToast("Peranti ditambahkan."); }
             }
         };
 
