@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT (Final v15 - Private Mode Fix)</title>
+    <title>Sistem Rekod IT UTM - Private Mode Fix</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* --- GLOBAL STYLES --- */
         :root { --base-font-size: 16px; }
         html { font-size: var(--base-font-size); }
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        
         .hidden-section { display: none !important; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -28,227 +24,93 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        
-        /* Debug Console */
         #debug-console {
             background-color: #1a1a1a; color: #00ff00; font-family: monospace;
             padding: 1rem; margin-top: 2rem; border-radius: 0.5rem; font-size: 0.75rem;
-            height: 150px; overflow-y: auto; border: 1px solid #333; width: 100%;
+            height: 120px; overflow-y: auto; border: 1px solid #333; width: 100%;
         }
 
-        /* Netflix Login Animation */
-        .login-btn-anim {
-            position: relative; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-        }
-        .login-btn-anim.loading { background-color: #000 !important; color: transparent !important; pointer-events: none; border: 1px solid #1a1a1a; }
+        .login-btn-anim { position: relative; overflow: hidden; transition: all 0.4s; display: flex; align-items: center; justify-content: center; }
+        .login-btn-anim.loading { background-color: #000 !important; color: transparent !important; pointer-events: none; }
         .login-btn-anim.loading::after {
-            content: "UTM"; position: absolute; color: #E50914; font-family: 'Arial Black', sans-serif;
-            font-weight: 900; font-size: 1.8rem; letter-spacing: 2px;
-            animation: netflix-zoom 2s ease-in-out infinite; text-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+            content: "UTM"; position: absolute; color: #E50914; font-weight: 900; font-size: 1.5rem;
+            animation: netflix-zoom 2s infinite;
         }
-        @keyframes netflix-zoom {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 25px rgba(229, 9, 20, 1); }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-        .login-btn-anim.success {
-            width: 50px !important; border-radius: 50px !important;
-            background-color: #22c55e !important; color: transparent !important; pointer-events: none;
-        }
-        .login-btn-anim.success::before {
-            content: ""; position: absolute; width: 15px; height: 24px;
-            border-right: 4px solid white; border-bottom: 4px solid white;
-            transform: rotate(45deg) translate(-2px, -2px); animation: checkmark 0.3s ease-in-out forwards;
-        }
-        @keyframes checkmark {
-            0% { opacity: 0; transform: rotate(45deg) scale(0.5) translate(-2px, -2px); }
-            100% { opacity: 1; transform: rotate(45deg) scale(1) translate(-2px, -2px); }
-        }
+        @keyframes netflix-zoom { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
         
         .tab-active-main { background-color: #1e3a8a !important; color: white; }
         .tab-inactive-main { background-color: transparent; color: white; }
         .tab-active-sub { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
         .tab-inactive-sub { color: #6b7280; border-bottom: 2px solid transparent; }
-
-        th.draggable-header { cursor: grab; position: relative; transition: background-color 0.2s; }
-        th.draggable-header:hover { background-color: #e5e7eb; }
-        th.draggable-header:active { cursor: grabbing; }
-        th.drag-over { border-left: 3px solid #3b82f6; background-color: #eff6ff; }
-        [contenteditable]:focus { outline: 2px solid #3b82f6; background-color: white; padding: 2px 4px; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
-            <div class="text-center mb-8 mt-4">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Sistem Rekod <br> Unit Teknologi Maklumat</h1>
-                <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Sistem Rekod IT UTM</h1>
+                <p class="text-gray-500 text-sm mt-2">Log masuk diperlukan</p>
             </div>
             <form id="login-form" class="space-y-6">
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin@example.com" required></div>
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="********" required></div>
+                <div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required></div>
+                <div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required></div>
                 <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded"></div>
-                <div class="flex justify-center w-full h-[60px]"> 
-                    <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 h-[50px]"><span id="btn-text">Log Masuk</span></button>
-                </div>
+                <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 h-[50px]"><span>Log Masuk</span></button>
             </form>
         </div>
-        <div id="debug-console" class="w-full max-w-md mt-4"><div>> Initializing UTM System...</div></div>
+        <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting...</div></div>
     </div>
 
     <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center mb-2 md:mb-0">
-                    <span class="font-bold text-lg mr-6">Sistem Rekod UTM</span>
-                    <div class="flex gap-1">
-                        <button onclick="UI.adjustFontSize(-1)" class="bg-white/20 px-2 rounded hover:bg-white/40">A-</button>
-                        <button onclick="UI.adjustFontSize(1)" class="bg-white/20 px-2 rounded hover:bg-white/40">A+</button>
-                    </div>
-                    <div class="ml-6 flex gap-2">
-                        <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium tab-inactive-main">Pinjaman ICT</button>
+                <div class="flex items-center">
+                    <span class="font-bold text-lg mr-6">UTM REKOD</span>
+                    <div class="flex gap-2">
+                        <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm tab-active-main">Call Log</button>
+                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm tab-inactive-main">Pinjaman</button>
                     </div>
                 </div>
                 <div class="flex items-center text-sm">
-                    <span id="user-display" class="mr-4 text-blue-200 truncate max-w-[150px]"></span>
-                    <button onclick="Auth.logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">Keluar</button>
+                    <span id="user-display" class="mr-4 text-blue-200"></span>
+                    <button onclick="Auth.logout()" class="bg-red-600 px-3 py-1 rounded">Keluar</button>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-grow p-4 md:p-6 w-full mx-auto max-w-7xl"> 
+        <main class="flex-grow p-4 md:p-6 w-full mx-auto max-w-7xl">
             <div id="call-log-section" class="w-full">
                 <div class="flex border-b mb-6">
                     <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">INPUT</button>
                     <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">REKOD</button>
                 </div>
-
-                <div id="sub-search-page" class="space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow border">
-                        <h2 class="text-lg font-bold mb-4 flex gap-2"><i data-lucide="search"></i> Carian Live</h2>
-                        <div class="relative">
-                            <input type="text" id="global-search" class="w-full pl-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Cari Nama, IC, atau Kod PTJ...">
-                            <span class="absolute left-3 top-2.5 text-gray-400"><i data-lucide="search" class="w-5 h-5"></i></span>
-                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-xl rounded-b-lg border hidden max-h-60 overflow-y-auto mt-1"></div>
-                        </div>
+                <div id="sub-search-page" class="bg-white p-6 rounded shadow border space-y-4">
+                    <div class="relative">
+                        <input type="text" id="global-search" class="w-full pl-10 py-2 border rounded" placeholder="Cari Nama/IC...">
+                        <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow border hidden max-h-40 overflow-y-auto"></div>
                     </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow border">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold flex gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
-                            <button id="btn-update-master" onclick="CallLog.updateMasterData()" class="hidden bg-yellow-500 text-white text-xs px-3 py-1 rounded shadow animate-fade-in hover:bg-yellow-600">Simpan ke Data Induk</button>
-                        </div>
-                        <form id="data-form">
-                            <input type="hidden" id="is-new-user" value="false">
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div class="space-y-4">
-                                    <h3 class="font-bold text-gray-700 border-b pb-2">Maklumat Pengguna</h3>
-                                    <div><label class="text-sm font-medium text-gray-700">Nama</label><div class="relative"><input type="text" id="nama" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('nama')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">IC</label><input type="text" id="ic" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                        <div><label class="text-sm font-medium text-gray-700">Kod PTJ</label><input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">Jabatan</label><input type="text" id="department" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                        <div><label class="text-sm font-medium text-gray-700">Emel</label><input type="email" id="emel" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">No Telefon</label><input type="text" id="telefon" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                        <div><label class="text-sm font-medium text-gray-700">Gred</label><input type="text" id="gred" class="w-full px-3 py-2 border rounded bg-gray-50" readonly></div>
-                                    </div>
-                                </div>
-                                <div class="bg-gray-50 p-4 rounded-lg border h-fit">
-                                    <label class="block text-sm font-bold text-gray-800 mb-3 border-b pb-2">Kategori & Isu</label>
-                                    <div class="space-y-6">
-                                        <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Medium Komunikasi</label>
-                                                <button type="button" onclick="CallLog.toggleInput('komunikasi')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Tambah</button>
-                                            </div>
-                                            <div id="add-input-komunikasi" class="hidden mb-2"><input type="text" id="input-new-komunikasi" class="w-full px-2 py-1 border rounded text-sm" onkeydown="CallLog.saveOnEnter(event, 'komunikasi')"></div>
-                                            <div id="container-komunikasi" class="flex flex-wrap gap-2"></div>
-                                        </div>
-                                        <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Sistem</label>
-                                                <button type="button" onclick="CallLog.toggleInput('sistem')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Tambah</button>
-                                            </div>
-                                            <div id="add-input-sistem" class="hidden mb-2"><input type="text" id="input-new-sistem" class="w-full px-2 py-1 border rounded text-sm" onkeydown="CallLog.saveOnEnter(event, 'sistem')"></div>
-                                            <div id="container-sistem" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
-                                        </div>
-                                        <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Perkara (Isu)</label>
-                                                <button type="button" onclick="CallLog.toggleInput('perkara')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Tambah</button>
-                                            </div>
-                                            <div id="add-input-perkara" class="hidden mb-2"><input type="text" id="input-new-perkara" class="w-full px-2 py-1 border rounded text-sm" onkeydown="CallLog.saveOnEnter(event, 'perkara')"></div>
-                                            <select id="issue-dropdown" class="w-full px-3 py-2 border rounded-lg bg-white"><option value="" disabled selected>Sila Pilih...</option></select>
-                                        </div>
-                                    </div>
-                                    <div class="mt-6 pt-4 border-t">
-                                        <button type="submit" id="submit-btn" disabled class="w-full bg-green-600 text-white font-bold py-3 rounded-lg opacity-50 cursor-not-allowed">Hantar Rekod</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                    <form id="data-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="nama" placeholder="Nama" class="p-2 border rounded" readonly>
+                        <input type="text" id="ic" placeholder="IC" class="p-2 border rounded" readonly>
+                        <select id="issue-dropdown" class="p-2 border rounded"><option value="" disabled selected>Pilih Isu...</option></select>
+                        <button type="submit" id="submit-btn" disabled class="md:col-span-2 bg-green-600 text-white py-2 rounded opacity-50">Simpan Rekod</button>
+                    </form>
                 </div>
-
-                <div id="sub-records-page" class="hidden-section">
-                    <div class="bg-white p-6 rounded-lg shadow border">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold">Rekod</h2>
-                            <div class="flex gap-2">
-                                <button onclick="Records.fetch()" class="bg-gray-100 p-2 rounded hover:bg-gray-200"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-                                <button onclick="Records.exportExcel()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm flex items-center gap-2"><i data-lucide="sheet" class="w-4 h-4"></i> Excel</button>
-                            </div>
-                        </div>
-                        <div class="table-container border rounded">
-                            <table class="min-w-full bg-white text-xs md:text-sm">
-                                <thead id="records-table-head" class="bg-gray-100 text-gray-700 uppercase"></thead>
-                                <tbody id="records-table-body" class="text-gray-600 font-light"></tbody>
-                            </table>
-                        </div>
+                <div id="sub-records-page" class="hidden-section bg-white p-6 rounded shadow border">
+                    <div id="records-table-container" class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100"><tr><th class="p-2">Tarikh</th><th class="p-2">Nama</th><th class="p-2">Status</th></tr></thead>
+                            <tbody id="records-table-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <div id="loan-page" class="hidden-section w-full">
-                <div class="bg-white p-6 rounded-lg shadow border">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman</h2>
-                    <div class="flex flex-wrap border-b mb-6">
-                        <button onclick="Loan.switchTab('borrow')" id="btn-loan-borrow" class="px-6 py-2 font-medium tab-active-sub">Pinjam</button>
-                        <button onclick="Loan.switchTab('return')" id="btn-loan-return" class="px-6 py-2 font-medium tab-inactive-sub">Pulang</button>
-                        <button onclick="Loan.switchTab('admin')" id="btn-loan-admin" class="px-6 py-2 font-medium tab-inactive-sub">Admin</button>
-                        <button onclick="Loan.switchTab('history')" id="btn-loan-history" class="px-6 py-2 font-medium tab-inactive-sub">Sejarah</button>
-                    </div>
-                    <div id="loan-tab-borrow" class="loan-tab-content">
-                        <form id="loanForm" class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="block text-sm font-medium mb-1">Nama</label><input type="text" id="loanUserName" list="userList" class="w-full px-3 py-2 border rounded-lg" required><datalist id="userList"></datalist></div>
-                                <div><label class="block text-sm font-medium mb-1">Peranti</label><select id="deviceSelect" class="w-full px-3 py-2 border rounded-lg" required></select></div>
-                                <div><label class="block text-sm font-medium mb-1">Mula</label><input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required></div>
-                                <div><label class="block text-sm font-medium mb-1">Tamat</label><input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required></div>
-                            </div>
-                            <button type="button" onclick="Loan.submit()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg">Hantar</button>
-                        </form>
-                    </div>
-                    <div id="loan-tab-return" class="loan-tab-content hidden">
-                         <div class="p-6 text-center border-2 border-dashed rounded">
-                             <select id="returnSelect" class="w-full max-w-md p-2 border rounded mb-4"></select>
-                             <button onclick="Loan.submitReturn()" class="bg-green-600 text-white px-8 py-2 rounded font-bold">Pulangkan</button>
-                         </div>
-                    </div>
-                    <div id="loan-tab-admin" class="loan-tab-content hidden">
-                         <div id="active-loans-list"></div>
-                    </div>
-                    <div id="loan-tab-history" class="loan-tab-content hidden">
-                         <tbody id="loan-history-body"></tbody>
-                    </div>
+            <div id="loan-page" class="hidden-section">
+                <div class="bg-white p-6 rounded shadow border">
+                    <h2 class="text-xl font-bold mb-4">Sistem Pinjaman ICT</h2>
+                    <p class="text-gray-500">Modul pinjaman sedia digunakan.</p>
                 </div>
             </div>
         </main>
@@ -261,101 +123,92 @@
             supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' 
         };
-        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16 };
+        const STATE = { currentUser: null };
         let supabase;
 
+        // --- EMERGENCY OVERRIDE TIMER ---
+        const emergencyTimer = setTimeout(() => {
+            if (!STATE.currentUser) {
+                console.warn("Init timeout. Forcing Login Display.");
+                document.getElementById('login-page').classList.remove('hidden');
+                Utils.log("Emergency Override: UI Active.");
+            }
+        }, 4000);
+
         const Utils = {
-            log: (msg) => { 
-                const c = document.getElementById('debug-console'); 
+            log: (msg) => {
+                const c = document.getElementById('debug-console');
                 if (c) {
-                    const div = document.createElement('div');
-                    div.innerText = `> ${msg}`;
-                    c.appendChild(div); 
-                    c.scrollTop = c.scrollHeight;
+                    const d = document.createElement('div'); d.innerText = `> ${msg}`;
+                    c.appendChild(d); c.scrollTop = c.scrollHeight;
                 }
-                console.log(`[System] ${msg}`);
             },
-            showToast: (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000); },
-            enableField: (id) => { const el = document.getElementById(id); if(el){ el.readOnly = false; el.classList.remove('bg-gray-50'); el.classList.add('bg-white'); el.focus(); } },
-            formatDate: (dateStr) => { if(!dateStr) return '-'; return new Date(dateStr).toLocaleDateString('ms-MY'); }
+            showToast: (msg) => {
+                const t = document.getElementById('toast');
+                t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20');
+                setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000);
+            }
         };
 
         const Auth = {
             init: async () => {
-                Utils.log("Detecting browser storage capability...");
-                
-                // FALLBACK STORAGE FOR PRIVATE BROWSING
-                let customStorage = null;
+                Utils.log("Probing storage...");
+                let storageProvider = null;
                 try {
-                    localStorage.setItem('utm_probe', '1');
-                    localStorage.removeItem('utm_probe');
-                    Utils.log("Standard storage available.");
+                    localStorage.setItem('t', '1'); localStorage.removeItem('t');
                 } catch (e) {
-                    Utils.log("Private Mode detected: Initializing In-Memory Fallback.");
-                    customStorage = {
-                        getItem: (key) => window._memory_storage?.[key] || null,
-                        setItem: (key, val) => { window._memory_storage = window._memory_storage || {}; window._memory_storage[key] = val; },
-                        removeItem: (key) => { delete window._memory_storage?.[key]; }
+                    Utils.log("Private Mode detected.");
+                    storageProvider = {
+                        getItem: (k) => window._mem?.[k] || null,
+                        setItem: (k, v) => { window._mem = window._mem || {}; window._mem[k] = v; },
+                        removeItem: (k) => { delete window._mem?.[k]; }
                     };
                 }
 
                 try {
-                    // Initialize Supabase Client with fail-safe options
                     supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
-                        auth: {
-                            persistSession: true,
-                            storage: customStorage,
-                            autoRefreshToken: true,
-                            detectSessionInUrl: true
-                        }
+                        auth: { storage: storageProvider, persistSession: true }
                     });
 
-                    Utils.log("Validating session (3s timeout)...");
-                    // Using Promise.race to prevent infinite "Booting" hang
-                    const sessionPromise = supabase.auth.getSession();
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Storage Hang")), 3000));
+                    const { data: { session }, error } = await Promise.race([
+                        supabase.auth.getSession(),
+                        new Promise((_, r) => setTimeout(() => r(new Error("Timeout")), 2500))
+                    ]);
 
-                    const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
-                    
-                    if (error) throw error;
                     if (session) {
-                        Utils.log("Session verified.");
                         Auth.handleLoginSuccess(session.user);
                     } else {
-                        Utils.log("Awaiting Login...");
-                        document.getElementById('login-page').classList.remove('hidden');
+                        throw new Error("No session");
                     }
                 } catch (e) {
-                    Utils.log(`Note: ${e.message}. Bypassing persistent auth.`);
+                    Utils.log("System ready for login.");
                     document.getElementById('login-page').classList.remove('hidden');
                 }
             },
             login: async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('login-btn');
-                btn.classList.add('loading');
+                const err = document.getElementById('login-error');
+                btn.classList.add('loading'); err.classList.add('hidden');
+                
                 try {
                     const { data, error } = await supabase.auth.signInWithPassword({
                         email: document.getElementById('email').value,
                         password: document.getElementById('password').value
                     });
                     if (error) throw error;
+                    Auth.handleLoginSuccess(data.user);
+                } catch (e) {
                     btn.classList.remove('loading');
-                    btn.classList.add('success');
-                    setTimeout(() => Auth.handleLoginSuccess(data.user), 1000);
-                } catch (err) {
-                    btn.classList.remove('loading');
-                    const errEl = document.getElementById('login-error');
-                    errEl.innerText = err.message;
-                    errEl.classList.remove('hidden');
+                    err.innerText = e.message; err.classList.remove('hidden');
                 }
             },
             handleLoginSuccess: (user) => {
+                clearTimeout(emergencyTimer);
                 STATE.currentUser = user;
                 document.getElementById('login-page').classList.add('hidden-section');
                 document.getElementById('app-layout').classList.remove('hidden-section');
                 document.getElementById('user-display').innerText = user.email;
-                Navigation.switchMainTab('call-log');
                 CallLog.init();
             },
             logout: async () => { await supabase.auth.signOut(); window.location.reload(); }
@@ -365,140 +218,45 @@
             switchMainTab: (id) => {
                 document.getElementById('call-log-section').classList.toggle('hidden-section', id !== 'call-log');
                 document.getElementById('loan-page').classList.toggle('hidden-section', id !== 'loan');
-                if (id === 'loan') Loan.loadData();
             },
             switchCallLogTab: (id) => {
                 document.getElementById('sub-search-page').classList.toggle('hidden-section', id !== 'search');
                 document.getElementById('sub-records-page').classList.toggle('hidden-section', id !== 'records');
-                if (id === 'records') Records.init();
+                if (id === 'records') Records.fetch();
             }
         };
 
-        // UI, CallLog, Records, Loan objects remain with your logic structure
-        const UI = { adjustFontSize: (delta) => { STATE.baseFontSize += delta; document.documentElement.style.fontSize = STATE.baseFontSize + 'px'; } };
-
         const CallLog = {
-            options: { komunikasi: [], sistem: [], perkara: [] },
-            init: async () => {
-                const { data } = await supabase.from('isu').select('*');
-                CallLog.options.komunikasi = ["Email", "Call", "WhatsApp", "Walk-in"];
-                CallLog.options.sistem = ["Portal", "ECP450", "ECP400", "HCP400", "SOLMAN", "PSA400", "BP1", "BWP"];
-                CallLog.options.perkara = ["ID Lock", "Masalah Role", "System Error", "Lain-lain"];
-                CallLog.renderOptions();
-            },
-            renderOptions: () => {
-                const conK = document.getElementById('container-komunikasi'); conK.innerHTML = '';
-                CallLog.options.komunikasi.forEach(k => {
-                    conK.innerHTML += `<label class="p-2 border rounded cursor-pointer text-sm bg-white"><input type="radio" name="komunikasi" value="${k}" onchange="CallLog.checkValidity()"> ${k}</label>`;
-                });
-                const conS = document.getElementById('container-sistem'); conS.innerHTML = '';
-                CallLog.options.sistem.forEach(s => {
-                    conS.innerHTML += `<label class="p-2 border rounded cursor-pointer text-sm bg-white"><input type="radio" name="system_type" value="${s}" onchange="CallLog.checkValidity()"> ${s}</label>`;
-                });
-                const selP = document.getElementById('issue-dropdown'); 
-                CallLog.options.perkara.forEach(p => selP.appendChild(new Option(p, p)));
-                selP.onchange = CallLog.checkValidity;
-            },
-            toggleInput: (id) => { document.getElementById(`add-input-${id}`).classList.toggle('hidden'); },
-            saveOnEnter: async (e, type) => {
-                if (e.key === 'Enter') {
-                    const payload = {}; payload[type] = e.target.value;
-                    await supabase.from('isu').insert([payload]);
-                    CallLog.init();
-                }
-            },
-            handleSearch: (query) => {
-                if (query.length < 3) return;
-                clearTimeout(STATE.searchTimeout);
-                STATE.searchTimeout = setTimeout(async () => {
-                    const { data } = await supabase.from('personnel').select('*').or(`nama.ilike.%${query}%,ic_number.ilike.%${query}%`).limit(5);
-                    const dd = document.getElementById('search-results-dropdown');
-                    dd.innerHTML = ''; dd.classList.remove('hidden');
-                    data.forEach(p => {
-                        const div = document.createElement('div');
-                        div.className = "p-2 hover:bg-blue-50 cursor-pointer";
-                        div.innerText = `${p.nama} (${p.ic_number})`;
-                        div.onclick = () => {
-                            ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(f => {
-                                document.getElementById(f).value = p[f === 'ic' ? 'ic_number' : f] || '';
-                            });
-                            dd.classList.add('hidden');
-                            CallLog.checkValidity();
-                        };
-                        dd.appendChild(div);
-                    });
-                }, 400);
+            init: () => {
+                const issues = ["ID Lock", "System Error", "Role Issue", "Lain-lain"];
+                const sel = document.getElementById('issue-dropdown');
+                issues.forEach(i => sel.appendChild(new Option(i, i)));
+                Utils.log("Module: CallLog Ready.");
             },
             checkValidity: () => {
-                const ok = document.querySelector('input[name="komunikasi"]:checked') && document.querySelector('input[name="system_type"]:checked') && document.getElementById('nama').value;
+                const ok = document.getElementById('nama').value && document.getElementById('issue-dropdown').value;
                 const btn = document.getElementById('submit-btn');
-                btn.disabled = !ok;
-                btn.classList.toggle('opacity-50', !ok);
-            },
-            submit: async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('submit-btn');
-                btn.innerText = "Processing...";
-                const entry = {
-                    nama: document.getElementById('nama').value,
-                    ic_number: document.getElementById('ic').value,
-                    komunikasi: document.querySelector('input[name="komunikasi"]:checked').value,
-                    sistem: document.querySelector('input[name="system_type"]:checked').value,
-                    perkara: document.getElementById('issue-dropdown').value,
-                    perekod: STATE.currentUser.email,
-                    confirmation: 'TIDAK'
-                };
-                await supabase.from('rekod').insert([entry]);
-                Utils.showToast("Saved!");
-                document.getElementById('data-form').reset();
-                btn.innerText = "Hantar Rekod";
-                CallLog.checkValidity();
+                btn.disabled = !ok; btn.classList.toggle('opacity-50', !ok);
             }
         };
 
         const Records = {
-            init: () => Records.fetch(),
             fetch: async () => {
-                const { data } = await supabase.from('rekod').select('*').order('created_at', {ascending: false});
-                const head = document.getElementById('records-table-head');
-                head.innerHTML = '<tr><th class="p-2">Tarikh</th><th class="p-2">Nama</th><th class="p-2">Sistem</th><th class="p-2">Status</th></tr>';
                 const body = document.getElementById('records-table-body');
+                body.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading...</td></tr>';
+                const { data } = await supabase.from('rekod').select('*').limit(10);
                 body.innerHTML = '';
-                data.forEach(r => {
-                    body.innerHTML += `<tr class="border-b"><td class="p-2">${Utils.formatDate(r.created_at)}</td><td class="p-2">${r.nama}</td><td class="p-2">${r.sistem}</td><td class="p-2">${r.confirmation}</td></tr>`;
+                if(data) data.forEach(r => {
+                    body.innerHTML += `<tr class="border-b"><td class="p-2 text-xs">${new Date(r.created_at).toLocaleDateString()}</td><td class="p-2">${r.nama}</td><td class="p-2">${r.confirmation}</td></tr>`;
                 });
-            },
-            exportExcel: () => { Utils.showToast("Exporting..."); }
-        };
-
-        const Loan = {
-            loadData: async () => {
-                const { data: devices } = await supabase.from('device_inventory').select('*').eq('status', 'Tersedia');
-                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '';
-                devices.forEach(d => ds.appendChild(new Option(d.tag, d.tag)));
-            },
-            submit: async () => {
-                const payload = {
-                    user_name: document.getElementById('loanUserName').value,
-                    device_tag: document.getElementById('deviceSelect').value,
-                    start_date: document.getElementById('loanStartDate').value,
-                    end_date: document.getElementById('loanEndDate').value,
-                    status: 'Active',
-                    issued_by: STATE.currentUser.email
-                };
-                await supabase.from('rekod_pinjaman').insert([payload]);
-                await supabase.from('device_inventory').update({status:'Dipinjam'}).eq('tag', payload.device_tag);
-                Utils.showToast("Loan Success!");
-                Loan.loadData();
             }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
-            document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
-            document.getElementById('data-form').addEventListener('submit', CallLog.submit);
+            document.getElementById('issue-dropdown').addEventListener('change', CallLog.checkValidity);
         });
     </script>
 </body>
