@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT UTM - Private Mode Fix</title>
+    <title>Sistem Rekod IT UTM - Universal v15</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -14,6 +14,7 @@
         :root { --base-font-size: 16px; }
         html { font-size: var(--base-font-size); }
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
         .hidden-section { display: none !important; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -26,11 +27,15 @@
         
         #debug-console {
             background-color: #1a1a1a; color: #00ff00; font-family: monospace;
-            padding: 1rem; margin-top: 2rem; border-radius: 0.5rem; font-size: 0.75rem;
-            height: 120px; overflow-y: auto; border: 1px solid #333; width: 100%;
+            padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; font-size: 0.75rem;
+            height: 100px; overflow-y: auto; border: 1px solid #333; width: 100%;
         }
 
-        .login-btn-anim { position: relative; overflow: hidden; transition: all 0.4s; display: flex; align-items: center; justify-content: center; }
+        /* Netflix Login Animation */
+        .login-btn-anim {
+            position: relative; transition: all 0.4s;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
         .login-btn-anim.loading { background-color: #000 !important; color: transparent !important; pointer-events: none; }
         .login-btn-anim.loading::after {
             content: "UTM"; position: absolute; color: #E50914; font-weight: 900; font-size: 1.5rem;
@@ -48,58 +53,69 @@
 
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
-            <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-gray-800">Sistem Rekod IT UTM</h1>
-                <p class="text-gray-500 text-sm mt-2">Log masuk diperlukan</p>
+            <div class="text-center mb-8 mt-4">
+                <h1 class="text-2xl font-bold text-gray-800">Sistem Rekod <br> Unit Teknologi Maklumat</h1>
+                <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
             </div>
             <form id="login-form" class="space-y-6">
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required></div>
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required></div>
+                <div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin@example.com" required></div>
+                <div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="********" required></div>
                 <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded"></div>
-                <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 h-[50px]"><span>Log Masuk</span></button>
+                <div class="flex justify-center w-full h-[60px]"> 
+                    <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 h-[50px]"><span id="btn-text">Log Masuk</span></button>
+                </div>
             </form>
         </div>
-        <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting...</div></div>
+        <div id="debug-console" class="w-full max-w-md mt-4"><div>> System ready.</div></div>
     </div>
 
     <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center">
-                    <span class="font-bold text-lg mr-6">UTM REKOD</span>
-                    <div class="flex gap-2">
-                        <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm tab-inactive-main">Pinjaman</button>
+                <div class="flex items-center mb-2 md:mb-0">
+                    <span class="font-bold text-lg mr-6">Sistem Rekod UTM</span>
+                    <div class="ml-6 flex gap-2">
+                        <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
+                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium tab-inactive-main">Pinjaman ICT</button>
                     </div>
                 </div>
                 <div class="flex items-center text-sm">
-                    <span id="user-display" class="mr-4 text-blue-200"></span>
-                    <button onclick="Auth.logout()" class="bg-red-600 px-3 py-1 rounded">Keluar</button>
+                    <span id="user-display" class="mr-4 text-blue-200 truncate max-w-[150px]"></span>
+                    <button onclick="Auth.logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">Keluar</button>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-grow p-4 md:p-6 w-full mx-auto max-w-7xl">
+        <main class="flex-grow p-4 md:p-6 w-full mx-auto max-w-7xl"> 
+            
             <div id="call-log-section" class="w-full">
                 <div class="flex border-b mb-6">
                     <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">INPUT</button>
                     <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">REKOD</button>
                 </div>
-                <div id="sub-search-page" class="bg-white p-6 rounded shadow border space-y-4">
-                    <div class="relative">
-                        <input type="text" id="global-search" class="w-full pl-10 py-2 border rounded" placeholder="Cari Nama/IC...">
-                        <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow border hidden max-h-40 overflow-y-auto"></div>
+
+                <div id="sub-search-page" class="space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h2 class="text-lg font-bold mb-4 flex gap-2"><i data-lucide="search"></i> Carian Live</h2>
+                        <input type="text" id="global-search" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Cari Nama atau IC...">
+                        <div id="search-results-dropdown" class="bg-white border hidden max-h-40 overflow-y-auto mt-1"></div>
                     </div>
-                    <form id="data-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="nama" placeholder="Nama" class="p-2 border rounded" readonly>
-                        <input type="text" id="ic" placeholder="IC" class="p-2 border rounded" readonly>
-                        <select id="issue-dropdown" class="p-2 border rounded"><option value="" disabled selected>Pilih Isu...</option></select>
-                        <button type="submit" id="submit-btn" disabled class="md:col-span-2 bg-green-600 text-white py-2 rounded opacity-50">Simpan Rekod</button>
-                    </form>
+
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <form id="data-form" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" id="nama" placeholder="Nama" class="w-full p-2 border rounded bg-gray-50" readonly>
+                                <input type="text" id="ic" placeholder="IC" class="w-full p-2 border rounded bg-gray-50" readonly>
+                                <select id="issue-dropdown" class="w-full p-2 border rounded"><option value="" disabled selected>Pilih Isu...</option></select>
+                            </div>
+                            <button type="submit" id="submit-btn" disabled class="w-full bg-green-600 text-white font-bold py-2 rounded opacity-50">Hantar Rekod</button>
+                        </form>
+                    </div>
                 </div>
-                <div id="sub-records-page" class="hidden-section bg-white p-6 rounded shadow border">
-                    <div id="records-table-container" class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
+
+                <div id="sub-records-page" class="hidden-section bg-white p-6 rounded-lg shadow border">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
                             <thead class="bg-gray-100"><tr><th class="p-2">Tarikh</th><th class="p-2">Nama</th><th class="p-2">Status</th></tr></thead>
                             <tbody id="records-table-body"></tbody>
                         </table>
@@ -107,90 +123,72 @@
                 </div>
             </div>
 
-            <div id="loan-page" class="hidden-section">
-                <div class="bg-white p-6 rounded shadow border">
-                    <h2 class="text-xl font-bold mb-4">Sistem Pinjaman ICT</h2>
-                    <p class="text-gray-500">Modul pinjaman sedia digunakan.</p>
+            <div id="loan-page" class="hidden-section w-full">
+                <div class="bg-white p-6 rounded-lg shadow border text-center">
+                    <h2 class="text-xl font-bold">Modul Pinjaman ICT</h2>
+                    <p class="text-gray-500 mt-2">Sistem disambungkan.</p>
                 </div>
             </div>
+
         </main>
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50"></div>
-
     <script>
         const CONFIG = { 
-            supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', 
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' 
+            url: 'https://objxfgosatmasjjifkkg.supabase.co', 
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' 
         };
-        const STATE = { currentUser: null };
+        
         let supabase;
 
-        // --- EMERGENCY OVERRIDE TIMER ---
-        const emergencyTimer = setTimeout(() => {
-            if (!STATE.currentUser) {
-                console.warn("Init timeout. Forcing Login Display.");
-                document.getElementById('login-page').classList.remove('hidden');
-                Utils.log("Emergency Override: UI Active.");
-            }
-        }, 4000);
+        function log(msg) {
+            const c = document.getElementById('debug-console');
+            if(c) { c.innerHTML += `<div>> ${msg}</div>`; c.scrollTop = c.scrollHeight; }
+            console.log(`[UTM System] ${msg}`);
+        }
 
-        const Utils = {
-            log: (msg) => {
-                const c = document.getElementById('debug-console');
-                if (c) {
-                    const d = document.createElement('div'); d.innerText = `> ${msg}`;
-                    c.appendChild(d); c.scrollTop = c.scrollHeight;
-                }
-            },
-            showToast: (msg) => {
-                const t = document.getElementById('toast');
-                t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20');
-                setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000);
-            }
-        };
+        // --- STEP 1: INITIALIZE CLIENT IMMEDIATELY ---
+        try {
+            const memoryStorage = {
+                getItem: (k) => window._m?.[k] || null,
+                setItem: (k, v) => { window._m = window._m || {}; window._m[k] = v; },
+                removeItem: (k) => { delete window._m?.[k]; }
+            };
+
+            supabase = window.supabase.createClient(CONFIG.url, CONFIG.key, {
+                auth: { storage: memoryStorage, persistSession: true }
+            });
+            log("Database client ready.");
+        } catch (e) {
+            log("Critical: Database script blocked.");
+        }
 
         const Auth = {
-            init: async () => {
-                Utils.log("Probing storage...");
-                let storageProvider = null;
+            // --- STEP 2: NON-BLOCKING BACKGROUND SESSION CHECK ---
+            checkSession: async () => {
+                log("Verifying background session...");
                 try {
-                    localStorage.setItem('t', '1'); localStorage.removeItem('t');
-                } catch (e) {
-                    Utils.log("Private Mode detected.");
-                    storageProvider = {
-                        getItem: (k) => window._mem?.[k] || null,
-                        setItem: (k, v) => { window._mem = window._mem || {}; window._mem[k] = v; },
-                        removeItem: (k) => { delete window._mem?.[k]; }
-                    };
-                }
-
-                try {
-                    supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
-                        auth: { storage: storageProvider, persistSession: true }
-                    });
-
-                    const { data: { session }, error } = await Promise.race([
+                    const { data: { session } } = await Promise.race([
                         supabase.auth.getSession(),
-                        new Promise((_, r) => setTimeout(() => r(new Error("Timeout")), 2500))
+                        new Promise((_, r) => setTimeout(() => r(new Error("Timeout")), 2000))
                     ]);
-
                     if (session) {
                         Auth.handleLoginSuccess(session.user);
                     } else {
-                        throw new Error("No session");
+                        log("Manual login required.");
                     }
                 } catch (e) {
-                    Utils.log("System ready for login.");
-                    document.getElementById('login-page').classList.remove('hidden');
+                    log("Session check bypassed.");
                 }
             },
             login: async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('login-btn');
                 const err = document.getElementById('login-error');
-                btn.classList.add('loading'); err.classList.add('hidden');
                 
+                btn.classList.add('loading');
+                err.classList.add('hidden');
+
                 try {
                     const { data, error } = await supabase.auth.signInWithPassword({
                         email: document.getElementById('email').value,
@@ -200,18 +198,19 @@
                     Auth.handleLoginSuccess(data.user);
                 } catch (e) {
                     btn.classList.remove('loading');
-                    err.innerText = e.message; err.classList.remove('hidden');
+                    err.innerText = e.message;
+                    err.classList.remove('hidden');
+                    log("Login error: " + e.message);
                 }
             },
             handleLoginSuccess: (user) => {
-                clearTimeout(emergencyTimer);
-                STATE.currentUser = user;
                 document.getElementById('login-page').classList.add('hidden-section');
                 document.getElementById('app-layout').classList.remove('hidden-section');
                 document.getElementById('user-display').innerText = user.email;
+                log("Authentication success.");
                 CallLog.init();
             },
-            logout: async () => { await supabase.auth.signOut(); window.location.reload(); }
+            logout: () => location.reload()
         };
 
         const Navigation = {
@@ -222,42 +221,24 @@
             switchCallLogTab: (id) => {
                 document.getElementById('sub-search-page').classList.toggle('hidden-section', id !== 'search');
                 document.getElementById('sub-records-page').classList.toggle('hidden-section', id !== 'records');
-                if (id === 'records') Records.fetch();
             }
         };
 
         const CallLog = {
             init: () => {
-                const issues = ["ID Lock", "System Error", "Role Issue", "Lain-lain"];
+                const issues = ["ID Lock", "System Error", "Masalah Role", "Lain-lain"];
                 const sel = document.getElementById('issue-dropdown');
                 issues.forEach(i => sel.appendChild(new Option(i, i)));
-                Utils.log("Module: CallLog Ready.");
-            },
-            checkValidity: () => {
-                const ok = document.getElementById('nama').value && document.getElementById('issue-dropdown').value;
-                const btn = document.getElementById('submit-btn');
-                btn.disabled = !ok; btn.classList.toggle('opacity-50', !ok);
+                log("CallLog ready.");
             }
         };
 
-        const Records = {
-            fetch: async () => {
-                const body = document.getElementById('records-table-body');
-                body.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading...</td></tr>';
-                const { data } = await supabase.from('rekod').select('*').limit(10);
-                body.innerHTML = '';
-                if(data) data.forEach(r => {
-                    body.innerHTML += `<tr class="border-b"><td class="p-2 text-xs">${new Date(r.created_at).toLocaleDateString()}</td><td class="p-2">${r.nama}</td><td class="p-2">${r.confirmation}</td></tr>`;
-                });
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- STEP 3: RUN INITIALIZATION ON LOAD ---
+        window.onload = () => {
             if (window.lucide) lucide.createIcons();
-            Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
-            document.getElementById('issue-dropdown').addEventListener('change', CallLog.checkValidity);
-        });
+            Auth.checkSession();
+        };
     </script>
 </body>
 </html>
