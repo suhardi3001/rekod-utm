@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Rekod IT (Final v15 - Dynamic Table)</title>
     
-    <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
@@ -107,7 +106,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <!-- LOGIN PAGE -->
     <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
             <div class="text-center mb-8 mt-4">
@@ -126,7 +124,6 @@
         <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting System...</div></div>
     </div>
 
-    <!-- MAIN APP LAYOUT -->
     <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
@@ -150,14 +147,12 @@
 
         <main class="flex-grow p-4 md:p-6 w-full mx-auto max-w-7xl"> 
             
-            <!-- MODULE 1: CALL LOG -->
             <div id="call-log-section" class="w-full">
                 <div class="flex border-b mb-6">
                     <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">INPUT</button>
                     <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">REKOD</button>
                 </div>
 
-                <!-- Input Form -->
                 <div id="sub-search-page" class="space-y-6">
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <h2 class="text-lg font-bold mb-4 flex gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
@@ -196,7 +191,6 @@
                                     <label class="block text-sm font-bold text-gray-800 mb-3 border-b pb-2">Kategori Sistem & Isu <span class="text-red-500">*</span></label>
                                     
                                     <div class="space-y-6">
-                                        <!-- 1. KOMUNIKASI (Radio) -->
                                         <div>
                                             <div class="flex justify-between items-center mb-2">
                                                 <label class="block text-sm font-semibold text-gray-700">Medium Komunikasi</label>
@@ -208,7 +202,6 @@
                                             <div id="container-komunikasi" class="flex flex-wrap gap-2"></div>
                                         </div>
 
-                                        <!-- 2. SISTEM (Radio) -->
                                         <div>
                                             <div class="flex justify-between items-center mb-2">
                                                 <label class="block text-sm font-semibold text-gray-700">Sistem</label>
@@ -220,7 +213,6 @@
                                             <div id="container-sistem" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
                                         </div>
 
-                                        <!-- 3. PERKARA (Dropdown) -->
                                         <div>
                                             <div class="flex justify-between items-center mb-2">
                                                 <label class="block text-sm font-semibold text-gray-700">Perkara (Isu)</label>
@@ -246,7 +238,6 @@
                     </div>
                 </div>
 
-                <!-- Database Table (DYNAMIC & DRAGGABLE) -->
                 <div id="sub-records-page" class="hidden-section">
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <div class="flex justify-between items-center mb-4">
@@ -263,18 +254,15 @@
                         <div class="table-container border rounded">
                             <table class="min-w-full bg-white text-xs md:text-sm">
                                 <thead id="records-table-head" class="bg-gray-100 text-gray-700 uppercase leading-normal">
-                                    <!-- Dynamic Headers Generated via JS -->
-                                </thead>
+                                    </thead>
                                 <tbody id="records-table-body" class="text-gray-600 font-light">
-                                    <!-- Dynamic Body Generated via JS -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- MODULE 2: LOAN SYSTEM -->
             <div id="loan-page" class="hidden-section w-full">
                 <div class="bg-white p-6 rounded-lg shadow border">
                     <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
@@ -286,7 +274,6 @@
                         <button onclick="Loan.switchTab('history')" id="btn-loan-history" class="px-6 py-2 font-medium tab-inactive-sub">Sejarah</button>
                     </div>
 
-                    <!-- BORROW -->
                     <div id="loan-tab-borrow" class="loan-tab-content">
                         <form id="loanForm" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,7 +288,6 @@
                         </form>
                     </div>
 
-                    <!-- RETURN -->
                     <div id="loan-tab-return" class="loan-tab-content hidden">
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                             <h5 class="text-lg font-bold text-gray-800 mb-2">Pulangkan Peranti</h5>
@@ -310,7 +296,6 @@
                         </div>
                     </div>
 
-                    <!-- ADMIN -->
                     <div id="loan-tab-admin" class="loan-tab-content hidden">
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             <div class="space-y-6">
@@ -337,7 +322,6 @@
                         </div>
                     </div>
 
-                    <!-- HISTORY -->
                     <div id="loan-tab-history" class="loan-tab-content hidden">
                         <div class="mb-4 flex justify-between items-center">
                             <h6 class="font-bold text-gray-700">Sejarah</h6>
@@ -361,7 +345,6 @@
         </main>
     </div>
 
-    <!-- MODALS -->
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50"></div>
     <div id="overdue-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
         <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
@@ -370,47 +353,158 @@
         </div>
     </div>
 
-    <!-- LOGIC -->
     <script>
-        const CONFIG = { supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' };
+        const CONFIG = { 
+            supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', 
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' 
+        };
         const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16 };
         
-        let supabase; try { supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey); } catch (e) { console.error(e); }
+        let supabase;
 
         const Utils = {
-            log: (msg) => { const c = document.getElementById('debug-console'); c.appendChild(document.createElement('div')).innerText = `> ${msg}`; c.scrollTop = c.scrollHeight; },
-            showToast: (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000); },
-            enableField: (id) => { const el = document.getElementById(id); if(el) { el.readOnly = false; el.classList.remove('bg-gray-50'); el.classList.add('bg-white', 'ring-2', 'ring-blue-100'); el.focus(); document.getElementById('btn-update-master').classList.remove('hidden'); } },
-            formatDate: (dateStr) => { if(!dateStr) return '-'; return new Date(dateStr).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+            log: (msg) => { 
+                const c = document.getElementById('debug-console'); 
+                if (c) {
+                    const div = document.createElement('div');
+                    div.innerText = `> ${msg}`;
+                    c.appendChild(div); 
+                    c.scrollTop = c.scrollHeight;
+                }
+                console.log(`[UTM System] ${msg}`);
+            },
+            showToast: (msg) => { 
+                const t = document.getElementById('toast'); 
+                t.innerText = msg; 
+                t.classList.remove('opacity-0', 'translate-y-20'); 
+                setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000); 
+            },
+            enableField: (id) => { 
+                const el = document.getElementById(id); 
+                if(el) { 
+                    el.readOnly = false; 
+                    el.classList.remove('bg-gray-50'); 
+                    el.classList.add('bg-white', 'ring-2', 'ring-blue-100'); 
+                    el.focus(); 
+                    document.getElementById('btn-update-master').classList.remove('hidden'); 
+                } 
+            },
+            formatDate: (dateStr) => { 
+                if(!dateStr) return '-'; 
+                return new Date(dateStr).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); 
+            }
         };
 
         const Auth = {
             init: async () => {
-                Utils.log("Checking Auth..."); const { data: { session } } = await supabase.auth.getSession();
-                if (session) { Utils.log("Auth OK: " + session.user.email); Auth.handleLoginSuccess(session.user); } else { document.getElementById('login-page').classList.remove('hidden'); }
+                Utils.log("Initializing Supabase...");
+                try {
+                    // Initialize Supabase Client inside a try-catch for private browser compatibility
+                    supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+                    Utils.log("Supabase client ready.");
+
+                    Utils.log("Checking Auth Session...");
+                    // Using getSession with extra timeout to prevent infinite wait in private mode
+                    const sessionPromise = supabase.auth.getSession();
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Auth Timeout")), 5000));
+
+                    const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+                    
+                    if (error) throw error;
+
+                    if (session) { 
+                        Utils.log("Active session found: " + session.user.email); 
+                        Auth.handleLoginSuccess(session.user); 
+                    } else { 
+                        Utils.log("No session. Ready for login.");
+                        document.getElementById('login-page').classList.remove('hidden'); 
+                    }
+                } catch (e) { 
+                    Utils.log(`Warning: ${e.message}. Proceeding to Login.`);
+                    // Even if session check fails (often due to localStorage in Incognito), show login page
+                    document.getElementById('login-page').classList.remove('hidden'); 
+                }
             },
             login: async (e) => {
-                e.preventDefault(); const btn = document.getElementById('login-btn'); btn.classList.add('loading');
-                const { data, error } = await supabase.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
-                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
-                else { setTimeout(() => { btn.classList.remove('loading'); btn.classList.add('success'); setTimeout(() => { Auth.handleLoginSuccess(data.user); btn.classList.remove('success'); }, 2000); }, 1500); }
+                e.preventDefault(); 
+                const btn = document.getElementById('login-btn'); 
+                const errDiv = document.getElementById('login-error');
+                
+                btn.classList.add('loading');
+                errDiv.classList.add('hidden');
+                
+                try {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    
+                    if (error) throw error;
+
+                    Utils.log("Login successful.");
+                    setTimeout(() => { 
+                        btn.classList.remove('loading'); 
+                        btn.classList.add('success'); 
+                        setTimeout(() => { 
+                            Auth.handleLoginSuccess(data.user); 
+                            btn.classList.remove('success'); 
+                        }, 1500); 
+                    }, 1000);
+
+                } catch (error) {
+                    btn.classList.remove('loading'); 
+                    errDiv.innerText = error.message; 
+                    errDiv.classList.remove('hidden'); 
+                    Utils.log(`Login Failed: ${error.message}`);
+                }
             },
-            handleLoginSuccess: (user) => { STATE.currentUser = user; document.getElementById('login-page').classList.add('hidden-section'); document.getElementById('app-layout').classList.remove('hidden-section'); document.getElementById('user-display').innerText = user.email; Navigation.switchMainTab('call-log'); },
-            logout: async () => { await supabase.auth.signOut(); window.location.reload(); }
+            handleLoginSuccess: (user) => { 
+                STATE.currentUser = user; 
+                document.getElementById('login-page').classList.add('hidden-section'); 
+                document.getElementById('app-layout').classList.remove('hidden-section'); 
+                document.getElementById('user-display').innerText = user.email; 
+                Navigation.switchMainTab('call-log'); 
+                CallLog.init(); // Load options after login
+            },
+            logout: async () => { 
+                Utils.log("Logging out...");
+                await supabase.auth.signOut(); 
+                window.location.reload(); 
+            }
         };
 
         const Navigation = {
             switchMainTab: (tabId) => {
-                document.getElementById('call-log-section').classList.toggle('hidden-section', tabId !== 'call-log'); document.getElementById('loan-page').classList.toggle('hidden-section', tabId !== 'loan');
-                const btnCall = document.getElementById('nav-call-log'); const btnLoan = document.getElementById('nav-loan');
-                if (tabId === 'call-log') { btnCall.classList.replace('tab-inactive-main', 'tab-active-main'); btnLoan.classList.replace('tab-active-main', 'tab-inactive-main'); } 
-                else { btnLoan.classList.replace('tab-inactive-main', 'tab-active-main'); btnCall.classList.replace('tab-active-main', 'tab-inactive-main'); Loan.loadData(); }
+                document.getElementById('call-log-section').classList.toggle('hidden-section', tabId !== 'call-log'); 
+                document.getElementById('loan-page').classList.toggle('hidden-section', tabId !== 'loan');
+                
+                const btnCall = document.getElementById('nav-call-log'); 
+                const btnLoan = document.getElementById('nav-loan');
+                
+                if (tabId === 'call-log') { 
+                    btnCall.className = "px-3 py-1 rounded text-sm font-medium tab-active-main";
+                    btnLoan.className = "px-3 py-1 rounded text-sm font-medium tab-inactive-main";
+                } else { 
+                    btnLoan.className = "px-3 py-1 rounded text-sm font-medium tab-active-main";
+                    btnCall.className = "px-3 py-1 rounded text-sm font-medium tab-inactive-main";
+                    Loan.loadData(); 
+                }
             },
             switchCallLogTab: (subTabId) => {
-                document.getElementById('sub-search-page').classList.toggle('hidden-section', subTabId !== 'search'); document.getElementById('sub-records-page').classList.toggle('hidden-section', subTabId !== 'records');
-                const btnSearch = document.getElementById('btn-sub-search'); const btnRec = document.getElementById('btn-sub-records');
-                if (subTabId === 'search') { btnSearch.className = "px-6 py-2 font-medium tab-active-sub"; btnRec.className = "px-6 py-2 font-medium tab-inactive-sub"; } 
-                else { btnRec.className = "px-6 py-2 font-medium tab-active-sub"; btnSearch.className = "px-6 py-2 font-medium tab-inactive-sub"; Records.init(); }
+                document.getElementById('sub-search-page').classList.toggle('hidden-section', subTabId !== 'search'); 
+                document.getElementById('sub-records-page').classList.toggle('hidden-section', subTabId !== 'records');
+                
+                const btnSearch = document.getElementById('btn-sub-search'); 
+                const btnRec = document.getElementById('btn-sub-records');
+                
+                if (subTabId === 'search') { 
+                    btnSearch.className = "px-6 py-2 font-medium tab-active-sub"; 
+                    btnRec.className = "px-6 py-2 font-medium tab-inactive-sub"; 
+                } else { 
+                    btnRec.className = "px-6 py-2 font-medium tab-active-sub"; 
+                    btnSearch.className = "px-6 py-2 font-medium tab-inactive-sub"; 
+                    Records.init(); 
+                }
             }
         };
 
@@ -509,7 +603,12 @@
                 btn.classList.toggle('opacity-50', !isValid); 
                 btn.classList.toggle('cursor-not-allowed', !isValid); 
             },
-            updateMasterData: async () => { const payload = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value }; const { data: exist } = await supabase.from('personnel').select('id').eq('ic_number', payload.ic_number).maybeSingle(); const { error } = exist ? await supabase.from('personnel').update(payload).eq('ic_number', payload.ic_number) : await supabase.from('personnel').insert([payload]); if(!error) { Utils.showToast("Data Induk Dikemaskini!"); document.getElementById('btn-update-master').classList.add('hidden'); } },
+            updateMasterData: async () => { 
+                const payload = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value }; 
+                const { data: exist } = await supabase.from('personnel').select('id').eq('ic_number', payload.ic_number).maybeSingle(); 
+                const { error } = exist ? await supabase.from('personnel').update(payload).eq('ic_number', payload.ic_number) : await supabase.from('personnel').insert([payload]); 
+                if(!error) { Utils.showToast("Data Induk Dikemaskini!"); document.getElementById('btn-update-master').classList.add('hidden'); } 
+            },
             
             submit: async (e) => { 
                 e.preventDefault(); 
@@ -557,7 +656,6 @@
         const Records = {
             userMap: {},
             currentRecords: [],
-            // Initial Column Configuration
             columns: [
                 { id: 'created_at', label: 'Tarikh Event' },
                 { id: 'nama_ic', label: 'Nama / IC' },
@@ -587,22 +685,18 @@
                     th.draggable = true;
                     th.dataset.index = index;
                     
-                    // Header Content (Editable Span)
                     const span = document.createElement('span');
                     span.contentEditable = true;
                     span.innerText = col.label;
                     span.className = "cursor-text focus:cursor-text w-full block";
                     span.onblur = (e) => {
                         Records.columns[index].label = e.target.innerText;
-                        // console.log("Updated header:", Records.columns);
                     };
                     
-                    // Prevent drag when clicking text to edit
                     span.onmousedown = (e) => e.stopPropagation(); 
 
                     th.appendChild(span);
 
-                    // Drag Events
                     th.addEventListener('dragstart', Records.handleDragStart);
                     th.addEventListener('dragover', Records.handleDragOver);
                     th.addEventListener('dragleave', Records.handleDragLeave);
@@ -613,7 +707,6 @@
                 thead.appendChild(tr);
             },
 
-            // Drag and Drop Logic
             dragSrcIndex: null,
             handleDragStart: (e) => {
                 Records.dragSrcIndex = e.target.closest('th').dataset.index;
@@ -643,13 +736,10 @@
                 const dropIndex = parseInt(th.dataset.index);
 
                 if (dragIndex !== dropIndex) {
-                    // Reorder columns array
                     const item = Records.columns.splice(dragIndex, 1)[0];
                     Records.columns.splice(dropIndex, 0, item);
-                    
-                    // Re-render
                     Records.renderHeader();
-                    Records.renderBody(); // Re-render body to match new order
+                    Records.renderBody();
                 }
                 return false;
             },
@@ -684,7 +774,6 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b hover:bg-gray-50 align-top";
 
-                    // Pre-process data fields
                     const recName = r.perekod ? (Records.userMap[r.perekod.toLowerCase()] || r.perekod.split('@')[0]) : '-';
                     const updName = r.status_updated_by ? (Records.userMap[r.status_updated_by.toLowerCase()] || r.status_updated_by.split('@')[0]) : '-';
                     let displaySistem = r.sistem;
@@ -692,65 +781,33 @@
                     if (!displaySistem && r.notes && r.notes.includes(' - ')) displaySistem = r.notes.split(' - ')[0];
                     if (!displayPerkara && r.notes && r.notes.includes(' - ')) { const parts = r.notes.split(' - '); if(parts.length > 1) displayPerkara = parts[1].split(' (')[0]; }
 
-                    // Render columns based on current order
                     Records.columns.forEach(col => {
                         const td = document.createElement('td');
                         td.className = "p-3";
 
                         switch(col.id) {
-                            case 'created_at':
-                                td.innerText = Utils.formatDate(r.created_at);
-                                break;
-                            case 'nama_ic':
-                                td.innerHTML = `<div class="font-bold text-gray-800">${r.nama}</div><div class="text-xs text-gray-500">${r.ic_number}</div>`;
-                                break;
-                            case 'department':
-                                td.className += " text-xs";
-                                td.innerText = r.department;
-                                break;
+                            case 'created_at': td.innerText = Utils.formatDate(r.created_at); break;
+                            case 'nama_ic': td.innerHTML = `<div class="font-bold text-gray-800">${r.nama}</div><div class="text-xs text-gray-500">${r.ic_number}</div>`; break;
+                            case 'department': td.className += " text-xs"; td.innerText = r.department; break;
                             case 'komunikasi':
-                                // DYNAMIC DROPDOWN FOR KOMUNIKASI
                                 const selectKom = document.createElement('select');
                                 selectKom.className = "border rounded px-2 py-1 text-xs bg-white text-purple-700 w-full";
-                                
-                                // Get options (ensure CallLog initialized or use defaults)
                                 const komOpts = CallLog.options.komunikasi.length ? CallLog.options.komunikasi : ["Email", "Call", "WhatsApp", "Walk-in"];
-                                
-                                // Current value or fallback
                                 const currentKom = r.komunikasi || '';
-                                
-                                // Add default/placeholder if current not in list (optional)
                                 komOpts.forEach(opt => {
                                     const option = document.createElement('option');
-                                    option.value = opt;
-                                    option.text = opt;
+                                    option.value = opt; option.text = opt;
                                     if(opt === currentKom) option.selected = true;
                                     selectKom.appendChild(option);
                                 });
-                                
                                 selectKom.onchange = (e) => Records.updateField(r.id, 'komunikasi', e.target.value);
                                 td.appendChild(selectKom);
                                 break;
-                            case 'sistem':
-                                td.className += " text-xs font-bold text-gray-600";
-                                td.innerText = displaySistem || '-';
-                                break;
-                            case 'perkara':
-                                td.className += " text-sm";
-                                td.innerText = displayPerkara || '-';
-                                break;
-                            case 'perekod':
-                                td.className += " text-xs font-medium text-blue-700";
-                                td.innerText = recName;
-                                break;
-                            case 'updated_at':
-                                td.className += " text-xs text-gray-600";
-                                td.innerText = Utils.formatDate(r.status_updated_at);
-                                break;
-                            case 'updated_by':
-                                td.className += " text-xs font-medium text-blue-700";
-                                td.innerText = updName;
-                                break;
+                            case 'sistem': td.className += " text-xs font-bold text-gray-600"; td.innerText = displaySistem || '-'; break;
+                            case 'perkara': td.className += " text-sm"; td.innerText = displayPerkara || '-'; break;
+                            case 'perekod': td.className += " text-xs font-medium text-blue-700"; td.innerText = recName; break;
+                            case 'updated_at': td.className += " text-xs text-gray-600"; td.innerText = Utils.formatDate(r.status_updated_at); break;
+                            case 'updated_by': td.className += " text-xs font-medium text-blue-700"; td.innerText = updName; break;
                             case 'status':
                                 const selectStatus = document.createElement('select');
                                 selectStatus.className = `border rounded px-2 py-1 text-xs font-bold ${r.confirmation==='YA'?'bg-green-100 text-green-800':'bg-red-100 text-red-800'}`;
@@ -758,8 +815,7 @@
                                 selectStatus.onchange = (e) => Records.updateField(r.id, 'confirmation', e.target.value);
                                 td.appendChild(selectStatus);
                                 break;
-                            default:
-                                td.innerText = '-';
+                            default: td.innerText = '-';
                         }
                         tr.appendChild(td);
                     });
@@ -772,30 +828,21 @@
                 const updateData = {};
                 updateData[field] = val;
                 
-                // If updating status/confirmation, update metadata too
                 if(field === 'confirmation') {
                     updateData.status_updated_at = new Date();
                     updateData.status_updated_by = STATE.currentUser.email;
                 }
 
                 const { error } = await supabase.from('rekod').update(updateData).eq('id', id);
-                
-                if(error) {
-                    alert("Update failed: " + error.message);
-                } else {
-                    Utils.showToast(`${field === 'confirmation' ? 'Status' : 'Data'} Dikemaskini`);
-                    Records.fetch(); // Refresh to reflect changes (e.g. background colors)
-                }
+                if(error) { alert("Update failed: " + error.message); } 
+                else { Utils.showToast(`${field === 'confirmation' ? 'Status' : 'Data'} Dikemaskini`); Records.fetch(); }
             },
 
             exportExcel: async () => {
                 const { data } = await supabase.from('rekod').select('*').order('created_at', {ascending:false});
                 if(!data || !data.length) return alert("Tiada data untuk diexport.");
-                
-                // Map data based on CURRENT Column Order and Custom Labels
                 const rows = data.map(r => {
                     const rowData = {};
-                    
                     Records.columns.forEach(col => {
                         let value = '';
                         switch(col.id) {
@@ -810,13 +857,10 @@
                             case 'updated_by': value = r.status_updated_by ? (Records.userMap[r.status_updated_by.toLowerCase()] || r.status_updated_by.split('@')[0]) : '-'; break;
                             case 'status': value = r.confirmation; break;
                         }
-                        // Use the Editable Label as the Excel Header
                         rowData[col.label] = value;
                     });
-                    
                     return rowData;
                 });
-
                 const ws = XLSX.utils.json_to_sheet(rows); 
                 const wb = XLSX.utils.book_new(); 
                 XLSX.utils.book_append_sheet(wb, ws, "Rekod"); 
@@ -828,16 +872,29 @@
             currentHistory: [],
             deviceMap: {},
             switchTab: (id) => {
-                document.querySelectorAll('.loan-tab-content').forEach(e => e.classList.add('hidden')); document.getElementById('loan-tab-'+id).classList.remove('hidden');
-                ['borrow','return','admin','history'].forEach(t => { const btn = document.getElementById('btn-loan-'+t); if(t===id) { btn.classList.add('tab-active-sub'); btn.classList.remove('tab-inactive-sub'); } else { btn.classList.add('tab-inactive-sub'); btn.classList.remove('tab-active-sub'); } });
-                // Prevent past dates in Borrow
+                document.querySelectorAll('.loan-tab-content').forEach(e => e.classList.add('hidden')); 
+                document.getElementById('loan-tab-'+id).classList.remove('hidden');
+                ['borrow','return','admin','history'].forEach(t => { 
+                    const btn = document.getElementById('btn-loan-'+t); 
+                    if(t===id) { btn.className = "px-6 py-2 font-medium tab-active-sub"; } 
+                    else { btn.className = "px-6 py-2 font-medium tab-inactive-sub"; } 
+                });
                 if(id === 'borrow') { const today = new Date().toISOString().split('T')[0]; document.getElementById('loanStartDate').min = today; document.getElementById('loanEndDate').min = today; }
                 if(id === 'history') Loan.loadHistory();
             },
             loadData: async () => {
-                const { data: u } = await supabase.from('user_ba').select('name').order('name'); const ul = document.getElementById('userList'); ul.innerHTML = ''; if(u) u.forEach(i => ul.appendChild(new Option(i.name, i.name)));
-                const { data: d } = await supabase.from('device_inventory').select('*').eq('status','Tersedia').order('tag'); const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option value="" disabled selected>Pilih...</option>'; if(d) d.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
-                const { data: r } = await supabase.from('device_inventory').select('*').eq('status','Dipinjam').order('tag'); const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option value="" disabled selected>Pilih...</option>'; if(r) r.forEach(i => rs.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
+                const { data: u } = await supabase.from('user_ba').select('name').order('name'); 
+                const ul = document.getElementById('userList'); ul.innerHTML = ''; 
+                if(u) u.forEach(i => ul.appendChild(new Option(i.name, i.name)));
+                
+                const { data: d } = await supabase.from('device_inventory').select('*').eq('status','Tersedia').order('tag'); 
+                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option value="" disabled selected>Pilih...</option>'; 
+                if(d) d.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
+                
+                const { data: r } = await supabase.from('device_inventory').select('*').eq('status','Dipinjam').order('tag'); 
+                const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option value="" disabled selected>Pilih Peranti...</option>'; 
+                if(r) r.forEach(i => rs.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
+                
                 Loan.loadActiveLoans();
             },
             loadActiveLoans: async () => {
@@ -900,12 +957,24 @@
             addDevice: async () => { const t = document.getElementById('newTag').value; const s = document.getElementById('newSerial').value; const type = document.getElementById('newType').value; if(t) { await supabase.from('device_inventory').insert([{tag:t, type:type, serial:s, status:'Tersedia'}]); await Loan.loadData(); document.getElementById('newTag').value = ''; document.getElementById('newSerial').value = ''; Utils.showToast("Device Added & List Updated"); } }
         };
 
-        document.addEventListener('DOMContentLoaded', () => { if (typeof lucide !== 'undefined') lucide.createIcons(); Auth.init(); 
+        // GLOBAL INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => { 
+            if (typeof lucide !== 'undefined') lucide.createIcons(); 
+            
+            // Start Authentication Flow
+            Auth.init(); 
+            
+            // Event Listeners
             document.getElementById('login-form').addEventListener('submit', Auth.login);
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
-            CallLog.init();
-            document.querySelectorAll('#data-form input, #data-form select').forEach(i => i.addEventListener('input', () => { CallLog.checkValidity(); if(!i.readOnly && i.id !== 'other-issue-input') document.getElementById('btn-update-master').classList.remove('hidden'); }));
+            
+            document.querySelectorAll('#data-form input, #data-form select').forEach(i => {
+                i.addEventListener('input', () => { 
+                    CallLog.checkValidity(); 
+                    if(!i.readOnly && i.id !== 'other-issue-input') document.getElementById('btn-update-master').classList.remove('hidden'); 
+                });
+            });
         });
     </script>
 </body>
