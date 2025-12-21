@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT (v23 - Enhanced Overdue Highlighting)</title>
+    <title>Sistem Rekod IT UTM (v31 - Loan Dropdown Fixed)</title>
     
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,300 +14,250 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* --- GLOBAL STYLES --- */
         :root { --base-font-size: 16px; }
-        html { 
-            font-size: var(--base-font-size); 
-        }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f3f4f6; 
-            overflow-x: auto; 
-        }
+        html { font-size: var(--base-font-size); }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow-x: auto; }
         
-        .no-wrap-content, 
-        th, td, label, .tab-active-main, .tab-inactive-main, .tab-active-sub, .tab-inactive-sub {
-            white-space: nowrap !important;
-            text-overflow: clip !important;
-            overflow: visible !important;
-        }
-
+        .no-wrap-content, th, td, label { white-space: nowrap !important; }
         .hidden-section { display: none !important; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         
         .loader {
             border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%;
-            width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;
+            width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .table-container { 
-            width: 100%; 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch;
-            border: 1px solid #e5e7eb;
-            background: white;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: max-content; 
-            min-width: 100%;
-        }
-        
-        #debug-console {
-            background-color: #1a1a1a; color: #00ff00; font-family: monospace;
-            padding: 1rem; margin-top: 2rem; border-radius: 0.5rem; font-size: 0.75rem;
-            height: 150px; overflow-y: auto; border: 1px solid #333; width: 100%;
-        }
-
-        .login-btn-anim {
-            position: relative; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-        }
-        .login-btn-anim.loading { background-color: #000 !important; color: transparent !important; pointer-events: none; border: 1px solid #1a1a1a; }
+        .login-btn-anim.loading { background-color: #000 !important; color: transparent !important; pointer-events: none; }
         .login-btn-anim.loading::after {
-            content: "UTM"; position: absolute; color: #E50914; font-family: 'Arial Black', sans-serif;
-            font-weight: 900; font-size: 1.8rem; letter-spacing: 2px;
-            animation: netflix-zoom 2s ease-in-out infinite; text-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+            content: "UTM"; position: absolute; color: #E50914; font-weight: 900; font-size: 1.5rem;
+            animation: netflix-zoom 2s ease-in-out infinite;
         }
-        @keyframes netflix-zoom {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 25px rgba(229, 9, 20, 1); }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-        
-        .tab-active-main { background-color: #1e3a8a !important; color: white; }
-        .tab-inactive-main { background-color: transparent; color: white; }
-        .tab-active-sub { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
-        .tab-inactive-sub { color: #6b7280; border-bottom: 2px solid transparent; }
+        @keyframes netflix-zoom { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
 
+        .tab-active-main { background-color: #1e3a8a !important; color: white; }
+        .tab-active-sub { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
+        
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid #e5e7eb; background: white; }
+        table { border-collapse: collapse; width: max-content; min-width: 100%; }
+        
         th.draggable-header { cursor: grab; position: relative; transition: background-color 0.2s; }
-        th.draggable-header:hover { background-color: #e5e7eb; }
-        th.draggable-header:active { cursor: grabbing; }
         th.drag-over { border-left: 3px solid #3b82f6; background-color: #eff6ff; }
-        [contenteditable]:focus { outline: 2px solid #3b82f6; background-color: white; padding: 2px 4px; border-radius: 4px; }
+        
+        #debug-console { background: #1a1a1a; color: #00ff00; font-family: monospace; height: 120px; overflow-y: auto; font-size: 11px; padding: 10px; border-radius: 8px; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-    <!-- LOGIN PAGE -->
-    <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto z-10 relative">
-            <div class="text-center mb-8 mt-4">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Sistem Rekod <br> Unit Teknologi Maklumat</h1>
-                <p class="text-gray-500 text-sm mt-2">Sila log masuk untuk meneruskan</p>
-            </div>
-            <form id="login-form" class="space-y-6">
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin@example.com" required></div>
-                <div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="********" required></div>
-                <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded"></div>
-                <div class="flex justify-center w-full h-[60px]"> 
-                    <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 h-[50px]"><span id="btn-text">Log Masuk</span></button>
-                </div>
-            </form>
-        </div>
-        <div id="debug-console" class="w-full max-w-md mt-4"><div>> Booting System...</div></div>
+    <!-- 1. INDEX / LOADING -->
+    <div id="index-page" class="flex-grow flex flex-col items-center justify-center bg-white">
+        <div class="loader mb-4"></div>
+        <h1 class="text-xl font-bold text-gray-800">Sistem Rekod UTM</h1>
+        <p class="text-gray-500 text-sm">Menghubungi Pangkalan Data...</p>
     </div>
 
-    <!-- MAIN APP LAYOUT -->
-    <div id="app-layout" class="hidden-section min-h-screen flex flex-col w-full">
+    <!-- 2. LOGIN -->
+    <div id="login-page" class="hidden-section flex-grow flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Sistem Rekod IT</h1>
+                <p class="text-gray-500 text-sm">Unit Teknologi Maklumat</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div><label class="block text-sm font-bold mb-2">Email</label><input type="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required></div>
+                <div><label class="block text-sm font-bold mb-2">Password</label><input type="password" id="password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required></div>
+                <div id="login-error" class="text-red-500 text-sm hidden bg-red-100 p-3 rounded"></div>
+                <button type="submit" id="login-btn" class="login-btn-anim w-full bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center">Log Masuk</button>
+            </form>
+            <div id="debug-console" class="mt-6"><div>> System ready.</div></div>
+        </div>
+    </div>
+
+    <!-- 3. MAIN APP -->
+    <div id="main-page" class="hidden-section min-h-screen flex flex-col">
         <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
             <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center mb-2 md:mb-0">
-                    <span class="font-bold text-lg mr-6">Sistem Rekod UTM</span>
-                    <div class="flex gap-1">
-                        <button onclick="UI.adjustFontSize(-1)" class="bg-white/20 px-3 py-1 rounded hover:bg-white/40 text-sm">A-</button>
-                        <button onclick="UI.adjustFontSize(1)" class="bg-white/20 px-3 py-1 rounded hover:bg-white/40 text-sm">A+</button>
-                    </div>
-                    <div class="ml-6 flex gap-2 overflow-x-auto">
-                        <button onclick="Navigation.switchMainTab('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchMainTab('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium tab-inactive-main">Pinjaman ICT</button>
+                <div class="flex items-center">
+                    <span class="font-bold text-lg mr-6">Rekod UTM</span>
+                    <div class="flex gap-2">
+                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
+                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium">Pinjaman ICT</button>
                     </div>
                 </div>
-                <div class="flex items-center text-sm">
-                    <span id="user-display" class="mr-4 text-blue-200"></span>
-                    <button onclick="Auth.logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">Keluar</button>
+                <div class="flex items-center gap-4 text-sm">
+                    <div class="flex gap-1">
+                        <button onclick="UI.adjustFontSize(-1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A-</button>
+                        <button onclick="UI.adjustFontSize(1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A+</button>
+                    </div>
+                    <span id="user-display" class="hidden md:inline text-blue-200"></span>
+                    <button onclick="Auth.logout()" class="bg-red-600 px-3 py-1 rounded font-bold">Keluar</button>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-grow p-4 md:p-6 w-full mx-auto"> 
+        <main class="flex-grow p-4 md:p-6">
             
-            <!-- MODULE 1: CALL LOG -->
-            <div id="call-log-section" class="w-full">
-                <div class="flex border-b mb-6 overflow-x-auto">
-                    <button onclick="Navigation.switchCallLogTab('search')" id="btn-sub-search" class="px-6 py-2 font-medium tab-active-sub">INPUT</button>
-                    <button onclick="Navigation.switchCallLogTab('records')" id="btn-sub-records" class="px-6 py-2 font-medium tab-inactive-sub">REKOD</button>
+            <!-- CALL LOG MODULE -->
+            <div id="call-log-module" class="w-full">
+                <div class="flex border-b mb-6 bg-white rounded-t-lg">
+                    <button onclick="Navigation.switchSubTab('call-log', 'input')" id="tab-cl-input" class="px-6 py-3 font-bold tab-active-sub">INPUT</button>
+                    <button onclick="Navigation.switchSubTab('call-log', 'records')" id="tab-cl-records" class="px-6 py-3 font-bold text-gray-400">REKOD</button>
                 </div>
 
-                <!-- Input Form -->
-                <div id="sub-search-page" class="space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow border">
-                        <h2 class="text-lg font-bold mb-4 flex gap-2"><i data-lucide="search"></i> Carian Live (Master Data)</h2>
+                <div id="cl-input-section">
+                    <div class="bg-white p-6 rounded-lg shadow border mb-6">
+                        <h2 class="text-lg font-bold mb-4 flex gap-2 items-center"><i data-lucide="search"></i> Carian Personnel</h2>
                         <div class="relative">
-                            <input type="text" id="global-search" class="w-full pl-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Cari Nama, IC, atau Kod PTJ...">
-                            <span class="absolute left-3 top-2.5 text-gray-400"><i data-lucide="search" class="w-5 h-5"></i></span>
-                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-xl rounded-b-lg border hidden max-h-60 overflow-y-auto mt-1"></div>
+                            <input type="text" id="global-search" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Cari Nama, IC, atau Kod PTJ...">
+                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-2xl rounded-b-lg border hidden max-h-60 overflow-y-auto mt-1"></div>
                         </div>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow border">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold flex gap-2"><i data-lucide="file-text"></i> Borang Maklumat</h2>
-                            <button id="btn-update-master" onclick="CallLog.updateMasterData()" class="hidden bg-yellow-500 text-white text-xs px-3 py-1 rounded shadow animate-fade-in flex items-center gap-1 hover:bg-yellow-600"><i data-lucide="save" class="w-3 h-3"></i> Simpan ke Data Induk</button>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-bold flex gap-2 items-center"><i data-lucide="file-text"></i> Maklumat Isu</h2>
+                            <button id="btn-update-master" onclick="CallLog.updateMasterData()" class="hidden bg-yellow-500 text-white text-xs px-3 py-1 rounded font-bold flex items-center gap-1 hover:bg-yellow-600"><i data-lucide="save" class="w-3 h-3"></i> Simpan ke Data Induk</button>
                         </div>
                         <form id="data-form">
                             <input type="hidden" id="is-new-user" value="false">
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                 <div class="space-y-4">
-                                    <h3 class="font-bold text-gray-700 border-b pb-2">Maklumat Pengguna</h3>
-                                    <div><label class="text-sm font-medium text-gray-700">1. Nama</label><div class="relative"><input type="text" id="nama" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('nama')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                    <h3 class="font-bold text-gray-400 text-xs uppercase">Maklumat Pengguna</h3>
+                                    <div><label class="text-xs font-bold text-gray-600">1. Nama</label><div class="relative"><input type="text" id="nama" class="w-full px-3 py-2 border rounded bg-gray-50 uppercase" readonly><button type="button" onclick="Utils.enableField('nama')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                     <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">2. IC</label><div class="relative"><input type="text" id="ic" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('ic')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
-                                        <div><label class="text-sm font-medium text-gray-700">3. Kod PTJ</label><div class="relative"><input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('kod_ptj')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">2. IC</label><div class="relative"><input type="text" id="ic" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('ic')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">3. Kod PTJ</label><div class="relative"><input type="text" id="kod_ptj" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('kod_ptj')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">4. Jabatan</label><div class="relative"><input type="text" id="department" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('department')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
-                                        <div><label class="text-sm font-medium text-gray-700">5. Emel</label><div class="relative"><input type="email" id="emel" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('emel')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">4. Jabatan</label><div class="relative"><input type="text" id="department" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('department')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">5. Emel</label><div class="relative"><input type="email" id="emel" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('emel')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="text-sm font-medium text-gray-700">6. No Telefon</label><div class="relative"><input type="text" id="telefon" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('telefon')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
-                                        <div><label class="text-sm font-medium text-gray-700">7. Gred</label><div class="relative"><input type="text" id="gred" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('gred')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">6. Telefon</label><div class="relative"><input type="text" id="telefon" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('telefon')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
+                                        <div><label class="text-xs font-bold text-gray-600">7. Gred</label><div class="relative"><input type="text" id="gred" class="w-full px-3 py-2 border rounded bg-gray-50" readonly><button type="button" onclick="Utils.enableField('gred')" class="absolute right-2 top-2 text-gray-400"><i data-lucide="pencil" class="w-4 h-4"></i></button></div></div>
                                     </div>
                                 </div>
-                                <div class="bg-gray-50 p-4 rounded-lg border h-fit">
-                                    <label class="block text-sm font-bold text-gray-800 mb-3 border-b pb-2">Kategori Sistem & Isu <span class="text-red-500">*</span></label>
-                                    
+                                <div class="bg-gray-50 p-6 rounded-lg border h-fit">
+                                    <h3 class="font-bold text-gray-400 text-xs uppercase mb-4">Butiran Sistem</h3>
                                     <div class="space-y-6">
                                         <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Medium Komunikasi</label>
-                                                <button type="button" onclick="CallLog.toggleInput('komunikasi')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Tambah</button>
-                                            </div>
-                                            <div id="add-input-komunikasi" class="hidden mb-2 animate-fade-in">
-                                                <input type="text" id="input-new-komunikasi" placeholder="Taip dan Enter..." class="w-full px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 shadow-sm" onkeydown="CallLog.saveOnEnter(event, 'komunikasi')">
-                                            </div>
+                                            <div class="flex justify-between items-center mb-1"><label class="text-xs font-bold text-gray-700">Medium</label><button type="button" onclick="CallLog.toggleInput('komunikasi')" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">+ Tambah</button></div>
+                                            <div id="add-input-komunikasi" class="hidden mb-2"><input type="text" id="input-new-komunikasi" class="w-full p-2 border rounded text-xs shadow-inner" placeholder="Enter..." onkeydown="CallLog.saveOnEnter(event, 'komunikasi')"></div>
                                             <div id="container-komunikasi" class="flex flex-wrap gap-2"></div>
                                         </div>
-
                                         <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Sistem</label>
-                                                <button type="button" onclick="CallLog.toggleInput('sistem')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Tambah</button>
-                                            </div>
-                                            <div id="add-input-sistem" class="hidden mb-2 animate-fade-in">
-                                                <input type="text" id="input-new-sistem" placeholder="Taip dan Enter..." class="w-full px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 shadow-sm" onkeydown="CallLog.saveOnEnter(event, 'sistem')">
-                                            </div>
-                                            <div id="container-sistem" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+                                            <div class="flex justify-between items-center mb-1"><label class="text-xs font-bold text-gray-700">Sistem</label><button type="button" onclick="CallLog.toggleInput('sistem')" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">+ Tambah</button></div>
+                                            <div id="add-input-sistem" class="hidden mb-2"><input type="text" id="input-new-sistem" class="w-full p-2 border rounded text-xs shadow-inner" onkeydown="CallLog.saveOnEnter(event, 'sistem')"></div>
+                                            <div id="container-sistem" class="grid grid-cols-2 gap-2"></div>
                                         </div>
-
                                         <div>
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="block text-sm font-semibold text-gray-700">Perkara (Isu)</label>
-                                                <button type="button" onclick="CallLog.toggleInput('perkara')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Tambah</button>
-                                            </div>
-                                            <div id="add-input-perkara" class="hidden mb-2 animate-fade-in">
-                                                <input type="text" id="input-new-perkara" placeholder="Taip dan Enter..." class="w-full px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 shadow-sm" onkeydown="CallLog.saveOnEnter(event, 'perkara')">
-                                            </div>
-                                            <select id="issue-dropdown" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                                <option value="" disabled selected>Sila Pilih...</option>
+                                            <div class="flex justify-between items-center mb-1"><label class="text-xs font-bold text-gray-700">Perkara</label><button type="button" onclick="CallLog.toggleInput('perkara')" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">+ Tambah</button></div>
+                                            <div id="add-input-perkara" class="hidden mb-2"><input type="text" id="input-new-perkara" class="w-full p-2 border rounded text-xs shadow-inner" onkeydown="CallLog.saveOnEnter(event, 'perkara')"></div>
+                                            <select id="issue-dropdown" class="w-full px-3 py-2 border rounded-lg bg-white text-sm">
+                                                <option value="" disabled selected>-- Pilih Isu --</option>
                                             </select>
                                         </div>
                                     </div>
-
-                                    <div class="mt-6 pt-4 border-t">
-                                        <button type="submit" id="submit-btn" disabled class="w-full bg-green-600 text-white font-bold py-3 rounded-lg opacity-50 cursor-not-allowed transition hover:scale-[1.02] flex justify-center gap-2 items-center">
-                                            <i data-lucide="save" class="w-4 h-4"></i> <span>Hantar Rekod</span>
-                                        </button>
-                                    </div>
+                                    <button type="submit" id="submit-btn" disabled class="w-full mt-8 bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg opacity-50 cursor-not-allowed flex items-center justify-center gap-2">
+                                        <i data-lucide="save"></i> HANTAR REKOD
+                                    </button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- Database Table -->
-                <div id="sub-records-page" class="hidden-section">
+                <div id="cl-records-section" class="hidden-section">
                     <div class="bg-white p-6 rounded-lg shadow border">
-                        <div class="flex justify-between items-center mb-4 overflow-x-auto">
-                            <h2 class="text-lg font-bold">Pangkalan Data Rekod</h2>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-bold">Pangkalan Data Rekod (Call Log)</h2>
                             <div class="flex gap-2">
-                                <button onclick="Records.fetch()" class="bg-gray-100 p-2 rounded hover:bg-gray-200" title="Refresh"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-                                <button onclick="Records.exportExcel()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm flex items-center gap-2"><i data-lucide="sheet" class="w-4 h-4"></i> Excel</button>
+                                <button onclick="Records.fetch()" class="bg-gray-100 p-2 rounded hover:bg-gray-200"><i data-lucide="refresh-cw"></i></button>
+                                <button onclick="Records.exportExcel()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 hover:bg-green-700"><i data-lucide="sheet"></i> EXPORT EXCEL</button>
                             </div>
                         </div>
                         <div class="table-container">
                             <table id="main-records-table">
-                                <thead id="records-table-head" class="bg-gray-100 text-gray-700 uppercase leading-normal font-bold"></thead>
-                                <tbody id="records-table-body" class="text-gray-600 font-light"></tbody>
+                                <thead id="records-table-head" class="bg-gray-50 text-xs font-bold uppercase border-b"></thead>
+                                <tbody id="records-table-body" class="text-[10px] text-gray-600"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- MODULE 2: LOAN SYSTEM -->
-            <div id="loan-page" class="hidden-section w-full">
+            <!-- PINJAMAN MODULE -->
+            <div id="loan-module" class="hidden-section w-full">
                 <div class="bg-white p-6 rounded-lg shadow border">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman Peranti</h2>
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800"><i data-lucide="monitor-smartphone"></i> Sistem Pinjaman</h2>
                     
-                    <div class="flex flex-wrap border-b mb-6 overflow-x-auto">
-                        <button onclick="Loan.switchTab('borrow')" id="btn-loan-borrow" class="px-6 py-2 font-medium tab-active-sub">Pinjam</button>
-                        <button onclick="Loan.switchTab('return')" id="btn-loan-return" class="px-6 py-2 font-medium tab-inactive-sub">Pulang</button>
-                        <button onclick="Loan.switchTab('admin')" id="btn-loan-admin" class="px-6 py-2 font-medium tab-inactive-sub">Admin</button>
-                        <button onclick="Loan.switchTab('history')" id="btn-loan-history" class="px-6 py-2 font-medium tab-inactive-sub">Sejarah</button>
+                    <div class="flex flex-wrap border-b mb-6 overflow-x-auto bg-gray-50 rounded-t-lg">
+                        <button onclick="Navigation.switchSubTab('loan', 'borrow')" id="tab-loan-borrow" class="px-6 py-3 font-bold tab-active-sub">PINJAM</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'return')" id="tab-loan-return" class="px-6 py-3 font-bold text-gray-400">PULANG</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'admin')" id="tab-loan-admin" class="px-6 py-3 font-bold text-gray-400">ADMIN</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'history')" id="tab-loan-history" class="px-6 py-3 font-bold text-gray-400">SEJARAH</button>
                     </div>
 
-                    <!-- BORROW -->
-                    <div id="loan-tab-borrow" class="loan-tab-content">
-                        <form id="loanForm" class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="block text-sm font-medium mb-1">Nama Pengguna</label><input type="text" id="loanUserName" list="userList" class="w-full px-3 py-2 border rounded-lg" required><datalist id="userList"></datalist></div>
-                                <div><label class="block text-sm font-medium mb-1">Pilih Peranti</label><select id="deviceSelect" class="w-full px-3 py-2 border rounded-lg" required></select></div>
-                                <div><label class="block text-sm font-medium mb-1">Tarikh Mula</label><input type="date" id="loanStartDate" class="w-full px-3 py-2 border rounded-lg" required></div>
-                                <div><label class="block text-sm font-medium mb-1">Tarikh Tamat</label><input type="date" id="loanEndDate" class="w-full px-3 py-2 border rounded-lg" required></div>
+                    <!-- Borrow -->
+                    <div id="loan-borrow-section">
+                        <form id="loanForm" class="space-y-6 bg-gray-50 p-6 rounded-xl border">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label class="block text-xs font-bold text-gray-700 mb-1">Nama Peminjam</label><input type="text" id="loanUserName" list="userList" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><datalist id="userList"></datalist></div>
+                                <div><label class="block text-xs font-bold text-gray-700 mb-1">Pilih Peranti</label><select id="deviceSelect" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required></select></div>
+                                <div><label class="block text-xs font-bold text-gray-700 mb-1">Tarikh Mula</label><input type="date" id="loanStartDate" class="w-full px-4 py-2 border rounded-lg"></div>
+                                <div><label class="block text-xs font-bold text-gray-700 mb-1">Tarikh Tamat</label><input type="date" id="loanEndDate" class="w-full px-4 py-2 border rounded-lg"></div>
+                                
+                                <!-- ADDED DROPDOWN FOR LUAR/DALAMAN -->
+                                <div><label class="block text-xs font-bold text-gray-700 mb-1">Jenis Kegunaan</label><select id="usageType" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required><option value="Kegunaan Dalaman">Kegunaan Dalaman</option><option value="Kegunaan Luar">Kegunaan Luar</option></select></div>
+                                
+                                <div class="md:col-span-1"><label class="block text-xs font-bold text-gray-700 mb-1">Tujuan / Butiran Pinjaman</label><textarea id="usageDetails" rows="1" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></textarea></div>
                             </div>
-                            <div><label class="block text-sm font-medium mb-1">Jenis Kegunaan</label><select id="usageType" class="w-full px-3 py-2 border rounded-lg" required><option value="Kegunaan Dalaman">Kegunaan Dalaman</option><option value="Kegunaan Luar">Kegunaan Luar</option></select></div>
-                            <div><label class="block text-sm font-medium mb-1">Butiran</label><textarea id="usageDetails" rows="2" class="w-full px-3 py-2 border rounded-lg"></textarea></div>
-                            <button type="button" onclick="Loan.submit()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700">Hantar Permohonan</button>
+                            <button type="button" onclick="Loan.submit()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"><i data-lucide="send"></i> HANTAR PINJAMAN</button>
                         </form>
                     </div>
 
-                    <!-- RETURN -->
-                    <div id="loan-tab-return" class="loan-tab-content hidden">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                            <h5 class="text-lg font-bold text-gray-800 mb-2">Pulangkan Peranti</h5>
-                            <p class="text-xs text-gray-500 mb-4">Sila pilih peranti yang sedang dipinjam di bawah</p>
-                            <select id="returnSelect" class="w-full max-w-md mx-auto px-3 py-2 border rounded-lg mb-4"></select>
-                            <button type="button" onclick="Loan.submitReturn()" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-700 block mx-auto">Sahkan Pulangan</button>
+                    <!-- Return -->
+                    <div id="loan-return-section" class="hidden-section">
+                        <div class="bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl p-10 text-center max-w-xl mx-auto">
+                            <h3 class="font-bold text-gray-800 mb-4">Pulangkan Peranti</h3>
+                            <select id="returnSelect" class="w-full px-4 py-3 border rounded-xl mb-6 shadow-sm"></select>
+                            <button onclick="Loan.submitReturn()" class="bg-green-600 text-white font-bold py-3 px-10 rounded-lg">SAHKAN PULANGAN</button>
                         </div>
                     </div>
 
-                    <!-- ADMIN & HISTORY TABLES -->
-                    <div id="loan-tab-admin" class="loan-tab-content hidden">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                            <div class="space-y-6">
-                                <button onclick="Loan.checkOverdueLoans()" class="w-full bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 flex items-center justify-center gap-2"><i data-lucide="bell-ring"></i> Semak Lewat & Hantar Emel</button>
-                                <div class="border p-4 rounded-lg bg-gray-50">
-                                    <h6 class="font-bold mb-3 border-b pb-2">Tambah Pengguna</h6>
-                                    <input id="newUserName" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Nama Penuh">
-                                    <button onclick="Loan.addUser()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah</button>
+                    <!-- Admin -->
+                    <div id="loan-admin-section" class="hidden-section">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="space-y-4">
+                                <button onclick="Loan.checkOverdueLoans()" class="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">SEMAK OVERDUE</button>
+                                
+                                <div class="border p-4 rounded bg-gray-50 shadow-sm">
+                                    <h6 class="font-bold border-b mb-4">Tambah Pengguna</h6>
+                                    <div class="space-y-2">
+                                        <input id="newUserName" class="w-full px-3 py-2 border rounded text-sm uppercase" placeholder="Nama Penuh">
+                                        <div class="relative">
+                                            <input id="newUserEmail" class="w-full px-3 py-2 border rounded text-sm pr-20" placeholder="ID Emel">
+                                            <span class="absolute right-3 top-2 text-[10px] text-gray-400">@moe.gov.my</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="Loan.addUser()" class="w-full mt-3 bg-gray-800 text-white py-2 rounded font-bold text-sm">SIMPAN PENGGUNA</button>
                                 </div>
-                                <div class="border p-4 rounded-lg bg-gray-50">
-                                    <h6 class="font-bold mb-3 border-b pb-2">Tambah Peranti</h6>
-                                    <input id="newTag" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="Tag Aset">
-                                    <select id="newType" class="w-full px-3 py-2 border rounded-lg mb-2"><option>Notebook</option><option>Projector</option><option>HDMI Cable</option></select>
-                                    <input id="newSerial" class="w-full px-3 py-2 border rounded-lg mb-2" placeholder="No. Siri">
-                                    <button onclick="Loan.addDevice()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">Tambah</button>
+
+                                <div class="border p-4 rounded bg-gray-50 shadow-sm">
+                                    <h6 class="font-bold border-b mb-4">Tambah Peranti (Aset)</h6>
+                                    <div class="space-y-2">
+                                        <input id="newTag" class="w-full px-3 py-2 border rounded text-sm" placeholder="Tag Aset">
+                                        <input id="newType" class="w-full px-3 py-2 border rounded text-sm" placeholder="Model">
+                                        <input id="newSerial" class="w-full px-3 py-2 border rounded text-sm" placeholder="Serial Number">
+                                    </div>
+                                    <button onclick="Loan.addDevice()" class="w-full mt-3 bg-gray-800 text-white py-2 rounded font-bold text-sm">DAFTAR PERANTI</button>
                                 </div>
                             </div>
-                            <div class="border p-4 rounded-lg bg-white h-full">
-                                <h6 class="font-bold mb-3 border-b pb-2">Senarai Pinjaman Aktif</h6>
-                                <div class="table-container">
-                                    <table class="no-wrap-content">
-                                        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Peminjam</th><th class="p-2 text-left">Peranti</th><th class="p-2 text-left">Tamat</th></tr></thead>
+                            
+                            <div class="border p-4 bg-white rounded shadow-sm">
+                                <h6 class="font-bold text-gray-800 mb-2 border-b pb-1">Pinjaman Aktif</h6>
+                                <div class="table-container text-[11px]">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Peminjam</th><th class="p-2 text-left">Tag</th><th class="p-2 text-left">Tamat</th></tr></thead>
                                         <tbody id="active-loans-body"></tbody>
                                     </table>
                                 </div>
@@ -315,26 +265,18 @@
                         </div>
                     </div>
 
-                    <div id="loan-tab-history" class="loan-tab-content hidden">
-                        <div class="flex justify-between items-center mb-4 overflow-x-auto">
-                            <h6 class="font-bold text-gray-800">Log Sejarah Pinjaman</h6>
-                            <button onclick="Loan.exportExcel()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs flex items-center gap-2">
-                                <i data-lucide="sheet" class="w-4 h-4"></i> Export Excel
+                    <!-- History -->
+                    <div id="loan-history-section" class="hidden-section">
+                        <div class="flex justify-between items-center mb-4">
+                            <h6 class="font-bold">Log Pinjaman (Full View)</h6>
+                            <button onclick="Loan.exportExcel()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 hover:bg-green-700">
+                                <i data-lucide="sheet" class="w-4 h-4"></i> EXPORT TO EXCEL
                             </button>
                         </div>
                         <div class="table-container">
-                            <table>
-                                <thead class="bg-gray-100 text-gray-700 uppercase font-bold">
-                                    <tr>
-                                        <th class="p-3 text-left border-b">Tarikh Pinjam</th>
-                                        <th class="p-3 text-left border-b">Peminjam</th>
-                                        <th class="p-3 text-left border-b">Tag Aset</th>
-                                        <th class="p-3 text-left border-b">Tempoh</th>
-                                        <th class="p-3 text-left border-b">Pegawai Pengeluar</th>
-                                        <th class="p-3 text-left border-b">Pegawai Penerima</th>
-                                        <th class="p-3 text-left border-b">Tarikh Pulang</th>
-                                        <th class="p-3 text-left border-b">Status</th>
-                                    </tr>
+                            <table class="text-[10px]">
+                                <thead class="bg-gray-100 font-bold border-b border-gray-300">
+                                    <tr><th class="p-3 text-left">Tarikh Pinjam</th><th class="p-3 text-left">Peminjam</th><th class="p-3 text-left">Tag Aset</th><th class="p-3 text-left">Tempoh</th><th class="p-3 text-left">Pengeluar</th><th class="p-3 text-left">Penerima</th><th class="p-3 text-left">Tarikh Pulang</th><th class="p-3 text-left">Status</th></tr>
                                 </thead>
                                 <tbody id="loan-history-body" class="bg-white"></tbody>
                             </table>
@@ -345,482 +287,423 @@
         </main>
     </div>
 
-    <!-- MODALS & TOAST -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition duration-300 opacity-0 z-50"></div>
-    <div id="overdue-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center bg-red-50"><h3 class="text-lg font-bold text-red-800">Senarai Lewat (Overdue)</h3><button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="text-gray-600 hover:text-gray-900 font-bold">X</button></div>
-            <div class="p-4 overflow-y-auto flex-grow">
-                <table class="w-full text-sm text-left no-wrap-content">
-                    <thead class="bg-gray-100"><tr><th class="p-2">Nama</th><th class="p-2">Peranti</th><th class="p-2">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead>
+    <!-- UTILITIES -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 transition-all opacity-0 z-[100]"></div>
+    <div id="overdue-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[100] p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-8 shadow-2xl">
+            <h3 class="text-xl font-bold text-red-600 mb-4">SENARAI OVERDUE</h3>
+            <div class="table-container max-h-60 rounded border">
+                <table class="text-xs w-full">
+                    <thead class="bg-red-50"><tr><th class="p-2 text-left">Nama</th><th class="p-2 text-left">Aset</th><th class="p-2 text-left">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead>
                     <tbody id="overdue-list-body"></tbody>
                 </table>
             </div>
+            <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="mt-6 bg-gray-800 text-white px-6 py-2 rounded font-bold w-full">TUTUP</button>
         </div>
     </div>
 
     <script>
         const CONFIG = { supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw' };
-        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16 };
-        
-        let sbClient; 
-        try { 
-            sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey); 
-        } catch (e) { console.error("Supabase Init Error:", e); }
+        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {} };
+        const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
         const Utils = {
-            log: (msg) => { const c = document.getElementById('debug-console'); if(c) { c.appendChild(document.createElement('div')).innerText = `> ${msg}`; c.scrollTop = c.scrollHeight; } },
+            log: (msg) => { const c = document.getElementById('debug-console'); if(c) { c.innerHTML += `<div>> ${msg}</div>`; c.scrollTop = c.scrollHeight; } },
             showToast: (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000); },
-            enableField: (id) => { const el = document.getElementById(id); if(el) { el.readOnly = false; el.classList.remove('bg-gray-50'); el.classList.add('bg-white', 'ring-2', 'ring-blue-100'); el.focus(); document.getElementById('btn-update-master').classList.remove('hidden'); } },
-            formatDate: (dateStr) => { if(!dateStr) return '-'; return new Date(dateStr).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); },
-            getLocalToday: () => { 
-                const now = new Date(); 
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+            enableField: (id) => { const el = document.getElementById(id); if(el) { el.readOnly = false; el.classList.replace('bg-gray-50', 'bg-white'); el.classList.add('ring-2', 'ring-blue-100'); el.focus(); document.getElementById('btn-update-master').classList.remove('hidden'); } },
+            formatDate: (d) => d ? new Date(d).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
+            getToday: () => new Date().toISOString().split('T')[0],
+            showPage: (pageId) => {
+                ['index-page', 'login-page', 'main-page'].forEach(p => document.getElementById(p).classList.add('hidden-section'));
+                document.getElementById(pageId).classList.remove('hidden-section');
             }
         };
 
         const Auth = {
             init: async () => {
-                Utils.log("Checking Auth..."); 
                 try {
-                    const { data: { session } } = await sbClient.auth.getSession();
-                    if (session) { Auth.handleLoginSuccess(session.user); } 
-                    else { document.getElementById('login-page').classList.remove('hidden'); }
-                } catch (e) { Utils.log("Auth init failed."); }
+                    const { data: { session }, error } = await sbClient.auth.getSession();
+                    if (error) throw error;
+                    if (session) Auth.onAuth(session.user);
+                    else Utils.showPage('login-page');
+                } catch (e) { Utils.log("Database Error: " + e.message); Utils.showPage('login-page'); }
             },
             login: async (e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 const btn = document.getElementById('login-btn'); btn.classList.add('loading');
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                try {
-                    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-                    if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); } 
-                    else { Auth.handleLoginSuccess(data.user); }
-                } catch (err) { btn.classList.remove('loading'); }
+                const { data, error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
+                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
+                else Auth.onAuth(data.user);
             },
-            handleLoginSuccess: (user) => { 
-                STATE.currentUser = user; 
-                document.getElementById('login-page').classList.add('hidden-section'); 
-                document.getElementById('app-layout').classList.remove('hidden-section'); 
-                document.getElementById('user-display').innerText = user.email; 
-                Navigation.switchMainTab('call-log');
-                CallLog.init(); 
+            onAuth: async (user) => {
+                STATE.currentUser = user;
+                document.getElementById('user-display').innerText = user.email;
+                const { data: users } = await sbClient.from('user_ba').select('name, emel');
+                users?.forEach(u => { if(u.emel) STATE.userMap[u.emel.toLowerCase()] = u.name; });
+                Utils.showPage('main-page');
+                Navigation.switchModule('call-log');
+                CallLog.init();
             },
             logout: async () => { await sbClient.auth.signOut(); window.location.reload(); }
         };
 
         const Navigation = {
-            switchMainTab: (tabId) => {
-                document.getElementById('call-log-section').classList.toggle('hidden-section', tabId !== 'call-log'); 
-                document.getElementById('loan-page').classList.toggle('hidden-section', tabId !== 'loan');
-                const btnCall = document.getElementById('nav-call-log'); const btnLoan = document.getElementById('nav-loan');
-                if (tabId === 'call-log') { btnCall.classList.replace('tab-inactive-main', 'tab-active-main'); btnLoan.classList.replace('tab-active-main', 'tab-inactive-main'); } 
-                else { btnLoan.classList.replace('tab-inactive-main', 'tab-active-main'); btnCall.classList.replace('tab-active-main', 'tab-inactive-main'); Loan.loadData(); }
+            switchModule: (mod) => {
+                const isCl = mod === 'call-log';
+                document.getElementById('call-log-module').classList.toggle('hidden-section', !isCl);
+                document.getElementById('loan-module').classList.toggle('hidden-section', isCl);
+                document.getElementById('nav-call-log').className = isCl ? 'px-3 py-1 rounded text-sm font-medium tab-active-main' : 'px-3 py-1 rounded text-sm font-medium';
+                document.getElementById('nav-loan').className = !isCl ? 'px-3 py-1 rounded text-sm font-medium tab-active-main' : 'px-3 py-1 rounded text-sm font-medium';
+                if (!isCl) Loan.loadData();
             },
-            switchCallLogTab: (subTabId) => {
-                document.getElementById('sub-search-page').classList.toggle('hidden-section', subTabId !== 'search'); document.getElementById('sub-records-page').classList.toggle('hidden-section', subTabId !== 'records');
-                const btnSearch = document.getElementById('btn-sub-search'); const btnRec = document.getElementById('btn-sub-records');
-                if (subTabId === 'search') { btnSearch.className = "px-6 py-2 font-medium tab-active-sub"; btnRec.className = "px-6 py-2 font-medium tab-inactive-sub"; } 
-                else { btnRec.className = "px-6 py-2 font-medium tab-active-sub"; btnSearch.className = "px-6 py-2 font-medium tab-inactive-sub"; Records.init(); }
+            switchSubTab: (mod, tab) => {
+                if (mod === 'call-log') {
+                    const isInput = tab === 'input';
+                    document.getElementById('cl-input-section').classList.toggle('hidden-section', !isInput);
+                    document.getElementById('cl-records-section').classList.toggle('hidden-section', isInput);
+                    document.getElementById('tab-cl-input').className = isInput ? 'px-6 py-3 font-bold tab-active-sub' : 'px-6 py-3 font-bold text-gray-400';
+                    document.getElementById('tab-cl-records').className = !isInput ? 'px-6 py-3 font-bold tab-active-sub' : 'px-6 py-3 font-bold text-gray-400';
+                    if (!isInput) Records.init();
+                } else {
+                    ['borrow','return','admin','history'].forEach(t => {
+                        document.getElementById(`loan-${t}-section`).classList.toggle('hidden-section', t !== tab);
+                        document.getElementById(`tab-loan-${t}`).className = t === tab ? 'px-6 py-3 font-bold tab-active-sub' : 'px-6 py-3 font-bold text-gray-400';
+                    });
+                    if (tab === 'history') Loan.loadHistory();
+                }
             }
         };
 
-        const UI = { 
-            adjustFontSize: (delta) => { 
-                STATE.baseFontSize = Math.max(10, STATE.baseFontSize + delta); 
-                document.documentElement.style.setProperty('--base-font-size', STATE.baseFontSize + 'px');
-            } 
-        };
+        const UI = { adjustFontSize: (d) => { STATE.baseFontSize += d; document.documentElement.style.setProperty('--base-font-size', STATE.baseFontSize + 'px'); } };
 
         const CallLog = {
             options: { komunikasi: [], sistem: [], perkara: [] },
             init: async () => {
-                const defaults = {
-                    komunikasi: ["Email", "Call", "WhatsApp", "Walk-in"],
-                    sistem: ["Portal", "ECP450", "ECP400", "HCP400", "SOLMAN", "PSA400", "BP1", "BWP"],
-                    perkara: ["ID Lock", "Masalah Role", "System Error", "Lain-lain"]
-                };
-                try {
-                    const { data } = await sbClient.from('isu').select('*');
-                    if (data && data.length > 0) {
-                        const k = [...new Set(data.map(i => i.komunikasi).filter(Boolean))];
-                        const s = [...new Set(data.map(i => i.sistem).filter(Boolean))];
-                        const p = [...new Set(data.map(i => i.perkara).filter(Boolean))];
-                        CallLog.options.komunikasi = k.length ? k : defaults.komunikasi;
-                        CallLog.options.sistem = s.length ? s : defaults.sistem;
-                        CallLog.options.perkara = p.length ? p : defaults.perkara;
-                    } else { CallLog.options = defaults; }
-                } catch (e) { CallLog.options = defaults; }
+                const { data } = await sbClient.from('isu').select('*');
+                const def = { komunikasi: ["Email", "Call", "WhatsApp", "Walk-in"], sistem: ["Portal", "ECP450", "ECP400", "HCP400", "SOLMAN", "BP1", "BWP"], perkara: ["ID Lock", "Masalah Role", "System Error", "Lain-lain"] };
+                if (data?.length) {
+                    CallLog.options.komunikasi = [...new Set(data.map(i => i.komunikasi).filter(Boolean))] || def.komunikasi;
+                    CallLog.options.sistem = [...new Set(data.map(i => i.sistem).filter(Boolean))] || def.sistem;
+                    CallLog.options.perkara = [...new Set(data.map(i => i.perkara).filter(Boolean))] || def.perkara;
+                } else CallLog.options = def;
                 CallLog.renderOptions();
             },
             renderOptions: () => {
-                const conK = document.getElementById('container-komunikasi'); conK.innerHTML = '';
-                CallLog.options.komunikasi.forEach(k => {
-                    const label = document.createElement('label'); label.className = "flex items-center gap-2 p-2 bg-white border rounded cursor-pointer hover:bg-blue-50 text-sm";
-                    label.innerHTML = `<input type="radio" name="komunikasi" value="${k}" class="text-blue-600"> ${k}`; 
-                    label.querySelector('input').onchange = CallLog.checkValidity; 
-                    conK.appendChild(label);
-                });
-                const conS = document.getElementById('container-sistem'); conS.innerHTML = '';
-                CallLog.options.sistem.forEach(s => {
-                    const label = document.createElement('label'); label.className = "flex items-center gap-2 p-2 bg-white border rounded cursor-pointer hover:bg-blue-50 text-sm";
-                    label.innerHTML = `<input type="radio" name="system_type" value="${s}" class="text-blue-600"> ${s}`; 
-                    label.querySelector('input').onchange = CallLog.checkValidity;
-                    conS.appendChild(label);
-                });
-                const selP = document.getElementById('issue-dropdown'); 
-                selP.innerHTML = '<option value="" disabled selected>Sila Pilih...</option>';
-                CallLog.options.perkara.forEach(p => { 
-                    const opt = document.createElement('option'); 
-                    opt.value = p; opt.text = p; selP.appendChild(opt); 
-                });
-                selP.onchange = CallLog.checkValidity;
+                const renderRadio = (id, list, name) => {
+                    const con = document.getElementById(id); con.innerHTML = '';
+                    list.forEach(v => {
+                        const l = document.createElement('label'); l.className = "flex items-center gap-2 p-2 bg-white border rounded shadow-sm text-[10px] cursor-pointer hover:bg-blue-50";
+                        l.innerHTML = `<input type="radio" name="${name}" value="${v}"> ${v}`;
+                        l.querySelector('input').onchange = CallLog.checkValidity;
+                        con.appendChild(l);
+                    });
+                };
+                renderRadio('container-komunikasi', CallLog.options.komunikasi, 'komunikasi');
+                renderRadio('container-sistem', CallLog.options.sistem, 'system_type');
+                const sel = document.getElementById('issue-dropdown'); sel.innerHTML = '<option disabled selected>-- Pilih Isu --</option>';
+                CallLog.options.perkara.forEach(p => sel.appendChild(new Option(p, p)));
+                sel.onchange = CallLog.checkValidity;
             },
-            toggleInput: (id) => {
-                const el = document.getElementById('add-input-' + id);
-                el.classList.toggle('hidden');
-                if(!el.classList.contains('hidden')) document.getElementById('input-new-'+id).focus();
-            },
+            toggleInput: (id) => document.getElementById('add-input-' + id).classList.toggle('hidden'),
             saveOnEnter: async (e, type) => {
                 if (e.key === 'Enter') {
-                    e.preventDefault();
                     const val = e.target.value.trim();
                     if(val) {
-                        const payload = {}; payload[type] = val;
-                        const { error } = await sbClient.from('isu').insert([payload]);
-                        if(!error) { Utils.showToast("Berjaya!"); e.target.value = ''; document.getElementById('add-input-'+type).classList.add('hidden'); CallLog.init(); }
+                        await sbClient.from('isu').insert([{ [type]: val }]);
+                        e.target.value = ''; CallLog.init();
+                        document.getElementById('add-input-'+type).classList.add('hidden');
                     }
                 }
             },
-            handleSearch: (query) => {
-                const dd = document.getElementById('search-results-dropdown'); if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
-                if (!query || query.length < 2) { dd.classList.add('hidden'); return; }
+            handleSearch: (q) => {
+                const dd = document.getElementById('search-results-dropdown');
+                if (q.length < 2) return dd.classList.add('hidden');
+                if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
                 STATE.searchTimeout = setTimeout(async () => {
-                    dd.classList.remove('hidden'); dd.innerHTML = '<div class="p-2 text-center text-xs">Cari...</div>';
-                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${query}%,ic_number.ilike.%${query}%,kod_ptj.ilike.%${query}%`).limit(5);
-                    dd.innerHTML = '';
-                    if (!data || data.length === 0) { 
-                        const item = document.createElement('div'); item.className = "p-3 hover:bg-green-50 text-green-700 cursor-pointer text-sm font-bold border-b"; 
-                        item.innerHTML = `+ Tambah "${query}"?`; item.onclick = () => CallLog.prepareNewUser(query); dd.appendChild(item); return; 
-                    }
-                    data.forEach(p => { 
-                        const item = document.createElement('div'); item.className = "p-3 hover:bg-blue-50 cursor-pointer border-b"; 
-                        item.innerHTML = `<div class="font-bold text-sm">${p.nama}</div><div class="text-xs text-gray-500">${p.ic_number}</div>`; 
-                        item.onclick = () => CallLog.fillForm(p); dd.appendChild(item); 
+                    dd.classList.remove('hidden'); dd.innerHTML = '<div class="p-2 text-xs">Mencari...</div>';
+                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
+                    dd.innerHTML = data?.length ? '' : `<div class="p-3 text-blue-600 font-bold cursor-pointer hover:bg-blue-50" onclick="CallLog.prepareNew('${q}')">+ Tambah "${q}"?</div>`;
+                    data?.forEach(p => {
+                        const item = document.createElement('div'); item.className = "p-2 hover:bg-gray-100 cursor-pointer border-b text-xs";
+                        item.innerHTML = `<b>${p.nama}</b><br><span class="text-gray-400">${p.ic_number}</span>`;
+                        item.onclick = () => CallLog.fill(p);
+                        dd.appendChild(item);
                     });
                 }, 300);
             },
-            fillForm: (data) => { ['nama', 'ic', 'kod_ptj', 'department', 'emel', 'telefon', 'gred'].forEach(k => document.getElementById(k).value = data[k==='ic'?'ic_number':k] || ''); document.getElementById('search-results-dropdown').classList.add('hidden'); CallLog.checkValidity(); },
-            prepareNewUser: (name) => { document.getElementById('data-form').reset(); document.getElementById('nama').value = name.toUpperCase(); document.getElementById('is-new-user').value = 'true'; ['nama', 'ic', 'kod_ptj', 'department', 'emel', 'telefon', 'gred'].forEach(id => Utils.enableField(id)); document.getElementById('search-results-dropdown').classList.add('hidden'); CallLog.checkValidity(); },
-            checkValidity: () => { 
-                const btn = document.getElementById('submit-btn'); 
-                const validText = ['nama', 'ic', 'department'].every(id => document.getElementById(id).value);
-                const validSys = document.querySelector('input[name="system_type"]:checked');
-                const validKom = document.querySelector('input[name="komunikasi"]:checked');
-                const validIss = document.getElementById('issue-dropdown').value;
-                const isValid = validText && validSys && validKom && validIss;
-                btn.disabled = !isValid; btn.classList.toggle('opacity-50', !isValid); 
+            fill: (p) => {
+                ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => document.getElementById(k).value = p[k==='ic'?'ic_number':k] || '');
+                document.getElementById('search-results-dropdown').classList.add('hidden'); CallLog.checkValidity();
+            },
+            prepareNew: (n) => { 
+                document.getElementById('data-form').reset(); 
+                document.getElementById('nama').value = n.toUpperCase(); 
+                document.getElementById('is-new-user').value = 'true';
+                ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(id => Utils.enableField(id)); 
+                document.getElementById('search-results-dropdown').classList.add('hidden'); 
+            },
+            checkValidity: () => {
+                const btn = document.getElementById('submit-btn');
+                const isValid = document.getElementById('nama').value && document.querySelector('input[name="system_type"]:checked') && document.getElementById('issue-dropdown').value;
+                btn.disabled = !isValid; btn.classList.toggle('opacity-50', !isValid);
             },
             updateMasterData: async () => {
-                const payload = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value };
-                const { data: exist } = await sbClient.from('personnel').select('id').eq('ic_number', payload.ic_number).maybeSingle();
-                const { error } = exist ? await sbClient.from('personnel').update(payload).eq('ic_number', payload.ic_number) : await sbClient.from('personnel').insert([payload]);
-                if(!error) { Utils.showToast("Master Data OK!"); document.getElementById('btn-update-master').classList.add('hidden'); }
+                const p = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value };
+                const { data: ex } = await sbClient.from('personnel').select('id').eq('ic_number', p.ic_number).maybeSingle();
+                if(ex) await sbClient.from('personnel').update(p).eq('ic_number', p.ic_number); else await sbClient.from('personnel').insert([p]);
+                Utils.showToast("Data Induk Dikemaskini"); document.getElementById('btn-update-master').classList.add('hidden');
             },
-            submit: async (e) => { 
-                e.preventDefault(); if(!STATE.currentUser) return; 
-                const btn = document.getElementById('submit-btn'); const btnText = btn.querySelector('span');
-                btn.disabled = true; btnText.innerText = "Simpan...";
-                try {
-                    const system = document.querySelector('input[name="system_type"]:checked').value;
-                    const komunikasi = document.querySelector('input[name="komunikasi"]:checked').value;
-                    const issue = document.getElementById('issue-dropdown').value;
-                    const logEntry = { 
-                        ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, telefon: document.getElementById('telefon').value, emel: document.getElementById('emel').value, gred: document.getElementById('gred').value, 
-                        confirmation: 'TIDAK', komunikasi: komunikasi, submitted_by: STATE.currentUser.id, perekod: STATE.currentUser.email, sistem: system, perkara: issue, notes: `${system} - ${issue}` 
-                    }; 
-                    const { error } = await sbClient.from('rekod').insert([logEntry]); 
-                    if (error) throw error;
-                    CallLog.updateMasterData(); Utils.showToast("Berjaya!"); document.getElementById('data-form').reset(); CallLog.checkValidity();
-                } catch (err) { alert("Error: " + err.message); } finally { btn.disabled = false; btnText.innerText = "Hantar Rekod"; }
+            submit: async (e) => {
+                e.preventDefault();
+                const log = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, department: document.getElementById('department').value, perekod: STATE.currentUser.email, submitted_by: STATE.currentUser.id, sistem: document.querySelector('input[name="system_type"]:checked').value, perkara: document.getElementById('issue-dropdown').value, komunikasi: document.querySelector('input[name="komunikasi"]:checked').value, confirmation: 'TIDAK' };
+                const { error } = await sbClient.from('rekod').insert([log]);
+                if(!error) { CallLog.updateMasterData(); Utils.showToast("Rekod Disimpan"); document.getElementById('data-form').reset(); CallLog.checkValidity(); }
             }
         };
 
         const Records = {
-            userMap: {},
-            currentRecords: [],
             columns: [
-                { id: 'created_at', label: 'Tarikh Event' },
-                { id: 'nama_ic', label: 'Nama / IC' },
-                { id: 'department', label: 'Jabatan' },
-                { id: 'komunikasi', label: 'Komunikasi' },
-                { id: 'sistem', label: 'Sistem' },
-                { id: 'perkara', label: 'Perkara/Masalah' },
-                { id: 'perekod', label: 'Direkod Oleh' },
-                { id: 'updated_at', label: 'Dikemaskini Pada' },
-                { id: 'updated_by', label: 'Dikemaskini Oleh' },
-                { id: 'status', label: 'Status Selesai' }
+                { id: 'created_at', label: 'Tarikh Event' }, { id: 'nama_ic', label: 'Nama / IC' }, { id: 'department', label: 'Jabatan' }, { id: 'komunikasi', label: 'Komunikasi' }, { id: 'sistem', label: 'Sistem' }, { id: 'perkara', label: 'Isu' }, { id: 'perekod', label: 'Direkod Oleh' }, { id: 'updated_at', label: 'Selesai Pada' }, { id: 'updated_by', label: 'Selesai Oleh' }, { id: 'status', label: 'Status' }
             ],
             init: () => { Records.renderHeader(); Records.fetch(); },
             renderHeader: () => {
-                const thead = document.getElementById('records-table-head'); thead.innerHTML = '';
+                const h = document.getElementById('records-table-head'); h.innerHTML = '';
                 const tr = document.createElement('tr');
-                Records.columns.forEach((col, index) => {
-                    const th = document.createElement('th'); th.className = "p-3 text-left draggable-header select-none border-r border-gray-200 last:border-0 text-xs"; th.draggable = true; th.dataset.index = index;
-                    const span = document.createElement('span'); span.contentEditable = true; span.innerText = col.label; span.className = "cursor-text focus:cursor-text w-full block";
-                    span.onblur = (e) => { Records.columns[index].label = e.target.innerText; }; span.onmousedown = (e) => e.stopPropagation(); 
-                    th.appendChild(span);
-                    th.addEventListener('dragstart', Records.handleDragStart); th.addEventListener('dragover', Records.handleDragOver); th.addEventListener('dragleave', Records.handleDragLeave); th.addEventListener('drop', Records.handleDrop);
+                Records.columns.forEach((col, idx) => {
+                    const th = document.createElement('th'); th.className = "p-2 text-left border-r draggable-header"; th.innerText = col.label; th.dataset.index = idx; th.draggable = true;
+                    th.addEventListener('dragstart', (e) => { Records.dragIdx = idx; });
+                    th.addEventListener('dragover', (e) => e.preventDefault());
+                    th.addEventListener('drop', (e) => {
+                        const dropIdx = idx;
+                        const item = Records.columns.splice(Records.dragIdx, 1)[0];
+                        Records.columns.splice(dropIdx, 0, item);
+                        Records.init();
+                    });
                     tr.appendChild(th);
                 });
-                thead.appendChild(tr);
-            },
-            dragSrcIndex: null,
-            handleDragStart: (e) => { Records.dragSrcIndex = e.target.closest('th').dataset.index; e.dataTransfer.effectAllowed = 'move'; e.target.style.opacity = '0.4'; },
-            handleDragOver: (e) => { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const th = e.target.closest('th'); if (th) th.classList.add('drag-over'); return false; },
-            handleDragLeave: (e) => { const th = e.target.closest('th'); if (th) th.classList.remove('drag-over'); },
-            handleDrop: (e) => {
-                if (e.stopPropagation) e.stopPropagation();
-                const th = e.target.closest('th'); if (!th) return;
-                th.classList.remove('drag-over'); document.querySelectorAll('.draggable-header').forEach(el => el.style.opacity = '1');
-                const dragIndex = parseInt(Records.dragSrcIndex); const dropIndex = parseInt(th.dataset.index);
-                if (dragIndex !== dropIndex) {
-                    const item = Records.columns.splice(dragIndex, 1)[0]; Records.columns.splice(dropIndex, 0, item);
-                    Records.renderHeader(); Records.renderBody(); 
-                }
-                return false;
+                h.appendChild(tr);
             },
             fetch: async () => {
-                const tbody = document.getElementById('records-table-body'); tbody.innerHTML = '<tr><td colspan="100%" class="text-center p-4"><div class="loader"></div></td></tr>';
+                const tb = document.getElementById('records-table-body'); tb.innerHTML = '<tr><td colspan="10" class="p-8 text-center"><div class="loader mx-auto"></div></td></tr>';
                 try {
-                    const [ { data: records }, { data: users } ] = await Promise.all([ sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100), sbClient.from('user_ba').select('name, emel') ]);
-                    if(users) users.forEach(u => { if(u.emel) Records.userMap[u.emel.toLowerCase()] = u.name; });
-                    Records.currentRecords = records || []; Records.renderBody();
-                } catch (e) { tbody.innerHTML = `<tr><td colspan="100%" class="p-4">Error: ${e.message}</td></tr>`; }
+                    const [ { data: r }, { data: u } ] = await Promise.all([ 
+                        sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100),
+                        sbClient.from('user_ba').select('name, emel')
+                    ]);
+                    if (u) u.forEach(i => { if(i.emel) STATE.userMap[i.emel.toLowerCase()] = i.name; });
+                    Records.currentData = r || []; Records.renderBody();
+                } catch (e) { Utils.log("Fetch Error: " + e.message); tb.innerHTML = '<tr><td colspan="10">Error loading data.</td></tr>'; }
             },
             renderBody: () => {
-                const tbody = document.getElementById('records-table-body'); tbody.innerHTML = '';
-                if(!Records.currentRecords.length) { tbody.innerHTML = '<tr><td colspan="100%" class="text-center p-4">Tiada rekod.</td></tr>'; return; }
-                Records.currentRecords.forEach(r => {
-                    const tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50 align-top";
+                const tb = document.getElementById('records-table-body'); tb.innerHTML = '';
+                Records.currentData.forEach(r => {
+                    const tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50";
                     Records.columns.forEach(col => {
-                        const td = document.createElement('td'); td.className = "p-3";
-                        switch(col.id) {
-                            case 'created_at': td.className += " text-xs"; td.innerText = Utils.formatDate(r.created_at); break;
-                            case 'nama_ic': td.innerHTML = `<div class="font-bold text-gray-800 text-xs">${r.nama}</div><div class="text-[10px] text-gray-500">${r.ic_number}</div>`; break;
-                            case 'department': td.className += " text-[10px]"; td.innerText = r.department; break;
-                            case 'komunikasi':
-                                const selectKom = document.createElement('select'); selectKom.className = "border rounded px-2 py-1 text-[10px] bg-white text-blue-700 w-full";
-                                const komOpts = CallLog.options.komunikasi.length ? CallLog.options.komunikasi : ["Email", "Call", "WhatsApp", "Walk-in"];
-                                komOpts.forEach(opt => { const option = document.createElement('option'); option.value = opt; option.text = opt; if(opt === r.komunikasi) option.selected = true; selectKom.appendChild(option); });
-                                selectKom.onchange = (e) => Records.updateField(r.id, 'komunikasi', e.target.value); td.appendChild(selectKom);
-                                break;
-                            case 'sistem': td.className += " text-[10px] font-bold text-gray-600"; td.innerText = r.sistem || '-'; break;
-                            case 'perkara': td.className += " text-[10px]"; td.innerText = r.perkara || '-'; break;
-                            case 'perekod': td.className += " text-[10px] font-medium text-gray-700"; td.innerText = r.perekod ? (Records.userMap[r.perekod.toLowerCase()] || r.perekod.split('@')[0]) : '-'; break;
-                            case 'updated_at': td.className += " text-[10px] text-gray-500"; td.innerText = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-'; break;
-                            case 'updated_by': td.className += " text-[10px] text-blue-700 font-medium"; td.innerText = r.status_updated_by ? (Records.userMap[r.status_updated_by.toLowerCase()] || r.status_updated_by.split('@')[0]) : '-'; break;
-                            case 'status':
-                                const selectStatus = document.createElement('select'); selectStatus.className = `border rounded px-2 py-1 text-[10px] font-bold ${r.confirmation === 'YA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} w-full`;
-                                selectStatus.innerHTML = `<option value="YA" ${r.confirmation === 'YA' ? 'selected' : ''}>YA</option><option value="TIDAK" ${r.confirmation !== 'YA' ? 'selected' : ''}>TIDAK</option>`;
-                                selectStatus.onchange = (e) => Records.updateField(r.id, 'confirmation', e.target.value); td.appendChild(selectStatus);
-                                break;
-                            default: td.innerText = '-';
-                        }
+                        const td = document.createElement('td'); td.className = "p-2";
+                        if(col.id === 'created_at') td.innerText = Utils.formatDate(r.created_at);
+                        else if(col.id === 'nama_ic') td.innerHTML = `<b>${r.nama}</b><br><span class="text-gray-400">${r.ic_number}</span>`;
+                        else if(col.id === 'perekod') td.innerText = STATE.userMap[r.perekod?.toLowerCase()] || r.perekod?.split('@')[0] || '-';
+                        else if(col.id === 'updated_at') td.innerText = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
+                        else if(col.id === 'updated_by') td.innerText = STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by?.split('@')[0] || '-';
+                        else if(col.id === 'status') {
+                            const sel = document.createElement('select'); sel.className = `p-1 rounded font-bold ${r.confirmation === 'YA' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+                            sel.innerHTML = `<option value="YA" ${r.confirmation==='YA'?'selected':''}>YA</option><option value="TIDAK" ${r.confirmation!=='YA'?'selected':''}>TIDAK</option>`;
+                            sel.onchange = (e) => Records.update(r.id, e.target.value);
+                            td.appendChild(sel);
+                        } else td.innerText = r[col.id] || '-';
                         tr.appendChild(td);
                     });
-                    tbody.appendChild(tr);
+                    tb.appendChild(tr);
                 });
             },
-            updateField: async (id, field, val) => {
-                if(!STATE.currentUser) return;
-                const updateData = {}; updateData[field] = val;
-                if(field === 'confirmation') { updateData.status_updated_at = new Date(); updateData.status_updated_by = STATE.currentUser.email; }
-                const { error } = await sbClient.from('rekod').update(updateData).eq('id', id);
-                if(!error) { Utils.showToast("Dikemaskini"); Records.fetch(); }
-            },
+            update: async (id, v) => { await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); Utils.showToast("Dikemaskini"); Records.fetch(); },
             exportExcel: () => {
-                if(!Records.currentRecords.length) return alert("Tiada rekod untuk dieksport.");
-                const exportData = Records.currentRecords.map(r => {
-                    const row = {};
-                    Records.columns.forEach(col => {
-                        if(col.id === 'created_at') row[col.label] = Utils.formatDate(r.created_at);
-                        else if(col.id === 'nama_ic') row[col.label] = `${r.nama} (${r.ic_number})`;
-                        else if(col.id === 'updated_at') row[col.label] = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
-                        else if(col.id === 'updated_by') row[col.label] = r.status_updated_by ? (Records.userMap[r.status_updated_by.toLowerCase()] || r.status_updated_by) : '-';
-                        else if(col.id === 'perekod') row[col.label] = r.perekod ? (Records.userMap[r.perekod.toLowerCase()] || r.perekod) : '-';
-                        else if(col.id === 'status') row[col.label] = r.confirmation;
-                        else row[col.label] = r[col.id] || '-';
-                    });
-                    return row;
-                });
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rekod Call Log");
-                XLSX.writeFile(wb, `Call_Log_Rekod_${new Date().toISOString().split('T')[0]}.xlsx`);
+                const formatted = Records.currentData.map(r => ({
+                    'Tarikh Event': Utils.formatDate(r.created_at),
+                    'Nama': r.nama,
+                    'IC': r.ic_number,
+                    'Jabatan': r.department,
+                    'Komunikasi': r.komunikasi,
+                    'Sistem': r.sistem,
+                    'Isu': r.perkara,
+                    'Direkod Oleh': STATE.userMap[r.perekod?.toLowerCase()] || r.perekod,
+                    'Selesai Pada': r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-',
+                    'Selesai Oleh': STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by || '-',
+                    'Status': r.confirmation
+                }));
+                const ws = XLSX.utils.json_to_sheet(formatted);
+                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "CallLog");
+                XLSX.writeFile(wb, "Rekod_UTM_CallLog.xlsx");
             }
         };
 
         const Loan = {
-            deviceMap: {},
-            switchTab: (id) => {
-                document.querySelectorAll('.loan-tab-content').forEach(e => e.classList.add('hidden')); 
-                document.getElementById('loan-tab-'+id).classList.remove('hidden');
-                ['borrow','return','admin','history'].forEach(t => { 
-                    const btn = document.getElementById('btn-loan-'+t); 
-                    if(t===id) { btn.classList.add('tab-active-sub'); btn.classList.remove('tab-inactive-sub'); } 
-                    else { btn.classList.add('tab-inactive-sub'); btn.classList.remove('tab-active-sub'); } 
-                });
-                if(id === 'history') Loan.loadHistory();
-            },
+            currentHistory: [],
             loadData: async () => {
-                const todayStr = Utils.getLocalToday();
-                // Set current date as minimum for start date
-                const startInput = document.getElementById('loanStartDate');
-                if(startInput) startInput.min = todayStr;
+                document.getElementById('loanStartDate').min = Utils.getToday();
+                try {
+                    const { data: u } = await sbClient.from('user_ba').select('name').order('name');
+                    const dl = document.getElementById('userList'); dl.innerHTML = '';
+                    u?.forEach(i => dl.appendChild(new Option(i.name, i.name)));
+                    
+                    const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag', { ascending: true });
+                    const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option disabled selected>-- Pilih Peranti --</option>';
+                    d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type} (${i.serial || 'No S/N'})`, i.tag)));
 
-                const { data: u } = await sbClient.from('user_ba').select('name').order('name'); 
-                const ul = document.getElementById('userList'); ul.innerHTML = ''; 
-                if(u) u.forEach(i => ul.appendChild(new Option(i.name, i.name)));
-                
-                const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag', { ascending: true }); 
-                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option disabled selected>Pilih Peranti...</option>'; 
-                if(d) d.forEach(i => {
-                    const label = `${i.tag} - ${i.type} (${i.serial || 'No Serial'})`;
-                    ds.appendChild(new Option(label, i.tag));
-                    Loan.deviceMap[i.tag] = i.serial; 
-                });
-                
-                const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
-                const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option disabled selected>Pilih Peranti & Peminjam...</option>'; 
-                if(activeLoans) activeLoans.forEach(l => {
-                    rs.appendChild(new Option(`${l.device_tag} - [Dipinjam oleh: ${l.user_name}]`, l.device_tag));
-                });
-
-                Loan.loadActive();
+                    const { data: ac } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
+                    const rs = document.getElementById('returnSelect'); rs.innerHTML = '<option disabled selected>-- Pilih untuk Pulangan --</option>';
+                    ac?.forEach(l => rs.appendChild(new Option(`${l.device_tag} [${l.user_name}]`, l.device_tag)));
+                    Loan.loadActive();
+                } catch (e) { console.error(e); }
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                const tb = document.getElementById('active-loans-body'); tb.innerHTML = '';
-                const todayStr = Utils.getLocalToday();
-                if(data) {
-                    data.forEach(l => { 
-                        const isLate = l.end_date < todayStr;
-                        const rowClass = isLate ? 'bg-red-100 text-red-800 font-bold border-red-200' : 'border-b';
-                        tb.innerHTML += `<tr class="${rowClass}"><td class="p-2">${l.user_name}</td><td class="p-2">${l.device_tag}</td><td class="p-2">${l.end_date} ${isLate ? '<span class="ml-2 text-[10px] uppercase bg-red-600 text-white px-1 rounded">LEWAT</span>' : ''}</td></tr>`; 
-                    });
-                }
+                document.getElementById('active-loans-body').innerHTML = data?.map(l => `<tr class="${l.end_date < Utils.getToday() ? 'bg-red-50 text-red-700 font-bold' : 'border-b'}"><td class="p-2">${l.user_name}</td><td class="p-2">${l.device_tag}</td><td class="p-2">${l.end_date}</td></tr>`).join('') || '';
             },
             submit: async () => {
-                const u = document.getElementById('loanUserName').value;
-                const d = document.getElementById('deviceSelect').value;
-                const s = document.getElementById('loanStartDate').value;
-                const e = document.getElementById('loanEndDate').value;
-                const todayStr = Utils.getLocalToday();
-                
-                if(!u || !d || !s || !e) return alert("Sila isi semua maklumat.");
-                
-                // VALIDATION: Start date cannot be in the past
-                if(s < todayStr) {
-                    return alert("Tarikh Mula tidak boleh tarikh lepas.");
-                }
-                
-                // VALIDATION: End date must not be before start date
-                if(e < s) {
-                    return alert("Tarikh Tamat tidak boleh sebelum Tarikh Mula.");
-                }
-
-                const { error } = await sbClient.from('rekod_pinjaman').insert([{ user_name: u, device_tag: d, start_date: s, end_date: e, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email }]);
-                if(!error) { await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', d); Utils.showToast("Berjaya!"); Loan.loadData(); document.getElementById('loanForm').reset(); }
-                else { alert("Error: " + error.message); }
+                const p = { 
+                    user_name: document.getElementById('loanUserName').value, 
+                    device_tag: document.getElementById('deviceSelect').value, 
+                    start_date: document.getElementById('loanStartDate').value, 
+                    end_date: document.getElementById('loanEndDate').value, 
+                    usage_type: document.getElementById('usageType').value, // ADDED USAGE TYPE
+                    usage_details: document.getElementById('usageDetails').value, 
+                    status: 'Active', 
+                    issued_by: STATE.currentUser.email 
+                };
+                if(!p.user_name || !p.device_tag) return alert("Pilih Peminjam & Peranti.");
+                try {
+                    const { error } = await sbClient.from('rekod_pinjaman').insert([p]);
+                    if(error) throw error;
+                    await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', p.device_tag);
+                    Utils.showToast("Pinjaman Direkod"); document.getElementById('loanForm').reset(); Loan.loadData();
+                } catch(e) { alert("Error: " + e.message); }
             },
             submitReturn: async () => {
-                const t = document.getElementById('returnSelect').value; if(!t) return alert("Sila pilih peranti.");
-                const { data } = await sbClient.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').maybeSingle();
-                if(data) { await sbClient.from('rekod_pinjaman').update({ status: 'Returned', return_date: new Date(), received_by: STATE.currentUser.email }).eq('id', data.id); await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t); Utils.showToast("Dipulangkan!"); Loan.loadData(); }
+                const t = document.getElementById('returnSelect').value; if(!t) return;
+                try {
+                    const { data } = await sbClient.from('rekod_pinjaman').select('id').eq('device_tag', t).eq('status','Active').maybeSingle();
+                    if(data) {
+                        const { error } = await sbClient.from('rekod_pinjaman').update({ status:'Returned', return_date: new Date(), received_by: STATE.currentUser.email }).eq('id', data.id);
+                        if(error) throw error;
+                        await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t);
+                        Utils.showToast("Dipulangkan"); Loan.loadData();
+                    }
+                } catch(e) { alert("Error: " + e.message); }
             },
             loadHistory: async () => {
-                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="8" class="text-center p-4">Loading...</td></tr>';
-                const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
-                const todayStr = Utils.getLocalToday();
-                tb.innerHTML = '';
-                if(data) data.forEach(l => { 
-                    const p_eluar = l.issued_by ? (Records.userMap[l.issued_by.toLowerCase()] || l.issued_by.split('@')[0]) : '-';
-                    const p_enerima = l.received_by ? (Records.userMap[l.received_by.toLowerCase()] || l.received_by.split('@')[0]) : '-';
+                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="8" class="p-8 text-center"><div class="loader mx-auto"></div></td></tr>';
+                try {
+                    const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
+                    Loan.currentHistory = data || [];
+                    const today = Utils.getToday();
                     
-                    // Logic for Overdue highlight in History
-                    // 1. Still Active and past End Date
-                    const isActiveLate = l.status === 'Active' && l.end_date < todayStr;
-                    // 2. Returned but return date was after End Date
-                    let isReturnedLate = false;
-                    if(l.status === 'Returned' && l.return_date) {
-                        const returnDateOnly = new Date(l.return_date).toISOString().split('T')[0];
-                        if(returnDateOnly > l.end_date) isReturnedLate = true;
-                    }
+                    tb.innerHTML = data?.map(l => {
+                        const isActiveLate = l.status === 'Active' && l.end_date < today;
+                        const isReturnedLate = l.status === 'Returned' && l.return_date && (new Date(l.return_date).toISOString().split('T')[0] > l.end_date);
+                        const isLate = isActiveLate || isReturnedLate;
+                        const p_eluar = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
+                        const p_enerima = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
 
-                    const isLate = isActiveLate || isReturnedLate;
-                    const rowClass = isLate ? 'bg-red-50 text-red-800 border-red-100 font-medium' : 'border-b hover:bg-gray-50';
-                    
-                    let lateLabel = '';
-                    if(isActiveLate) lateLabel = '<div class="text-[10px] text-red-600 font-bold mt-1">LEWAT</div>';
-                    else if(isReturnedLate) lateLabel = '<div class="text-[10px] text-red-600 font-bold mt-1">PULANG LEWAT</div>';
-
-                    tb.innerHTML += `
-                    <tr class="${rowClass}">
-                        <td class="p-3">${Utils.formatDate(l.created_at)}</td>
-                        <td class="p-3 font-bold">${l.user_name}</td>
-                        <td class="p-3 text-blue-600 font-bold">${l.device_tag}</td>
-                        <td class="p-3 text-xs">
-                            ${l.start_date} hingga ${l.end_date}
-                            ${lateLabel}
-                        </td>
-                        <td class="p-3">${p_eluar}</td>
-                        <td class="p-3">${p_enerima}</td>
-                        <td class="p-3">${l.return_date ? Utils.formatDate(l.return_date) : '-'}</td>
-                        <td class="p-3 font-bold text-[10px]">
-                            <span class="${l.status === 'Active' ? 'text-blue-600' : 'text-gray-500'}">${l.status}</span>
-                        </td>
-                    </tr>`; 
-                });
+                        return `<tr class="${isLate ? 'bg-red-50 text-red-800' : 'border-b hover:bg-gray-50'}">
+                            <td class="p-3">${Utils.formatDate(l.created_at)}</td>
+                            <td class="p-3 font-bold">${l.user_name}</td>
+                            <td class="p-3 text-blue-600 font-bold">${l.device_tag}</td>
+                            <td class="p-3">
+                                ${l.start_date} hingga ${l.end_date}
+                                ${isActiveLate ? '<div class="text-[9px] font-black text-red-600 mt-1 uppercase">LEWAT</div>' : ''}
+                                ${isReturnedLate ? '<div class="text-[9px] font-black text-red-600 mt-1 uppercase">PULANG LEWAT</div>' : ''}
+                            </td>
+                            <td class="p-3">${p_eluar}</td>
+                            <td class="p-3">${p_enerima}</td>
+                            <td class="p-3">${l.return_date ? Utils.formatDate(l.return_date) : '-'}</td>
+                            <td class="p-3 font-black uppercase text-[8px]">
+                                <span class="${l.status === 'Active' ? 'text-blue-600' : 'text-gray-500'}">${l.status}</span>
+                            </td>
+                        </tr>`;
+                    }).join('') || '<tr><td colspan="8" class="p-4">Tiada sejarah dijumpai.</td></tr>';
+                } catch(e) { tb.innerHTML = '<tr><td colspan="8">Gagal memuatkan sejarah.</td></tr>'; }
             },
             exportExcel: async () => {
-                const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
-                const ws = XLSX.utils.json_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "History");
-                XLSX.writeFile(wb, `Loan_History_${new Date().toISOString().split('T')[0]}.xlsx`);
+                const today = Utils.getToday();
+                const formatted = Loan.currentHistory.map(l => {
+                    const isActiveLate = l.status === 'Active' && l.end_date < today;
+                    const isReturnedLate = l.status === 'Returned' && l.return_date && (new Date(l.return_date).toISOString().split('T')[0] > l.end_date);
+                    let lateStatus = '';
+                    if(isActiveLate) lateStatus = '(LEWAT)';
+                    if(isReturnedLate) lateStatus = '(PULANG LEWAT)';
+
+                    return {
+                        'Tarikh Pinjam': Utils.formatDate(l.created_at),
+                        'Peminjam': l.user_name,
+                        'Tag Aset': l.device_tag,
+                        'Tempoh Pinjaman': `${l.start_date} - ${l.end_date} ${lateStatus}`,
+                        'Pegawai Pengeluar': STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by,
+                        'Pegawai Penerima': STATE.userMap[l.received_by?.toLowerCase()] || l.received_by || '-',
+                        'Tarikh Pulang': l.return_date ? Utils.formatDate(l.return_date) : '-',
+                        'Status': l.status
+                    };
+                });
+                const ws = XLSX.utils.json_to_sheet(formatted);
+                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "HistoryPinjaman");
+                XLSX.writeFile(wb, "Rekod_UTM_Pinjaman.xlsx");
             },
             checkOverdueLoans: async () => {
-                const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                const today = Utils.getLocalToday();
-                const overdue = data.filter(l => l.end_date < today);
-                const tb = document.getElementById('overdue-list-body'); tb.innerHTML = '';
-                if(overdue.length) {
-                    overdue.forEach(l => { 
-                        tb.innerHTML += `
-                        <tr class="border-b bg-red-50">
-                            <td class="p-2 font-bold">${l.user_name}</td>
-                            <td class="p-2">${l.device_tag}</td>
-                            <td class="p-2 text-red-700 font-bold">${l.end_date}</td>
-                            <td class="p-2 text-center">
-                                <button class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600">Email Reminder</button>
-                            </td>
-                        </tr>`; 
-                    });
-                    document.getElementById('overdue-modal').classList.remove('hidden');
-                } else { Utils.showToast("Tiada rekod lewat."); }
+                try {
+                    const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
+                    const overdue = data?.filter(l => l.end_date < Utils.getToday());
+                    if (overdue?.length) {
+                        document.getElementById('overdue-list-body').innerHTML = overdue.map(l => `<tr><td class="p-2 font-bold">${l.user_name}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600 font-bold">${l.end_date}</td><td class="p-2 text-center"><button class="bg-orange-500 text-white px-2 py-1 rounded text-[9px] font-bold">SEND ALERT</button></td></tr>`).join('');
+                        document.getElementById('overdue-modal').classList.remove('hidden');
+                    } else Utils.showToast("Tiada rekod pinjaman lewat aktif.");
+                } catch(e) { alert(e.message); }
             },
-            addUser: async () => { const n = document.getElementById('newUserName').value; if(n) { await sbClient.from('user_ba').insert([{name:n}]); Loan.loadData(); document.getElementById('newUserName').value=''; } },
-            addDevice: async () => { const t = document.getElementById('newTag').value, tp = document.getElementById('newType').value, s = document.getElementById('newSerial').value; if(t) { await sbClient.from('device_inventory').insert([{tag:t, type:tp, serial:s, status:'Tersedia'}]); Loan.loadData(); document.getElementById('newTag').value=''; } }
+            addUser: async () => { 
+                const n = document.getElementById('newUserName').value.trim(); 
+                const e = document.getElementById('newUserEmail').value.trim();
+                if(!n || !e) return alert("Sila isi Nama dan ID Email.");
+                try {
+                    const fullEmail = e.includes('@') ? e : e + '@moe.gov.my';
+                    const { error } = await sbClient.from('user_ba').insert([{
+                        id: crypto.randomUUID(),
+                        created_at: new Date().toISOString(),
+                        name: n.toUpperCase(), 
+                        emel: fullEmail
+                    }]); 
+                    if(error) throw error;
+                    Utils.showToast("Pengguna Berjaya Ditambah");
+                    Loan.loadData(); 
+                    document.getElementById('newUserName').value=''; 
+                    document.getElementById('newUserEmail').value='';
+                } catch(err) { alert("Gagal Simpan Pengguna: " + err.message); }
+            },
+            addDevice: async () => {
+                const t = document.getElementById('newTag').value.trim(); 
+                const tp = document.getElementById('newType').value.trim(); 
+                const s = document.getElementById('newSerial').value.trim();
+                if(!t) return alert("Sila masukkan Tag Aset.");
+                try {
+                    const { error } = await sbClient.from('device_inventory').insert([{
+                        id: crypto.randomUUID(),
+                        created_at: new Date().toISOString(),
+                        tag: t, 
+                        type: tp, 
+                        serial: s, 
+                        status: 'Tersedia'
+                    }]); 
+                    if(error) throw error;
+                    Utils.showToast("Peranti Berjaya Didaftarkan");
+                    Loan.loadData(); 
+                    document.getElementById('newTag').value=''; 
+                    document.getElementById('newType').value='';
+                    document.getElementById('newSerial').value='';
+                } catch(err) { alert("Gagal Simpan Peranti: " + err.message); }
+            }
         };
 
-        document.addEventListener('DOMContentLoaded', () => { 
-            if (typeof lucide !== 'undefined') lucide.createIcons(); 
-            Auth.init(); 
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
