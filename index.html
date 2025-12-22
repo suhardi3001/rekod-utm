@@ -72,27 +72,31 @@
         </div>
     </div>
 
-    <!-- 3. MAIN APP -->
-    <div id="main-page" class="hidden-section min-h-screen flex flex-col">
-        <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
-            <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center">
-                    <span class="font-bold text-lg mr-6">Rekod UTM</span>
-                    <div class="flex gap-2">
-                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium">Pinjaman ICT</button>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 text-sm">
-                    <div class="flex gap-1">
-                        <button onclick="UI.adjustFontSize(-1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A-</button>
-                        <button onclick="UI.adjustFontSize(1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A+</button>
-                    </div>
-                    <span id="user-display" class="hidden md:inline text-blue-200"></span>
-                    <button onclick="Auth.logout()" class="bg-red-600 px-3 py-1 rounded font-bold">Keluar</button>
+<!-- 3. MAIN APP -->
+<div id="main-page" class="hidden-section min-h-screen flex flex-col">
+    <nav class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="w-full px-4 py-2 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center">
+                <span class="font-bold text-lg mr-6">Rekod UTM</span>
+                <div class="flex gap-2">
+                    <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="px-3 py-1 rounded text-sm font-medium tab-active-main">Call Log</button>
+                    <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="px-3 py-1 rounded text-sm font-medium">Pinjaman ICT</button>
                 </div>
             </div>
-        </nav>
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex gap-1">
+                    <button onclick="UI.adjustFontSize(-1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A-</button>
+                    <button onclick="UI.adjustFontSize(1)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">A+</button>
+                    <button onclick="toggleFontWrap(true)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">Wrap Text</button>
+                    <button onclick="toggleFontWrap(false)" class="bg-white/10 px-2 py-1 rounded hover:bg-white/20">No Wrap</button>
+                </div>
+                <span id="user-display" class="hidden md:inline text-blue-200"></span>
+                <button onclick="Auth.logout()" class="bg-red-600 px-3 py-1 rounded font-bold">Keluar</button>
+            </div>
+        </div>
+    </nav>
+</div>
+
 
         <main class="flex-grow p-4 md:p-6">
             
@@ -711,6 +715,18 @@
                     } else Utils.showToast("Tiada rekod pinjaman lewat aktif.");
                 } catch(e) { alert(e.message); }
             },
+
+            function toggleFontWrap(wrap) {
+              const tableCells = document.querySelectorAll('table th, table td');
+                tableCells.forEach(cell => {
+                if (wrap) {
+                    cell.style.wordWrap = 'break-word';
+                    } else {
+                cell.style.wordWrap = 'normal';
+                }
+                });
+            }
+
             addUser: async () => { 
                 const n = document.getElementById('newUserName').value.trim(); 
                 const e = document.getElementById('newUserEmail').value.trim();
