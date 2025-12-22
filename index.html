@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT UTM (v31 - Loan Dropdown Fixed)</title>
+    <title>Sistem Rekod IT UTM (v31.1 - Validation Fix)</title>
     
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -310,7 +310,18 @@
         const Utils = {
             log: (msg) => { const c = document.getElementById('debug-console'); if(c) { c.innerHTML += `<div>> ${msg}</div>`; c.scrollTop = c.scrollHeight; } },
             showToast: (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-20'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-20'), 3000); },
-            enableField: (id) => { const el = document.getElementById(id); if(el) { el.readOnly = false; el.classList.replace('bg-gray-50', 'bg-white'); el.classList.add('ring-2', 'ring-blue-100'); el.focus(); document.getElementById('btn-update-master').classList.remove('hidden'); } },
+            enableField: (id) => { 
+                const el = document.getElementById(id); 
+                if(el) { 
+                    el.readOnly = false; 
+                    el.classList.replace('bg-gray-50', 'bg-white'); 
+                    el.classList.add('ring-2', 'ring-blue-100'); 
+                    el.focus(); 
+                    document.getElementById('btn-update-master').classList.remove('hidden'); 
+                    // Add listener to re-check validity on manual edit
+                    el.addEventListener('input', CallLog.checkValidity);
+                } 
+            },
             formatDate: (d) => d ? new Date(d).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
             getToday: () => new Date().toISOString().split('T')[0],
             showPage: (pageId) => {
@@ -400,7 +411,7 @@
                 };
                 renderRadio('container-komunikasi', CallLog.options.komunikasi, 'komunikasi');
                 renderRadio('container-sistem', CallLog.options.sistem, 'system_type');
-                const sel = document.getElementById('issue-dropdown'); sel.innerHTML = '<option disabled selected>-- Pilih Isu --</option>';
+                const sel = document.getElementById('issue-dropdown'); sel.innerHTML = '<option value="" disabled selected>-- Pilih Isu --</option>';
                 CallLog.options.perkara.forEach(p => sel.appendChild(new Option(p, p)));
                 sel.onchange = CallLog.checkValidity;
             },
@@ -432,8 +443,14 @@
                 }, 300);
             },
             fill: (p) => {
-                ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => document.getElementById(k).value = p[k==='ic'?'ic_number':k] || '');
-                document.getElementById('search-results-dropdown').classList.add('hidden'); CallLog.checkValidity();
+                ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => {
+                    const el = document.getElementById(k);
+                    el.value = p[k==='ic'?'ic_number':k] || '';
+                    // Trigger validity on fill
+                    el.dispatchEvent(new Event('input'));
+                });
+                document.getElementById('search-results-dropdown').classList.add('hidden'); 
+                CallLog.checkValidity();
             },
             prepareNew: (n) => { 
                 document.getElementById('data-form').reset(); 
@@ -441,11 +458,22 @@
                 document.getElementById('is-new-user').value = 'true';
                 ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(id => Utils.enableField(id)); 
                 document.getElementById('search-results-dropdown').classList.add('hidden'); 
+                CallLog.checkValidity();
             },
             checkValidity: () => {
                 const btn = document.getElementById('submit-btn');
-                const isValid = document.getElementById('nama').value && document.querySelector('input[name="system_type"]:checked') && document.getElementById('issue-dropdown').value;
-                btn.disabled = !isValid; btn.classList.toggle('opacity-50', !isValid);
+                const hasName = !!document.getElementById('nama').value.trim();
+                const hasSystem = !!document.querySelector('input[name="system_type"]:checked');
+                const hasPerkara = document.getElementById('issue-dropdown').value !== "";
+                
+                const isValid = hasName && hasSystem && hasPerkara;
+                
+                btn.disabled = !isValid;
+                if (isValid) {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             },
             updateMasterData: async () => {
                 const p = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value };
@@ -455,9 +483,34 @@
             },
             submit: async (e) => {
                 e.preventDefault();
-                const log = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, department: document.getElementById('department').value, perekod: STATE.currentUser.email, submitted_by: STATE.currentUser.id, sistem: document.querySelector('input[name="system_type"]:checked').value, perkara: document.getElementById('issue-dropdown').value, komunikasi: document.querySelector('input[name="komunikasi"]:checked').value, confirmation: 'TIDAK' };
+                // Final safeguard check
+                const sysChecked = document.querySelector('input[name="system_type"]:checked');
+                const komChecked = document.querySelector('input[name="komunikasi"]:checked');
+                const issueVal = document.getElementById('issue-dropdown').value;
+                
+                if (!sysChecked || !issueVal) return Utils.showToast("Sila lengkapkan Sistem dan Perkara.");
+
+                const log = { 
+                    ic_number: document.getElementById('ic').value, 
+                    nama: document.getElementById('nama').value, 
+                    department: document.getElementById('department').value, 
+                    perekod: STATE.currentUser.email, 
+                    submitted_by: STATE.currentUser.id, 
+                    sistem: sysChecked.value, 
+                    perkara: issueVal, 
+                    komunikasi: komChecked ? komChecked.value : 'Call', 
+                    confirmation: 'TIDAK' 
+                };
+                
                 const { error } = await sbClient.from('rekod').insert([log]);
-                if(!error) { CallLog.updateMasterData(); Utils.showToast("Rekod Disimpan"); document.getElementById('data-form').reset(); CallLog.checkValidity(); }
+                if(!error) { 
+                    CallLog.updateMasterData(); 
+                    Utils.showToast("Rekod Disimpan"); 
+                    document.getElementById('data-form').reset(); 
+                    CallLog.checkValidity(); 
+                } else {
+                    Utils.showToast("Gagal menyimpan rekod.");
+                }
             }
         };
 
@@ -566,7 +619,7 @@
                     device_tag: document.getElementById('deviceSelect').value, 
                     start_date: document.getElementById('loanStartDate').value, 
                     end_date: document.getElementById('loanEndDate').value, 
-                    usage_type: document.getElementById('usageType').value, // ADDED USAGE TYPE
+                    usage_type: document.getElementById('usageType').value, 
                     usage_details: document.getElementById('usageDetails').value, 
                     status: 'Active', 
                     issued_by: STATE.currentUser.email 
