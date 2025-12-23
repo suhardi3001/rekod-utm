@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT UTM (v32.0 - Loan Reminders)</title>
+    <title>Sistem Rekod IT UTM (v33.0 - Auto Email Alerts)</title>
     
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -317,11 +317,26 @@
     
     <!-- MODAL OVERDUE -->
     <div id="overdue-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[100] p-4">
-        <div class="bg-white rounded-xl max-w-2xl w-full p-8 shadow-2xl">
-            <h3 class="text-xl font-bold text-red-600 mb-4">SENARAI OVERDUE</h3>
-            <div class="table-container max-h-60 rounded border">
-                <table class="text-xs w-full">
-                    <thead class="bg-red-50"><tr><th class="p-2 text-left">Nama</th><th class="p-2 text-left">Aset</th><th class="p-2 text-left">Tamat</th><th class="p-2 text-center">Tindakan</th></tr></thead>
+        <div class="bg-white rounded-xl max-w-3xl w-full p-8 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-red-600">SENARAI OVERDUE</h3>
+                <div class="flex gap-2">
+                    <button id="btn-email-all-overdue" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold flex items-center gap-1 hover:bg-blue-700">
+                        <i data-lucide="mail" class="w-3 h-3"></i> EMAIL ALL
+                    </button>
+                </div>
+            </div>
+            <div class="table-container max-h-80 rounded border">
+                <table class="text-[11px] w-full">
+                    <thead class="bg-red-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2 text-left">Nama</th>
+                            <th class="p-2 text-left">Aset</th>
+                            <th class="p-2 text-left">Tamat</th>
+                            <th class="p-2 text-left">Emel</th>
+                            <th class="p-2 text-center">Tindakan</th>
+                        </tr>
+                    </thead>
                     <tbody id="overdue-list-body"></tbody>
                 </table>
             </div>
@@ -687,13 +702,59 @@
             },
             checkOverdueLoans: async () => {
                 try {
-                    const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                    const overdue = data?.filter(l => l.end_date < Utils.getToday());
+                    const [{ data: loans }, { data: users }] = await Promise.all([
+                        sbClient.from('rekod_pinjaman').select('*').eq('status','Active'),
+                        sbClient.from('user_ba').select('name, emel')
+                    ]);
+
+                    // Map users to quick lookup emel
+                    const userEmelMap = {};
+                    users?.forEach(u => userEmelMap[u.name.toUpperCase()] = u.emel);
+
+                    const overdue = loans?.filter(l => l.end_date < Utils.getToday());
                     if (overdue?.length) {
-                        document.getElementById('overdue-list-body').innerHTML = overdue.map(l => `<tr><td class="p-2 font-bold">${l.user_name}</td><td class="p-2">${l.device_tag}</td><td class="p-2 text-red-600 font-bold">${l.end_date}</td><td class="p-2 text-center"><button onclick='Loan.sendSoftReminder(${JSON.stringify(l)})' class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-[9px] font-bold">SEND ALERT</button></td></tr>`).join('');
+                        const body = document.getElementById('overdue-list-body');
+                        body.innerHTML = overdue.map(l => {
+                            const borrowerEmail = userEmelMap[l.user_name.toUpperCase()] || 'Tiada Emel';
+                            return `
+                                <tr class="border-b">
+                                    <td class="p-2 font-bold">${l.user_name}</td>
+                                    <td class="p-2">${l.device_tag}</td>
+                                    <td class="p-2 text-red-600 font-bold">${l.end_date}</td>
+                                    <td class="p-2 text-gray-500">${borrowerEmail}</td>
+                                    <td class="p-2 flex gap-1 justify-center">
+                                        <button onclick='Loan.sendSoftReminder(${JSON.stringify(l)})' class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-[9px] font-bold">WA</button>
+                                        <button onclick='Loan.sendEmailAlert(${JSON.stringify(l)}, "${borrowerEmail}")' class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[9px] font-bold">EMAIL</button>
+                                    </td>
+                                </tr>`;
+                        }).join('');
+                        
+                        document.getElementById('btn-email-all-overdue').onclick = () => Loan.emailAll(overdue, userEmelMap);
                         document.getElementById('overdue-modal').classList.remove('hidden');
                     } else Utils.showToast("Tiada rekod pinjaman lewat aktif.");
                 } catch(e) { alert(e.message); }
+            },
+            emailAll: (list, emelMap) => {
+                const count = list.filter(l => emelMap[l.user_name.toUpperCase()]).length;
+                if(count === 0) return alert("Tiada emel peminjam dijumpai untuk dihantar.");
+                if(!confirm(`Hantar emel peringatan kepada ${count} peminjam?`)) return;
+                
+                list.forEach(l => {
+                    const emel = emelMap[l.user_name.toUpperCase()];
+                    if(emel) Loan.sendEmailAlert(l, emel, true);
+                });
+                Utils.showToast(`${count} Emel peringatan dicetuskan.`);
+            },
+            sendEmailAlert: (loan, email, silent = false) => {
+                if (email === 'Tiada Emel' || !email) {
+                    if(!silent) alert("Emel peminjam tidak dijumpai dalam sistem.");
+                    return;
+                }
+                const subject = encodeURIComponent(`[PERINGATAN] Pemulangan Peralatan ICT - ${loan.device_tag}`);
+                const body = encodeURIComponent(`Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`);
+                
+                window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+                if(!silent) Utils.showToast("Emel peringatan dicetuskan.");
             },
             sendSoftReminder: (loan) => {
                 const msg = `Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera bagi tujuan rekod dan kegunaan kakitangan lain.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`;
