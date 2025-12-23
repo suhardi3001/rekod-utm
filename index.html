@@ -119,6 +119,10 @@
 
         .btn-hover { transition: transform 0.1s ease, background-color 0.2s ease; }
         .btn-hover:active { transform: scale(0.97); }
+
+        /* Animation for form switch */
+        .form-enter { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -130,16 +134,18 @@
         <p class="text-slate-400 text-sm mt-2 font-medium">Initializing secure connection...</p>
     </div>
 
-    <!-- 2. LOGIN -->
+    <!-- 2. LOGIN & REGISTER -->
     <div id="login-page" class="hidden-section flex-grow flex flex-col items-center justify-center p-6 bg-slate-50">
-        <div class="card-modern p-10 w-full max-w-md">
+        <div class="card-modern p-10 w-full max-w-md form-enter">
             <div class="text-center mb-10">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl mb-4 shadow-sm">
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900">Sistem Rekod IT</h1>
-                <p class="text-slate-500 text-sm mt-1">Sila log masuk untuk akses pangkalan data</p>
+                <p class="text-slate-500 text-sm mt-1">Akses Pangkalan Data & Inventori</p>
             </div>
+            
+            <!-- LOGIN FORM -->
             <form id="login-form" class="space-y-5">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Emel Rasmi</label>
@@ -153,7 +159,36 @@
                 <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center">
                     Akses Sistem
                 </button>
+                <div class="text-center mt-6 pt-4 border-t border-slate-100">
+                    <p class="text-xs text-slate-400 font-bold mb-2">Tiada akaun akses?</p>
+                    <button type="button" onclick="Auth.toggleForm('register')" class="text-indigo-600 text-sm font-bold hover:underline">Daftar Akaun Baru</button>
+                </div>
             </form>
+
+            <!-- REGISTER FORM (Hidden by default) -->
+            <form id="register-form" class="space-y-5 hidden">
+                <div class="bg-indigo-50 p-4 rounded-xl mb-4 text-indigo-800 text-xs font-medium">
+                    Pendaftaran akaun baru untuk staf pentadbir. Sila gunakan emel rasmi.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Emel Rasmi</label>
+                    <input type="email" id="reg-email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="nama@utm.my" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Kata Laluan Baru</label>
+                    <input type="password" id="reg-password" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Min. 6 aksara" required minlength="6">
+                </div>
+                <div id="reg-error" class="text-red-500 text-sm hidden bg-red-50 border border-red-100 p-4 rounded-xl font-medium"></div>
+                <div id="reg-success" class="text-emerald-600 text-sm hidden bg-emerald-50 border border-emerald-100 p-4 rounded-xl font-medium"></div>
+                
+                <button type="submit" id="reg-btn" class="login-btn-anim btn-hover w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 transition-all flex items-center justify-center">
+                    Daftar Akaun
+                </button>
+                <div class="text-center mt-4">
+                    <button type="button" onclick="Auth.toggleForm('login')" class="text-slate-400 text-sm font-bold hover:text-slate-600">Kembali ke Log Masuk</button>
+                </div>
+            </form>
+
             <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
@@ -195,7 +230,9 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span id="user-display" class="hidden lg:inline text-slate-300 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700"></span>
-                        <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-rose-900/20 transition-all">Keluar</button>
+                        <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-rose-900/20 transition-all flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-3 h-3"></i> Keluar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -528,33 +565,47 @@
     
     <!-- MODAL OVERDUE -->
     <div id="overdue-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden z-[100] p-6">
-        <div class="bg-white rounded-3xl max-w-4xl w-full p-10 shadow-2xl transform transition-all">
-            <div class="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
+        <div class="bg-white rounded-3xl max-w-5xl w-full p-10 shadow-2xl transform transition-all h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-8 border-b border-slate-50 pb-6 shrink-0">
                 <div>
                     <h3 class="text-2xl font-black text-rose-600 tracking-tighter uppercase">Awas: Pinjaman Lewat</h3>
                     <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Senarai peminjam yang belum memulangkan aset</p>
                 </div>
                 <div class="flex gap-3">
-                    <button id="btn-email-all-overdue" class="btn-hover bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black flex items-center gap-2 hover:bg-indigo-700 shadow-xl shadow-indigo-100 uppercase tracking-widest">
-                        <i data-lucide="mail-warning" class="w-4 h-4"></i> Hantar Email Semua
+                    <button id="btn-batch-email" class="btn-hover bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black flex items-center gap-2 hover:bg-indigo-700 shadow-xl shadow-indigo-100 uppercase tracking-widest">
+                        <i data-lucide="mail-plus" class="w-4 h-4"></i> Prepare Bulk Emails
                     </button>
                 </div>
             </div>
-            <div class="table-container max-h-96 rounded-2xl border border-slate-100">
-                <table class="text-[11px] w-full">
-                    <thead class="bg-rose-50/50 sticky top-0 z-10 text-rose-800 font-bold uppercase tracking-wider border-b border-rose-100">
-                        <tr>
-                            <th class="p-4 text-left">Nama Peminjam</th>
-                            <th class="p-4 text-left">Aset</th>
-                            <th class="p-4 text-left">Patut Pulang</th>
-                            <th class="p-4 text-left">Emel Perkhidmatan</th>
-                            <th class="p-4 text-center">Tindakan Pantas</th>
-                        </tr>
-                    </thead>
-                    <tbody id="overdue-list-body" class="text-slate-600"></tbody>
-                </table>
+            
+            <div id="overdue-content-area" class="flex-grow overflow-hidden flex flex-col">
+                <!-- Standard List View -->
+                <div id="overdue-list-view" class="table-container rounded-2xl border border-slate-100 flex-grow overflow-auto">
+                    <table class="text-[11px] w-full">
+                        <thead class="bg-rose-50/50 sticky top-0 z-10 text-rose-800 font-bold uppercase tracking-wider border-b border-rose-100">
+                            <tr>
+                                <th class="p-4 text-left">Nama Peminjam</th>
+                                <th class="p-4 text-left">Aset</th>
+                                <th class="p-4 text-left">Patut Pulang</th>
+                                <th class="p-4 text-left">Emel Perkhidmatan</th>
+                                <th class="p-4 text-center">Tindakan Pantas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overdue-list-body" class="text-slate-600"></tbody>
+                    </table>
+                </div>
+
+                <!-- Batch Email View (Hidden by default) -->
+                <div id="overdue-batch-view" class="hidden flex-grow overflow-auto p-4 space-y-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div class="flex items-center gap-3 bg-indigo-50 text-indigo-800 p-4 rounded-xl text-xs font-bold mb-4 border border-indigo-100">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                        <p>To prevent browser popup blockers, please click "Send Email" for each user manually. System has aggregated multiple items into single emails.</p>
+                    </div>
+                    <div id="batch-email-container" class="grid grid-cols-1 gap-4"></div>
+                </div>
             </div>
-            <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="btn-hover mt-10 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black w-full tracking-widest transition-all">TUTUP MODAL</button>
+
+            <button onclick="document.getElementById('overdue-modal').classList.add('hidden')" class="btn-hover mt-6 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black w-full tracking-widest transition-all shrink-0">TUTUP MODAL</button>
         </div>
     </div>
 
@@ -597,7 +648,6 @@
             },
             formatDate: (d) => d ? new Date(d).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
             getToday: () => {
-                // Returns YYYY-MM-DD in LOCAL TIME (fix for UTC issue)
                 const d = new Date();
                 const year = d.getFullYear();
                 const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -619,12 +669,42 @@
                     else Utils.showPage('login-page');
                 } catch (e) { Utils.log("Database Error: " + e.message); Utils.showPage('login-page'); }
             },
+            toggleForm: (type) => {
+                const isLogin = type === 'login';
+                document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+                document.getElementById('register-form').classList.toggle('hidden', isLogin);
+                document.getElementById('login-form').classList.toggle('form-enter', isLogin);
+                document.getElementById('register-form').classList.toggle('form-enter', !isLogin);
+                document.getElementById('reg-error').classList.add('hidden');
+                document.getElementById('reg-success').classList.add('hidden');
+            },
             login: async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('login-btn'); btn.classList.add('loading');
                 const { data, error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
                 if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
                 else Auth.onAuth(data.user);
+            },
+            register: async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('reg-btn'); 
+                btn.classList.add('loading');
+                const email = document.getElementById('reg-email').value.trim();
+                const password = document.getElementById('reg-password').value;
+                
+                const { data, error } = await sbClient.auth.signUp({ email, password });
+                btn.classList.remove('loading');
+                
+                if (error) {
+                    const errDiv = document.getElementById('reg-error');
+                    errDiv.innerText = error.message;
+                    errDiv.classList.remove('hidden');
+                } else {
+                    const succDiv = document.getElementById('reg-success');
+                    succDiv.innerText = "Pendaftaran berjaya! Sila semak emel anda untuk pengesahan.";
+                    succDiv.classList.remove('hidden');
+                    document.getElementById('register-form').reset();
+                }
             },
             onAuth: async (user) => {
                 STATE.currentUser = user;
@@ -635,7 +715,19 @@
                 Navigation.switchModule('call-log');
                 CallLog.init();
             },
-            logout: async () => { await sbClient.auth.signOut(); window.location.reload(); }
+            logout: async () => {
+                // Modified to prevent page reload loop and allow immediate user switch
+                await sbClient.auth.signOut();
+                STATE.currentUser = null;
+                document.getElementById('user-display').innerText = '';
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                // Reset to login view instantly
+                Utils.showPage('login-page');
+                Auth.toggleForm('login');
+                const btn = document.getElementById('login-btn');
+                btn.classList.remove('loading');
+            }
         };
 
         const Navigation = {
@@ -881,7 +973,6 @@
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                // Ensure date comparison uses local time and bold red color
                 document.getElementById('active-loans-body').innerHTML = data?.map(l => `<tr class="${l.end_date < Utils.getToday() ? 'bg-rose-100 text-rose-700 font-bold' : 'border-b border-slate-50'} hover:bg-slate-50 transition-all"><td class="p-4 uppercase font-bold text-slate-700">${l.user_name}</td><td class="p-4 font-black text-indigo-600 tracking-widest">${l.device_tag}</td><td class="p-4">${l.end_date}</td><td class="p-4 text-slate-400 font-bold">${l.usage_type}</td></tr>`).join('') || '';
             },
             submit: async () => {
@@ -939,7 +1030,6 @@
                     ]);
 
                     const userEmelMap = {};
-                    // Improved matching: trim spaces and uppercase
                     users?.forEach(u => userEmelMap[u.name.trim().toUpperCase()] = u.emel);
 
                     const overdue = loans?.filter(l => l.end_date < Utils.getToday());
@@ -955,44 +1045,81 @@
                                     <td class="p-4 text-slate-400 font-medium">${borrowerEmail}</td>
                                     <td class="p-4 flex gap-2 justify-center">
                                         <button onclick='Loan.sendSoftReminder(${JSON.stringify(l)})' class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase shadow-lg shadow-amber-100 transition-all">WA</button>
-                                        <button onclick='Loan.sendEmailAlert(${JSON.stringify(l)}, "${borrowerEmail}")' class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase shadow-lg shadow-indigo-100 transition-all">MAIL</button>
+                                        <button onclick='Loan.sendSingleEmail(${JSON.stringify(l)}, "${borrowerEmail}")' class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase shadow-lg shadow-indigo-100 transition-all">MAIL</button>
                                     </td>
                                 </tr>`;
                         }).join('');
                         
-                        document.getElementById('btn-email-all-overdue').onclick = () => Loan.emailAll(overdue, userEmelMap);
+                        document.getElementById('btn-batch-email').onclick = () => Loan.setupBatchEmailUI(overdue, userEmelMap);
                         document.getElementById('overdue-modal').classList.remove('hidden');
+                        document.getElementById('overdue-list-view').classList.remove('hidden');
+                        document.getElementById('overdue-batch-view').classList.add('hidden');
                     } else Utils.showToast("Compliance Check: No active overdue loans detected.");
                 } catch(e) { alert(e.message); }
             },
-            emailAll: async (list, emelMap) => {
-                const count = list.filter(l => emelMap[l.user_name.trim().toUpperCase()]).length;
-                if(count === 0) return alert("System Error: No valid email addresses found for overdue borrowers.");
-                if(!confirm(`Warning: This will attempt to open ${count} email windows. Some browsers may block this. Continue?`)) return;
-                
-                let emailsSent = 0;
-                for (const l of list) {
-                    const emel = emelMap[l.user_name.trim().toUpperCase()];
-                    if(emel) {
-                        Loan.sendEmailAlert(l, emel, true);
-                        emailsSent++;
-                        // Small delay to try and mitigate browser blocking
-                        await new Promise(r => setTimeout(r, 800));
-                    }
-                }
-                Utils.showToast(`${emailsSent} email alerts triggered.`);
+            setupBatchEmailUI: (list, emelMap) => {
+                // Group By User
+                const grouped = list.reduce((acc, l) => {
+                    const name = l.user_name.trim().toUpperCase();
+                    if(!acc[name]) acc[name] = [];
+                    acc[name].push(l);
+                    return acc;
+                }, {});
+
+                const container = document.getElementById('batch-email-container');
+                container.innerHTML = '';
+
+                Object.keys(grouped).forEach(name => {
+                    const email = emelMap[name] || 'N/A';
+                    const items = grouped[name];
+                    const count = items.length;
+                    
+                    const el = document.createElement('div');
+                    el.className = 'bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between';
+                    
+                    const itemTags = items.map(i => i.device_tag).join(', ');
+                    
+                    el.innerHTML = `
+                        <div>
+                            <div class="font-black text-slate-800 uppercase">${name}</div>
+                            <div class="text-xs text-slate-400 font-bold tracking-wider mt-1">${count} Item(s) Overdue: <span class="text-indigo-600">${itemTags}</span></div>
+                            <div class="text-[10px] text-slate-300 font-mono mt-1">${email}</div>
+                        </div>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center gap-2 btn-send-email">
+                            <i data-lucide="send" class="w-3 h-3"></i> Send Email
+                        </button>
+                    `;
+                    
+                    el.querySelector('.btn-send-email').onclick = function() {
+                        Loan.sendBatchEmail(name, email, items);
+                        this.classList.replace('bg-indigo-600', 'bg-emerald-500');
+                        this.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Sent';
+                        this.disabled = true;
+                        lucide.createIcons();
+                    };
+                    
+                    container.appendChild(el);
+                });
+
+                document.getElementById('overdue-list-view').classList.add('hidden');
+                document.getElementById('overdue-batch-view').classList.remove('hidden');
+                lucide.createIcons();
             },
-            sendEmailAlert: (loan, email, silent = false) => {
-                if (email === 'N/A' || !email) {
-                    if(!silent) alert("System Error: Email address missing in directory.");
-                    return;
-                }
+            sendSingleEmail: (loan, email) => {
+                if (email === 'N/A' || !email) return alert("System Error: Email address missing.");
                 const subject = encodeURIComponent(`[PERINGATAN] Pemulangan Peralatan ICT - ${loan.device_tag}`);
                 const body = encodeURIComponent(`Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`);
+                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            },
+            sendBatchEmail: (name, email, items) => {
+                if (email === 'N/A' || !email) return alert("System Error: Email address missing.");
                 
-                // Add rel=noopener to prevent security issues and potential blocks
-                window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
-                if(!silent) Utils.showToast("Email alert triggered.");
+                const itemList = items.map(i => `- ${i.device_tag} (Tamat: ${i.end_date})`).join('\n');
+                const subject = encodeURIComponent(`[PERINGATAN] Pemulangan Peralatan ICT (${items.length} Item)`);
+                const body = encodeURIComponent(`Salam sejahtera Tuan/Puan ${name},\n\nHarap maklum bahawa tempoh pinjaman bagi peralatan ICT berikut telah tamat:\n\n${itemList}\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`);
+                
+                // Using location.href is safer for single actions than window.open which blocks popups
+                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
             },
             sendSoftReminder: (loan) => {
                 const msg = `Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera bagi tujuan rekod dan kegunaan kakitangan lain.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`;
@@ -1034,6 +1161,7 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
+            document.getElementById('register-form').addEventListener('submit', Auth.register);
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
         });
