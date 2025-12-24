@@ -972,7 +972,7 @@
             },
             update: async (id, v) => { await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); Utils.showToast("Status dikemaskini"); Records.fetch(); },
             exportExcel: () => {
-                const formatted = Records.currentData.map(r => ({ 'Tarikh dan Masa': Utils.formatDate(r.created_at), 'Nama dan myKad Pemanggil': r.nama, 'IC': r.ic_number, 'Nama PTJ': r.department, 'Medium Komunikasi': r.komunikasi, 'Sistem': r.sistem, 'Perkara': r.perkara, 'Direkod Oleh': STATE.userMap[r.perekod?.toLowerCase()] || r.perekod, 'Status': r.confirmation }));
+                const formatted = Records.currentData.map(r => ({ 'Tarikh dan Masa': Utils.formatDate(r.created_at), 'Nama Pemanggil': r.nama, 'No myKad': r.ic_number, 'Nama PTJ': r.department, 'Medium Komunikasi': r.komunikasi, 'Sistem': r.sistem, 'Perkara': r.perkara, 'Direkod Oleh': STATE.userMap[r.perekod?.toLowerCase()] || r.perekod, 'Status': r.confirmation }));
                 const ws = XLSX.utils.json_to_sheet(formatted);
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "CallLog");
                 XLSX.writeFile(wb, "UTM_CallLog_Export.xlsx");
