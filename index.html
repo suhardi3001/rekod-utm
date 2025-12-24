@@ -595,9 +595,9 @@
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw',
             
             /* --- EMAIL AUTOMATION KEYS (EmailJS) --- */
-            emailjsKey: 'V13_yx5sLEDjTVgCE', // Go to EmailJS dashboard -> Account -> Public Key
-            emailjsServiceID: 'default_service',
-            emailjsTemplateID: 'template_overdue' 
+            emailjsKey: 'V13_yx5sLEDjTVgCE', // Paste your EmailJS Public Key here between quotes
+            emailjsServiceID: 'service_default', // Check this ID in EmailJS Dashboard
+            emailjsTemplateID: 'template_overdue' // Check this ID in EmailJS Dashboard
             /* --------------------------------------- */
         };
 
@@ -649,31 +649,35 @@
             init: () => {
                 if (CONFIG.emailjsKey) {
                     emailjs.init(CONFIG.emailjsKey);
-                    Utils.log("Email System: READY (Automated Service Enabled)");
+                    Utils.log("Email System: INITIALIZED with Public Key.");
                 } else {
-                    Utils.log("Email System: STANDBY (Awaiting configuration keys)");
+                    Utils.log("Email System: WAITING. Please paste public key in CONFIG.emailjsKey.");
                 }
             },
             sendNoReply: async (toEmail, toName, message) => {
                 if (!CONFIG.emailjsKey) {
-                    // Safety Fallback to Mail Client Bridge
+                    Utils.log(`Email Key missing. Opening mailto bridge for ${toEmail}...`);
                     const subject = encodeURIComponent("Peringatan Mesra: Pemulangan Aset IT UTM");
                     const body = encodeURIComponent(message);
                     window.location.href = `mailto:${toEmail}?subject=${subject}&body=${body}`;
                     return { status: 'bridged' };
                 }
                 
+                Utils.log(`Attempting automated send to: ${toEmail}...`);
                 try {
-                    // Professional No-Reply Sending Configuration
-                    return await emailjs.send(CONFIG.emailjsServiceID, CONFIG.emailjsTemplateID, {
+                    // Force public key as 4th parameter for robustness
+                    const result = await emailjs.send(CONFIG.emailjsServiceID, CONFIG.emailjsTemplateID, {
                         to_email: toEmail,
                         to_name: toName,
                         system_signature: "Unit Teknologi Maklumat UTM (Auto-Alert)",
                         message: message,
                         reply_to: "no-reply@utm.my" 
-                    });
+                    }, CONFIG.emailjsKey);
+                    Utils.log(`Email Successfully Sent. Response: ${result.status} ${result.text}`);
+                    return result;
                 } catch (err) {
-                    Utils.log("Auto-alert system encountered a protocol error.");
+                    Utils.log(`EmailJS Error: ${err.status || 'FAILED'}. Check ServiceID/TemplateID and Key.`);
+                    console.error("EmailJS Full Error Object:", err);
                     throw err;
                 }
             }
@@ -728,19 +732,18 @@
                 try {
                     const { data: users, error } = await sbClient.from('user_ba').select('*');
                     if (error) Utils.log("Load staff list failed: " + error.message);
+                    
+                    Utils.log(`Mapping ${users?.length || 0} user records...`);
                     users?.forEach(u => { 
-                        const name = u.name || u.nama || u.Name || u.Nama;
-                        const emel = u.emel || u.email || u.Emel || u.Email;
+                        const name = (u.name || u.nama || u.Name || u.Nama || "").trim();
+                        const emel = (u.emel || u.email || u.Emel || u.Email || "").trim();
                         if(emel && name) {
                             STATE.userMap[emel.toLowerCase()] = name; 
-                            // Append @moe.gov.my to emel for automated overdue email alerts
                             const fullEmail = emel.toLowerCase().includes('@') ? emel.toLowerCase() : emel.toLowerCase() + "@moe.gov.my";
                             STATE.userEmails[name.toUpperCase()] = fullEmail;
                         }
                     });
                     
-                    // --- AUTOMATION TRIGGER ---
-                    // Run a silent health check for overdue loans on background load
                     Loan.checkOverdueLoans(false); 
                     
                 } catch (err) { Utils.log("Data Load Error: " + err.message); }
@@ -1130,7 +1133,7 @@
                 document.getElementById('reminder-modal').classList.remove('hidden');
                 
                 document.getElementById('copy-reminder-btn').onclick = async () => {
-                    const email = STATE.userEmails[user.toUpperCase()];
+                    const email = STATE.userEmails[user.trim().toUpperCase()];
                     if (email) {
                         Utils.showToast("Menghantar auto-alert...");
                         try {
@@ -1140,6 +1143,7 @@
                             Utils.showToast("Ralat penghantaran automatik. Sila gunakan Mailto.");
                         }
                     } else {
+                        Utils.log(`Warn: Name "${user}" not found in email mapping. Using mailto bridge.`);
                         Utils.showToast("Tiada rekod emel. Membuka mailto fallback...");
                         EmailService.sendNoReply(null, user, msg);
                     }
@@ -1148,10 +1152,11 @@
             },
             blastBundleReminders: async (grouped) => {
                 let processed = 0;
+                let failedCount = 0;
                 Utils.showToast(`Memproses ${Object.keys(grouped).length} peringatan no-reply...`);
                 
                 for (const [user, items] of Object.entries(grouped)) {
-                    const email = STATE.userEmails[user.toUpperCase()];
+                    const email = STATE.userEmails[user.trim().toUpperCase()];
                     if (email) {
                         const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
                         const msg = `Salam sejahtera ${user},\n\nIni adalah peringatan mesra automatik (soft reminder) mengenai pemulangan aset IT berikut yang telah tamat tempoh pinjaman:\n\n${assetList}\n\nMohon kerjasama anda untuk memulangkan aset tersebut ke Unit IT secepat mungkin.\n\nTerima kasih.\n\n---\nUTM IT AUTO-ALERT SYSTEM\n(No-Reply Message)`;
@@ -1160,13 +1165,17 @@
                             await EmailService.sendNoReply(email, user, msg);
                             processed++;
                         } catch (e) {
-                            Utils.log(`Penyampaian gagal kepada: ${user}`);
+                            failedCount++;
+                            Utils.log(`Failed to send reminder for: ${user}`);
                         }
                         // Queue delay (1.2s) to ensure external server processes the automated blast
                         await new Promise(r => setTimeout(r, 1200));
+                    } else {
+                        failedCount++;
+                        Utils.log(`Skip: No email found for user "${user}".`);
                     }
                 }
-                Utils.showToast(`Auto-Blast Selesai: ${processed} emel peringatan diproses.`);
+                Utils.showToast(`Selesai: ${processed} dihantar, ${failedCount} gagal/langkau.`);
                 document.getElementById('overdue-modal').classList.add('hidden');
             },
             addUser: async () => { 
@@ -1174,12 +1183,18 @@
                 const e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return alert("Sila isi Nama dan Emel.");
                 try {
+                    const cleanName = n.toUpperCase();
+                    const fullEmail = e.toLowerCase().includes('@') ? e.toLowerCase() : e.toLowerCase() + "@moe.gov.my";
+                    
                     const { error } = await sbClient.from('user_ba').insert([{ 
-                        name: n.toUpperCase(), 
+                        name: cleanName, 
                         emel: e,
-                 
                     }]); 
                     if(error) throw error;
+                    
+                    // Update local state immediately so alerts work without refresh
+                    STATE.userEmails[cleanName] = fullEmail;
+                    
                     Utils.showToast("Pengguna didaftarkan"); 
                     Loan.loadData(); 
                     document.getElementById('newUserName').value=''; 
