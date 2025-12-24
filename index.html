@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -724,7 +725,7 @@
                         if(tabEl) tabEl.className = t === tab ? 'px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all tab-active-sub' : 'px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-400';
                     });
                     if (tab === 'history') Loan.loadHistory();
-                    if (tab === 'admin') Loan.loadData();
+                    if (tab === 'admin' || tab === 'borrow') Loan.loadData();
                 }
             }
         };
@@ -920,20 +921,35 @@
                 const startEl = document.getElementById('loanStartDate');
                 if (startEl) startEl.min = Utils.getToday();
                 try {
-                    // Load Peminjam List (user_ba)
-                    const { data: u, error: uErr } = await sbClient.from('user_ba').select('*').order('name');
+                    // Load Peminjam List (user_ba) - Robust Column Check
+                    // FIX: Fetch without sorting to avoid error if column "name" is missing
+                    const { data: u, error: uErr } = await sbClient.from('user_ba').select('*');
+                    
                     if (uErr) {
-                        Utils.log("Peminjam load failed: " + uErr.message);
+                        Utils.log("Peminjam load failed (user_ba): " + uErr.message);
                     }
+                    
                     const dl = document.getElementById('userList'); 
                     if (dl) {
                         dl.innerHTML = '';
-                        if (u) u.forEach(i => {
-                            const option = document.createElement('option');
-                            option.value = i.name || i.nama;
-                            dl.appendChild(option);
-                        });
-                        Utils.log(`Peminjam list loaded: ${u?.length || 0} users found.`);
+                        if (u) {
+                            // Sort in JS to handle dynamic column names (name or nama)
+                            const sortedUsers = u.sort((a, b) => {
+                                const nameA = (a.name || a.nama || "").toUpperCase();
+                                const nameB = (b.name || b.nama || "").toUpperCase();
+                                return nameA.localeCompare(nameB);
+                            });
+                            
+                            sortedUsers.forEach(i => {
+                                const val = i.name || i.nama;
+                                if (val) {
+                                    const option = document.createElement('option');
+                                    option.value = val;
+                                    dl.appendChild(option);
+                                }
+                            });
+                        }
+                        Utils.log(`Peminjam list ready: ${u?.length || 0} users.`);
                     }
                     
                     // Load Devices
@@ -1028,7 +1044,6 @@
                 const e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return alert("Sila isi Nama dan Emel.");
                 try {
-                    // FIX: No created_at to avoid schema cache errors
                     const { error } = await sbClient.from('user_ba').insert([{ 
                         name: n.toUpperCase(), 
                         emel: e 
@@ -1049,7 +1064,6 @@
                 const s = document.getElementById('newSerial').value.trim();
                 if(!t) return alert("Sila isi Tag Aset.");
                 try {
-                    // FIX: No created_at to avoid schema cache errors
                     const { error } = await sbClient.from('device_inventory').insert([{ 
                         tag: t, 
                         type: tp, 
