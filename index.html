@@ -550,35 +550,21 @@
                     <h3 class="text-2xl font-black text-rose-600 tracking-tighter uppercase">Awas: Pinjaman Lewat</h3>
                     <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Senarai peminjam yang belum memulangkan aset</p>
                 </div>
-                <div class="flex gap-3">
-                    <button id="btn-batch-email" class="btn-hover bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black flex items-center gap-2 hover:bg-indigo-700 shadow-xl shadow-indigo-100 uppercase tracking-widest">
-                        <i data-lucide="mail-plus" class="w-4 h-4"></i> Prepare Bulk Emails
-                    </button>
-                </div>
             </div>
             
             <div id="overdue-content-area" class="flex-grow overflow-hidden flex flex-col">
-                <div id="overdue-list-view" class="table-container rounded-2xl border border-slate-100 flex-grow overflow-auto">
+                <div class="table-container rounded-2xl border border-slate-100 flex-grow overflow-auto">
                     <table class="text-[11px] w-full">
                         <thead class="bg-rose-50/50 sticky top-0 z-10 text-rose-800 font-bold uppercase tracking-wider border-b border-rose-100">
                             <tr>
                                 <th class="p-4 text-left">Nama Peminjam</th>
                                 <th class="p-4 text-left">Aset</th>
                                 <th class="p-4 text-left">Patut Pulang</th>
-                                <th class="p-4 text-left">Emel Perkhidmatan</th>
                                 <th class="p-4 text-center">Tindakan Pantas</th>
                             </tr>
                         </thead>
                         <tbody id="overdue-list-body" class="text-slate-600"></tbody>
                     </table>
-                </div>
-
-                <div id="overdue-batch-view" class="hidden flex-grow overflow-auto p-4 space-y-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div class="flex items-center gap-3 bg-indigo-50 text-indigo-800 p-4 rounded-xl text-xs font-bold mb-4 border border-indigo-100">
-                        <i data-lucide="info" class="w-5 h-5"></i>
-                        <p>To prevent browser popup blockers, please click "Send Email" for each user manually. System has aggregated multiple items into single emails.</p>
-                    </div>
-                    <div id="batch-email-container" class="grid grid-cols-1 gap-4"></div>
                 </div>
             </div>
 
@@ -603,11 +589,18 @@
         const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
         const Utils = {
-            log: (msg) => { const c = document.getElementById('debug-console'); if(c) { c.innerHTML += `<div>> ${msg}</div>`; c.scrollTop = c.scrollHeight; } },
+            log: (msg) => { 
+                const c = document.getElementById('debug-console'); 
+                if(c) { 
+                    c.innerHTML += `<div>> ${msg}</div>`; 
+                    c.scrollTop = c.scrollHeight; 
+                }
+                console.log("UTM Sys Log:", msg);
+            },
             showToast: (msg) => { 
                 const t = document.getElementById('toast'); 
                 t.innerHTML = `<i data-lucide="info" class="w-5 h-5"></i><span>${msg}</span>`; 
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
                 t.classList.remove('opacity-0', 'translate-y-32'); 
                 setTimeout(() => t.classList.add('opacity-0', 'translate-y-32'), 3000); 
             },
@@ -643,7 +636,7 @@
                     if (error) throw error;
                     if (session) Auth.onAuth(session.user);
                     else Utils.showPage('login-page');
-                } catch (e) { Utils.log("Database Error: " + e.message); Utils.showPage('login-page'); }
+                } catch (e) { Utils.log("Auth Error: " + e.message); Utils.showPage('login-page'); }
             },
             toggleForm: (type) => {
                 const isLogin = type === 'login';
@@ -673,7 +666,7 @@
                     errDiv.classList.remove('hidden');
                 } else {
                     const succDiv = document.getElementById('reg-success');
-                    succDiv.innerText = "Pendaftaran berjaya! Sila semak emel anda untuk pengesahan.";
+                    succDiv.innerText = "Pendaftaran berjaya! Sila semak emel anda.";
                     succDiv.classList.remove('hidden');
                     document.getElementById('register-form').reset();
                 }
@@ -681,8 +674,17 @@
             onAuth: async (user) => {
                 STATE.currentUser = user;
                 document.getElementById('user-display').innerText = user.email;
-                const { data: users } = await sbClient.from('user_ba').select('name, emel');
-                users?.forEach(u => { if(u.emel) STATE.userMap[u.emel.toLowerCase()] = u.name; });
+                try {
+                    // Load user map for operator names
+                    const { data: users, error } = await sbClient.from('user_ba').select('*');
+                    if (error) Utils.log("Load staff list failed: " + error.message);
+                    users?.forEach(u => { 
+                        const name = u.name || u.nama;
+                        const emel = u.emel || u.email;
+                        if(emel && name) STATE.userMap[emel.toLowerCase()] = name; 
+                    });
+                } catch (err) { Utils.log("Data Load Error: " + err.message); }
+                
                 Utils.showPage('main-page');
                 Navigation.switchModule('call-log');
                 CallLog.init();
@@ -690,9 +692,6 @@
             logout: async () => {
                 await sbClient.auth.signOut();
                 STATE.currentUser = null;
-                document.getElementById('user-display').innerText = '';
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
                 Utils.showPage('login-page');
                 Auth.toggleForm('login');
                 const btn = document.getElementById('login-btn');
@@ -725,6 +724,7 @@
                         if(tabEl) tabEl.className = t === tab ? 'px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all tab-active-sub' : 'px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-400';
                     });
                     if (tab === 'history') Loan.loadHistory();
+                    if (tab === 'admin') Loan.loadData();
                 }
             }
         };
@@ -741,14 +741,11 @@
                 if (mode === 'wrap') {
                     main.classList.add('wrap-mode');
                     document.getElementById('btn-view-wrap').classList.add('bg-indigo-600', 'text-white');
-                    Utils.showToast("Text Wrapping enabled");
                 } else if (mode === 'compact') {
                     main.classList.add('compact-mode');
                     document.getElementById('btn-view-compact').classList.add('bg-indigo-600', 'text-white');
-                    Utils.showToast("Compact View enabled");
                 } else {
                     document.getElementById('btn-view-default').classList.add('bg-indigo-600', 'text-white');
-                    Utils.showToast("View reset to default");
                 }
                 STATE.currentViewMode = mode;
             }
@@ -812,8 +809,10 @@
             fill: (p) => {
                 ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => {
                     const el = document.getElementById(k);
-                    el.value = p[k==='ic'?'ic_number':k] || '';
-                    el.dispatchEvent(new Event('input'));
+                    if(el) {
+                        el.value = p[k==='ic'?'ic_number':k] || '';
+                        el.dispatchEvent(new Event('input'));
+                    }
                 });
                 document.getElementById('search-results-dropdown').classList.add('hidden'); 
                 CallLog.checkValidity();
@@ -840,18 +839,18 @@
                 const p = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value };
                 const { data: ex } = await sbClient.from('personnel').select('id').eq('ic_number', p.ic_number).maybeSingle();
                 if(ex) await sbClient.from('personnel').update(p).eq('ic_number', p.ic_number); else await sbClient.from('personnel').insert([p]);
-                Utils.showToast("Master Data successfully synchronized"); document.getElementById('btn-update-master').classList.add('hidden');
+                Utils.showToast("Master Data synchronized"); document.getElementById('btn-update-master').classList.add('hidden');
             },
             submit: async (e) => {
                 e.preventDefault();
                 const sysChecked = document.querySelector('input[name="system_type"]:checked');
                 const komChecked = document.querySelector('input[name="komunikasi"]:checked');
                 const issueVal = document.getElementById('issue-dropdown').value;
-                if (!sysChecked || !issueVal) return Utils.showToast("Validation Error: Please select System and Issue.");
+                if (!sysChecked || !issueVal) return Utils.showToast("Sila pilih Sistem dan Isu.");
                 const log = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, department: document.getElementById('department').value, perekod: STATE.currentUser.email, submitted_by: STATE.currentUser.id, sistem: sysChecked.value, perkara: issueVal, komunikasi: komChecked ? komChecked.value : 'Call', confirmation: 'TIDAK' };
                 const { error } = await sbClient.from('rekod').insert([log]);
-                if(!error) { CallLog.updateMasterData(); Utils.showToast("Record successfully archived"); document.getElementById('data-form').reset(); CallLog.checkValidity(); }
-                else Utils.showToast("Database Error: Failed to save record.");
+                if(!error) { CallLog.updateMasterData(); Utils.showToast("Rekod disimpan"); document.getElementById('data-form').reset(); CallLog.checkValidity(); }
+                else Utils.showToast("Gagal menyimpan rekod.");
             }
         };
 
@@ -880,13 +879,9 @@
             fetch: async () => {
                 const tb = document.getElementById('records-table-body'); tb.innerHTML = '<tr><td colspan="10" class="p-16 text-center"><div class="loader mx-auto"></div><p class="mt-4 font-bold text-slate-400">Loading Datagrid...</p></td></tr>';
                 try {
-                    const [ { data: r }, { data: u } ] = await Promise.all([ 
-                        sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100),
-                        sbClient.from('user_ba').select('name, emel')
-                    ]);
-                    if (u) u.forEach(i => { if(i.emel) STATE.userMap[i.emel.toLowerCase()] = i.name; });
+                    const { data: r } = await sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100);
                     Records.currentData = r || []; Records.renderBody();
-                } catch (e) { Utils.log("Fetch Error: " + e.message); tb.innerHTML = '<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Failed to load datagrid.</td></tr>'; }
+                } catch (e) { Utils.log("Fetch Error: " + e.message); }
             },
             renderBody: () => {
                 const tb = document.getElementById('records-table-body'); tb.innerHTML = '';
@@ -910,9 +905,9 @@
                     tb.appendChild(tr);
                 });
             },
-            update: async (id, v) => { await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); Utils.showToast("Record status updated"); Records.fetch(); },
+            update: async (id, v) => { await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); Utils.showToast("Status dikemaskini"); Records.fetch(); },
             exportExcel: () => {
-                const formatted = Records.currentData.map(r => ({ 'Tarikh Event': Utils.formatDate(r.created_at), 'Nama': r.nama, 'IC': r.ic_number, 'Jabatan': r.department, 'Komunikasi': r.komunikasi, 'Sistem': r.sistem, 'Isu': r.perkara, 'Direkod Oleh': STATE.userMap[r.perekod?.toLowerCase()] || r.perekod, 'Selesai Pada': r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-', 'Selesai Oleh': STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by || '-', 'Status': r.confirmation }));
+                const formatted = Records.currentData.map(r => ({ 'Tarikh Event': Utils.formatDate(r.created_at), 'Nama': r.nama, 'IC': r.ic_number, 'Jabatan': r.department, 'Komunikasi': r.komunikasi, 'Sistem': r.sistem, 'Isu': r.perkara, 'Direkod Oleh': STATE.userMap[r.perekod?.toLowerCase()] || r.perekod, 'Status': r.confirmation }));
                 const ws = XLSX.utils.json_to_sheet(formatted);
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "CallLog");
                 XLSX.writeFile(wb, "UTM_CallLog_Export.xlsx");
@@ -925,13 +920,23 @@
                 const startEl = document.getElementById('loanStartDate');
                 if (startEl) startEl.min = Utils.getToday();
                 try {
-                    const { data: u } = await sbClient.from('user_ba').select('name').order('name');
+                    // Load Peminjam List (user_ba)
+                    const { data: u, error: uErr } = await sbClient.from('user_ba').select('*').order('name');
+                    if (uErr) {
+                        Utils.log("Peminjam load failed: " + uErr.message);
+                    }
                     const dl = document.getElementById('userList'); 
                     if (dl) {
                         dl.innerHTML = '';
-                        u?.forEach(i => dl.appendChild(new Option(i.name, i.name)));
+                        if (u) u.forEach(i => {
+                            const option = document.createElement('option');
+                            option.value = i.name || i.nama;
+                            dl.appendChild(option);
+                        });
+                        Utils.log(`Peminjam list loaded: ${u?.length || 0} users found.`);
                     }
                     
+                    // Load Devices
                     const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag', { ascending: true });
                     const ds = document.getElementById('deviceSelect'); 
                     if (ds) {
@@ -939,6 +944,7 @@
                         d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type} (${i.serial || 'No S/N'})`, i.tag)));
                     }
 
+                    // Load Returnable Active Loans
                     const { data: ac } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
                     const rs = document.getElementById('returnSelect'); 
                     if (rs) {
@@ -946,7 +952,7 @@
                         ac?.forEach(l => rs.appendChild(new Option(`${l.device_tag} [${l.user_name}]`, l.device_tag)));
                     }
                     Loan.loadActive();
-                } catch (e) { console.error(e); }
+                } catch (e) { Utils.log("Loan Data Init Error: " + e.message); }
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
@@ -957,12 +963,12 @@
             },
             submit: async () => {
                 const p = { user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email };
-                if(!p.user_name || !p.device_tag) return Utils.showToast("Selection Required: Select Borrower & Asset.");
+                if(!p.user_name || !p.device_tag) return Utils.showToast("Sila pilih Peminjam dan Aset.");
                 try {
                     const { error } = await sbClient.from('rekod_pinjaman').insert([p]);
                     if(error) throw error;
                     await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', p.device_tag);
-                    Utils.showToast("Loan Transaction successful"); document.getElementById('loanForm').reset(); Loan.loadData();
+                    Utils.showToast("Transaksi Berjaya"); document.getElementById('loanForm').reset(); Loan.loadData();
                 } catch(e) { alert("Error: " + e.message); }
             },
             submitReturn: async () => {
@@ -973,7 +979,7 @@
                         const { error } = await sbClient.from('rekod_pinjaman').update({ status:'Returned', return_date: new Date(), received_by: STATE.currentUser.email }).eq('id', data.id);
                         if(error) throw error;
                         await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t);
-                        Utils.showToast("Asset successfully returned to inventory"); Loan.loadData();
+                        Utils.showToast("Aset dipulangkan"); Loan.loadData();
                     }
                 } catch(e) { alert("Error: " + e.message); }
             },
@@ -984,171 +990,82 @@
                     Loan.currentHistory = data || [];
                     const today = Utils.getToday();
                     tb.innerHTML = data?.map(l => {
-                        const isActiveLate = l.status === 'Active' && l.end_date < today;
-                        const isReturnedLate = l.status === 'Returned' && l.return_date && (new Date(l.return_date).toISOString().split('T')[0] > l.end_date);
-                        const isLate = isActiveLate || isReturnedLate;
-                        return `<tr class="${isLate ? 'bg-rose-50 text-rose-800' : 'border-b border-slate-50 hover:bg-slate-50'} transition-all"><td class="p-4 font-bold text-slate-400">${Utils.formatDate(l.created_at)}</td><td class="p-4 font-black uppercase text-slate-800">${l.user_name}</td><td class="p-4 text-indigo-600 font-black tracking-widest">${l.device_tag}</td><td class="p-4 font-bold">${l.start_date} → ${l.end_date}${isActiveLate ? '<div class="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">OVERDUE</div>' : ''}${isReturnedLate ? '<div class="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">LATE RETURN</div>' : ''}</td><td class="p-4">${l.usage_type}</td><td class="p-4 font-bold">${STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-'}</td><td class="p-4 font-bold">${STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-'}</td><td class="p-4">${l.return_date ? Utils.formatDate(l.return_date) : '-'}</td><td class="p-4"><span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${l.status === 'Active' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}">${l.status}</span></td></tr>`;
-                    }).join('') || '<tr><td colspan="9" class="p-10 text-center font-bold text-slate-300">No archival data found.</td></tr>';
-                } catch(e) { tb.innerHTML = '<tr><td colspan="9" class="p-10 text-rose-500">History Fetch Error.</td></tr>'; }
+                        const isLate = l.status === 'Active' && l.end_date < today;
+                        const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
+                        const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
+                        return `<tr class="${isLate ? 'bg-rose-50' : 'border-b border-slate-50'}"><td class="p-4 text-slate-400">${Utils.formatDate(l.created_at)}</td><td class="p-4 font-bold">${l.user_name}</td><td class="p-4 text-indigo-600 font-bold">${l.device_tag}</td><td class="p-4">${l.start_date} → ${l.end_date}</td><td class="p-4">${l.usage_type}</td><td class="p-4">${opIn}</td><td class="p-4">${opOut}</td><td class="p-4">${l.return_date ? Utils.formatDate(l.return_date) : '-'}</td><td class="p-4">${l.status}</td></tr>`;
+                    }).join('') || '';
+                } catch(e) { tb.innerHTML = '<tr><td colspan="9" class="p-10 text-rose-500">History Load Error.</td></tr>'; }
             },
             exportExcel: async () => {
-                const today = Utils.getToday();
-                const formatted = Loan.currentHistory.map(l => {
-                    const isActiveLate = l.status === 'Active' && l.end_date < today;
-                    const isReturnedLate = l.status === 'Returned' && l.return_date && (new Date(l.return_date).toISOString().split('T')[0] > l.end_date);
-                    return { 'Tarikh Pinjam': Utils.formatDate(l.created_at), 'Peminjam': l.user_name, 'Tag Aset': l.device_tag, 'Tempoh Pinjaman': `${l.start_date} - ${l.end_date} ${isActiveLate?'(LEWAT)':isReturnedLate?'(PULANG LEWAT)':''}`, 'Kegunaan': l.usage_type, 'Pegawai Pengeluar': STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by, 'Pegawai Penerima': STATE.userMap[l.received_by?.toLowerCase()] || l.received_by || '-', 'Tarikh Pulang': l.return_date ? Utils.formatDate(l.return_date) : '-', 'Status': l.status };
-                });
+                const formatted = Loan.currentHistory.map(l => ({ 'Tarikh Pinjam': Utils.formatDate(l.created_at), 'Peminjam': l.user_name, 'Tag Aset': l.device_tag, 'Status': l.status }));
                 const ws = XLSX.utils.json_to_sheet(formatted);
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "HistoryPinjaman");
-                XLSX.writeFile(wb, "UT_LoanHistory_Export.xlsx");
+                XLSX.writeFile(wb, "UT_LoanHistory.xlsx");
             },
             checkOverdueLoans: async () => {
                 try {
-                    const [{ data: loans }, { data: users }] = await Promise.all([
-                        sbClient.from('rekod_pinjaman').select('*').eq('status','Active'),
-                        sbClient.from('user_ba').select('name, emel')
-                    ]);
-                    const userEmelMap = {};
-                    users?.forEach(u => userEmelMap[u.name.trim().toUpperCase()] = u.emel);
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
                     const overdue = loans?.filter(l => l.end_date < Utils.getToday());
                     if (overdue?.length) {
                         const body = document.getElementById('overdue-list-body');
-                        body.innerHTML = overdue.map(l => {
-                            const borrowerEmail = userEmelMap[l.user_name.trim().toUpperCase()] || 'N/A';
-                            return `
-                                <tr class="border-b border-slate-50 hover:bg-rose-50/30 transition-all">
-                                    <td class="p-4 font-black uppercase text-slate-800">${l.user_name}</td>
-                                    <td class="p-4 font-black text-indigo-600 tracking-widest">${l.device_tag}</td>
-                                    <td class="p-4 text-rose-600 font-black">${l.end_date}</td>
-                                    <td class="p-4 text-slate-400 font-medium">${borrowerEmail}</td>
-                                    <td class="p-4 flex gap-2 justify-center">
-                                        <button onclick='Loan.sendSoftReminder(${JSON.stringify(l)})' class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase shadow-lg shadow-amber-100 transition-all">WA</button>
-                                        <button onclick='Loan.sendSingleEmail(${JSON.stringify(l)}, "${borrowerEmail}")' class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase shadow-lg shadow-indigo-100 transition-all">MAIL</button>
-                                    </td>
-                                </tr>`;
-                        }).join('');
-                        document.getElementById('btn-batch-email').onclick = () => Loan.setupBatchEmailUI(overdue, userEmelMap);
+                        body.innerHTML = overdue.map(l => `<tr class="border-b border-slate-50"><td class="p-4 font-bold">${l.user_name}</td><td class="p-4 font-black text-indigo-600">${l.device_tag}</td><td class="p-4 text-rose-600">${l.end_date}</td><td class="p-4"><button onclick='Loan.sendSoftReminder(${JSON.stringify(l)})' class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs">Copy Reminder</button></td></tr>`).join('');
                         document.getElementById('overdue-modal').classList.remove('hidden');
-                        document.getElementById('overdue-list-view').classList.remove('hidden');
-                        document.getElementById('overdue-batch-view').classList.add('hidden');
-                    } else Utils.showToast("Compliance Check: No active overdue loans detected.");
+                    } else Utils.showToast("Tiada pinjaman lewat dikesan.");
                 } catch(e) { alert(e.message); }
             },
-            setupBatchEmailUI: (list, emelMap) => {
-                const grouped = list.reduce((acc, l) => {
-                    const name = l.user_name.trim().toUpperCase();
-                    if(!acc[name]) acc[name] = [];
-                    acc[name].push(l);
-                    return acc;
-                }, {});
-                const container = document.getElementById('batch-email-container');
-                container.innerHTML = '';
-                Object.keys(grouped).forEach(name => {
-                    const email = emelMap[name] || 'N/A';
-                    const items = grouped[name];
-                    const count = items.length;
-                    const el = document.createElement('div');
-                    el.className = 'bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between';
-                    const itemTags = items.map(i => i.device_tag).join(', ');
-                    el.innerHTML = `
-                        <div>
-                            <div class="font-black text-slate-800 uppercase">${name}</div>
-                            <div class="text-xs text-slate-400 font-bold tracking-wider mt-1">${count} Item(s) Overdue: <span class="text-indigo-600">${itemTags}</span></div>
-                            <div class="text-[10px] text-slate-300 font-mono mt-1">${email}</div>
-                        </div>
-                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center gap-2 btn-send-email">
-                            <i data-lucide="send" class="w-3 h-3"></i> Send Email
-                        </button>
-                    `;
-                    el.querySelector('.btn-send-email').onclick = function() {
-                        Loan.sendBatchEmail(name, email, items);
-                        this.classList.replace('bg-indigo-600', 'bg-emerald-500');
-                        this.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Sent';
-                        this.disabled = true;
-                        lucide.createIcons();
-                    };
-                    container.appendChild(el);
-                });
-                document.getElementById('overdue-list-view').classList.add('hidden');
-                document.getElementById('overdue-batch-view').classList.remove('hidden');
-                lucide.createIcons();
-            },
-            sendSingleEmail: (loan, email) => {
-                if (email === 'N/A' || !email) return alert("System Error: Email address missing.");
-                const subject = encodeURIComponent(`[PERINGATAN] Pemulangan Peralatan ICT - ${loan.device_tag}`);
-                const body = encodeURIComponent(`Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`);
-                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-            },
-            sendBatchEmail: (name, email, items) => {
-                if (email === 'N/A' || !email) return alert("System Error: Email address missing.");
-                const itemList = items.map(i => `- ${i.device_tag} (Tamat: ${i.end_date})`).join('\n');
-                const subject = encodeURIComponent(`[PERINGATAN] Pemulangan Peralatan ICT (${items.length} Item)`);
-                const body = encodeURIComponent(`Salam sejahtera Tuan/Puan ${name},\n\nHarap maklum bahawa tempoh pinjaman bagi peralatan ICT berikut telah tamat:\n\n${itemList}\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`);
-                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-            },
             sendSoftReminder: (loan) => {
-                const msg = `Salam sejahtera Tuan/Puan ${loan.user_name},\n\nHarap maklum bahawa tempoh pinjaman peralatan ICT bagi Tag Aset: ${loan.device_tag} telah tamat pada ${loan.end_date}.\n\nMohon kerjasama Tuan/Puan untuk memulangkan peralatan tersebut ke Unit Teknologi Maklumat (UTM) dengan kadar segera bagi tujuan rekod dan kegunaan kakitangan lain.\n\nSekiranya terdapat keperluan penyambungan, sila hubungi kami untuk tindakan lanjut.\n\nTerima kasih.\n\n- Unit Teknologi Maklumat (UTM)`;
+                const msg = `Salam sejahtera ${loan.user_name}, mohon pulangkan ${loan.device_tag} yang telah tamat pada ${loan.end_date}. Terima kasih.`;
                 document.getElementById('reminder-text-area').innerText = msg;
                 document.getElementById('reminder-modal').classList.remove('hidden');
                 document.getElementById('copy-reminder-btn').onclick = () => {
-                    const el = document.createElement('textarea');
-                    el.value = msg;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    Utils.showToast("Reminder template copied to clipboard.");
+                    const el = document.createElement('textarea'); el.value = msg; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                    Utils.showToast("Mesej telah disalin.");
                 };
             },
             addUser: async () => { 
                 const n = document.getElementById('newUserName').value.trim(); 
                 const e = document.getElementById('newUserEmail').value.trim();
-                if(!n || !e) return alert("Validation Error: Name and Email ID are mandatory.");
+                if(!n || !e) return alert("Sila isi Nama dan Emel.");
                 try {
-                    // Check if email already exists to prevent duplicate key errors on ID or Email unique constraints
-                    const { data: existing } = await sbClient.from('user_ba').select('name').eq('emel', e).maybeSingle();
-                    if (existing) {
-                        return alert(`Registration Error: A user with this email (${e}) already exists under the name ${existing.name}.`);
-                    }
-
-                    // FIX: Explicitly send created_at timestamp to avoid null constraint errors or triggers
+                    // FIX: No created_at to avoid schema cache errors
                     const { error } = await sbClient.from('user_ba').insert([{ 
                         name: n.toUpperCase(), 
-                        emel: e,
-                        created_at: new Date().toISOString()
+                        emel: e 
                     }]); 
-                    if(error) throw error;
-                    Utils.showToast("Directory update: User successfully registered"); 
+                    if(error) {
+                        Utils.log("Gagal daftar pengguna (User_BA): " + error.message);
+                        throw error;
+                    }
+                    Utils.showToast("Pengguna didaftarkan"); 
                     Loan.loadData(); 
                     document.getElementById('newUserName').value=''; 
                     document.getElementById('newUserEmail').value='';
-                } catch(err) { 
-                    alert("Registration Error: " + err.message); 
-                }
+                } catch(err) { alert("Gagal mendaftar: " + err.message); }
             },
             addDevice: async () => {
                 const t = document.getElementById('newTag').value.trim(); 
                 const tp = document.getElementById('newType').value.trim(); 
                 const s = document.getElementById('newSerial').value.trim();
-                if(!t) return alert("Validation Error: Asset Tag is mandatory.");
+                if(!t) return alert("Sila isi Tag Aset.");
                 try {
-                    // FIX: Explicitly send created_at timestamp to avoid null constraint errors
+                    // FIX: No created_at to avoid schema cache errors
                     const { error } = await sbClient.from('device_inventory').insert([{ 
                         tag: t, 
                         type: tp, 
                         serial: s, 
-                        status: 'Tersedia',
-                        created_at: new Date().toISOString()
+                        status: 'Tersedia'
                     }]); 
-                    if(error) throw error;
-                    Utils.showToast("Inventory update: Asset successfully cataloged"); 
+                    if(error) {
+                        Utils.log("Gagal simpan aset (Device_Inventory): " + error.message);
+                        throw error;
+                    }
+                    Utils.showToast("Aset didaftarkan"); 
                     Loan.loadData(); 
                     document.getElementById('newTag').value=''; 
                     document.getElementById('newType').value=''; 
                     document.getElementById('newSerial').value='';
-                } catch(err) { 
-                    alert("Inventory Error: " + err.message); 
-                }
+                } catch(err) { alert("Gagal mendaftar aset: " + err.message); }
             }
         };
 
