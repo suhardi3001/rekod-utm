@@ -1000,7 +1000,7 @@
                 });
                 const ws = XLSX.utils.json_to_sheet(formatted);
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "HistoryPinjaman");
-                XLSX.writeFile(wb, "UTM_LoanHistory_Export.xlsx");
+                XLSX.writeFile(wb, "UT_LoanHistory_Export.xlsx");
             },
             checkOverdueLoans: async () => {
                 try {
@@ -1105,9 +1105,17 @@
                 const e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return alert("Validation Error: Name and Email ID are mandatory.");
                 try {
+                    // Check if email already exists to prevent duplicate key errors on ID or Email unique constraints
+                    const { data: existing } = await sbClient.from('user_ba').select('name').eq('emel', e).maybeSingle();
+                    if (existing) {
+                        return alert(`Registration Error: A user with this email (${e}) already exists under the name ${existing.name}.`);
+                    }
+
+                    // FIX: Explicitly send created_at timestamp to avoid null constraint errors or triggers
                     const { error } = await sbClient.from('user_ba').insert([{ 
                         name: n.toUpperCase(), 
-                        emel: e 
+                        emel: e,
+                        created_at: new Date().toISOString()
                     }]); 
                     if(error) throw error;
                     Utils.showToast("Directory update: User successfully registered"); 
