@@ -595,9 +595,9 @@
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw',
             
             /* --- EMAIL AUTOMATION KEYS (EmailJS) --- */
-            emailjsKey: 'V13_yx5sLEDjTVgCE', // Paste your EmailJS Public Key here between quotes
-            emailjsServiceID: 'service_default', // Check this ID in EmailJS Dashboard
-            emailjsTemplateID: 'template_overdue' // Check this ID in EmailJS Dashboard
+            emailjsKey: 'V13_yx5sLEDjTVgCE', 
+            emailjsServiceID: 'service_default', 
+            emailjsTemplateID: 'template_overdue' 
             /* --------------------------------------- */
         };
 
@@ -647,37 +647,37 @@
 
         const EmailService = {
             init: () => {
-                if (CONFIG.emailjsKey) {
+                if (typeof emailjs !== 'undefined' && CONFIG.emailjsKey) {
                     emailjs.init(CONFIG.emailjsKey);
-                    Utils.log("Email System: INITIALIZED with Public Key.");
+                    Utils.log("Email System: INITIALIZED (Ready for automated send).");
                 } else {
-                    Utils.log("Email System: WAITING. Please paste public key in CONFIG.emailjsKey.");
+                    Utils.log("Email System: STANDBY (Missing Key or Library).");
                 }
             },
             sendNoReply: async (toEmail, toName, message) => {
-                if (!CONFIG.emailjsKey) {
-                    Utils.log(`Email Key missing. Opening mailto bridge for ${toEmail}...`);
+                if (!CONFIG.emailjsKey || typeof emailjs === 'undefined') {
+                    Utils.log(`Automation Key Error. Opening Mailto for ${toName}...`);
                     const subject = encodeURIComponent("Peringatan Mesra: Pemulangan Aset IT UTM");
                     const body = encodeURIComponent(message);
                     window.location.href = `mailto:${toEmail}?subject=${subject}&body=${body}`;
                     return { status: 'bridged' };
                 }
                 
-                Utils.log(`Attempting automated send to: ${toEmail}...`);
+                Utils.log(`Triggering EmailJS Send Request to: ${toEmail}...`);
                 try {
-                    // Force public key as 4th parameter for robustness
                     const result = await emailjs.send(CONFIG.emailjsServiceID, CONFIG.emailjsTemplateID, {
                         to_email: toEmail,
                         to_name: toName,
                         system_signature: "Unit Teknologi Maklumat UTM (Auto-Alert)",
                         message: message,
                         reply_to: "no-reply@utm.my" 
-                    }, CONFIG.emailjsKey);
-                    Utils.log(`Email Successfully Sent. Response: ${result.status} ${result.text}`);
+                    });
+                    Utils.log(`Email Sent Successfully! Status: ${result.status}`);
                     return result;
                 } catch (err) {
-                    Utils.log(`EmailJS Error: ${err.status || 'FAILED'}. Check ServiceID/TemplateID and Key.`);
-                    console.error("EmailJS Full Error Object:", err);
+                    const errMsg = err.text || err.message || "Unknown protocol error";
+                    Utils.log(`CRITICAL EMAIL ERROR: ${errMsg}`);
+                    console.error("EmailJS Error details:", err);
                     throw err;
                 }
             }
@@ -733,7 +733,7 @@
                     const { data: users, error } = await sbClient.from('user_ba').select('*');
                     if (error) Utils.log("Load staff list failed: " + error.message);
                     
-                    Utils.log(`Mapping ${users?.length || 0} user records...`);
+                    Utils.log(`Synchronizing mapping for ${users?.length || 0} user records...`);
                     users?.forEach(u => { 
                         const name = (u.name || u.nama || u.Name || u.Nama || "").trim();
                         const emel = (u.emel || u.email || u.Emel || u.Email || "").trim();
@@ -1127,24 +1127,27 @@
                 const user = loans[0].user_name;
                 const assetList = loans.map(l => `- ${l.device_tag} (Jangkaan Pulang: ${l.end_date})`).join('\n');
                 
-                const msg = `Salam sejahtera ${user},\n\nSistem mengesan peminjaman aset IT berikut masih belum dipulangkan ke Unit IT:\n\n${assetList}\n\nKami amat menghargai kerjasama anda untuk memulangkan aset tersebut bagi melancarkan urusan inventori kami. Abaikan mesej ini sekiranya anda baru sahaja memulangkannya.\n\nTerima kasih.\n\n---\nUTM IT AUTO-ALERT SYSTEM\n(Ini adalah pesanan no-reply automatik)`;
+                const msg = `Salam sejahtera ${user},\n\nSistem mengesan peminjaman aset IT berikut masih belum dipulangkan ke Unit IT:\n\n${assetList}\n\nKami amat menghargai kerjasama anda untuk memulangkan aset tersebut bagi melancarkan urusan inventori kami.\n\nTerima kasih.\n\n---\nUTM IT AUTO-ALERT SYSTEM\n(Ini adalah pesanan automatik no-reply)`;
                 
                 document.getElementById('reminder-text-area').innerText = msg;
                 document.getElementById('reminder-modal').classList.remove('hidden');
                 
                 document.getElementById('copy-reminder-btn').onclick = async () => {
-                    const email = STATE.userEmails[user.trim().toUpperCase()];
+                    const cleanName = user.trim().toUpperCase();
+                    const email = STATE.userEmails[cleanName];
+                    
                     if (email) {
-                        Utils.showToast("Menghantar auto-alert...");
+                        Utils.showToast("Menghantar emel automatik...");
                         try {
                             await EmailService.sendNoReply(email, user, msg);
-                            Utils.showToast("Peringatan telah dihantar secara automatik.");
+                            Utils.showToast("Berjaya! Peringatan telah dihantar secara automatik.");
                         } catch (e) {
-                            Utils.showToast("Ralat penghantaran automatik. Sila gunakan Mailto.");
+                            Utils.showToast("Ralat teknikal. Membuka mod 'mailto' sebagai sandaran...");
+                            EmailService.sendNoReply(null, user, msg);
                         }
                     } else {
-                        Utils.log(`Warn: Name "${user}" not found in email mapping. Using mailto bridge.`);
-                        Utils.showToast("Tiada rekod emel. Membuka mailto fallback...");
+                        Utils.log(`Peringatan: Nama "${user}" tiada dalam pemetaan emel. Gunakan mailto.`);
+                        Utils.showToast("Tiada rekod emel. Membuka aplikasi emel peranti...");
                         EmailService.sendNoReply(null, user, msg);
                     }
                     document.getElementById('reminder-modal').classList.add('hidden');
@@ -1156,26 +1159,28 @@
                 Utils.showToast(`Memproses ${Object.keys(grouped).length} peringatan no-reply...`);
                 
                 for (const [user, items] of Object.entries(grouped)) {
-                    const email = STATE.userEmails[user.trim().toUpperCase()];
+                    const cleanName = user.trim().toUpperCase();
+                    const email = STATE.userEmails[cleanName];
+                    
                     if (email) {
                         const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
-                        const msg = `Salam sejahtera ${user},\n\nIni adalah peringatan mesra automatik (soft reminder) mengenai pemulangan aset IT berikut yang telah tamat tempoh pinjaman:\n\n${assetList}\n\nMohon kerjasama anda untuk memulangkan aset tersebut ke Unit IT secepat mungkin.\n\nTerima kasih.\n\n---\nUTM IT AUTO-ALERT SYSTEM\n(No-Reply Message)`;
+                        const msg = `Salam sejahtera ${user},\n\nIni adalah peringatan mesra automatik mengenai pemulangan aset IT berikut yang telah tamat tempoh pinjaman:\n\n${assetList}\n\nMohon kerjasama anda untuk memulangkan aset tersebut secepat mungkin.\n\nTerima kasih.\n\n---\nUTM IT AUTO-ALERT SYSTEM\n(No-Reply Message)`;
                         
                         try {
                             await EmailService.sendNoReply(email, user, msg);
                             processed++;
                         } catch (e) {
                             failedCount++;
-                            Utils.log(`Failed to send reminder for: ${user}`);
+                            Utils.log(`Gagal hantar kepada: ${user}`);
                         }
-                        // Queue delay (1.2s) to ensure external server processes the automated blast
-                        await new Promise(r => setTimeout(r, 1200));
+                        // Queue delay (1.8s) to avoid spam filters
+                        await new Promise(r => setTimeout(r, 1800));
                     } else {
                         failedCount++;
-                        Utils.log(`Skip: No email found for user "${user}".`);
+                        Utils.log(`Langkau: Tiada emel untuk "${user}".`);
                     }
                 }
-                Utils.showToast(`Selesai: ${processed} dihantar, ${failedCount} gagal/langkau.`);
+                Utils.showToast(`Selesai Blast: ${processed} dihantar, ${failedCount} gagal/langkau.`);
                 document.getElementById('overdue-modal').classList.add('hidden');
             },
             addUser: async () => { 
@@ -1192,7 +1197,6 @@
                     }]); 
                     if(error) throw error;
                     
-                    // Update local state immediately so alerts work without refresh
                     STATE.userEmails[cleanName] = fullEmail;
                     
                     Utils.showToast("Pengguna didaftarkan"); 
