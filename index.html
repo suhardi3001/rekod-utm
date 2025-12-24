@@ -1161,7 +1161,7 @@
                     const { error } = await sbClient.from('user_ba').insert([{ 
                         name: n.toUpperCase(), 
                         emel: e,
-                        //created_at: new Date().toISOString()//dont have that column
+                 
                     }]); 
                     if(error) throw error;
                     Utils.showToast("Pengguna didaftarkan"); 
