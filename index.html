@@ -1056,9 +1056,26 @@
                 } catch(e) { tb.innerHTML = '<tr><td colspan="9" class="p-10 text-rose-500">History Load Error.</td></tr>'; }
             },
             exportExcel: async () => {
-                const formatted = Loan.currentHistory.map(l => ({ 'Tarikh Pinjam': Utils.formatDate(l.created_at), 'Peminjam': l.user_name, 'Tag Aset': l.device_tag, 'Status': l.status }));
+                const formatted = Loan.currentHistory.map(l => {
+                    const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
+                    const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
+                    
+                    return {
+                        'Masa Rekod': Utils.formatDate(l.created_at),
+                        'Nama Peminjam': l.user_name,
+                        'Tag Aset': l.device_tag,
+                        'Tempoh Pinjaman': `${l.start_date} → ${l.end_date}`,
+                        'Tujuan': l.usage_type,
+                        'Pegawai (Pengeluar)': opIn,
+                        'Pegawai (Penerima)': opOut,
+                        'Tarikh Pulang': l.return_date ? Utils.formatDate(l.return_date) : '-',
+                        'Status': l.status
+                    };
+                });
+                
                 const ws = XLSX.utils.json_to_sheet(formatted);
-                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "HistoryPinjaman");
+                const wb = XLSX.utils.book_new(); 
+                XLSX.utils.book_append_sheet(wb, ws, "HistoryPinjaman");
                 XLSX.writeFile(wb, "UT_LoanHistory.xlsx");
             },
             checkOverdueLoans: async (forceShow = true) => {
