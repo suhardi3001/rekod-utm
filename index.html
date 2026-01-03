@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- AUTOMATED NO-REPLY SENDER SCRIPT (EmailJS) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -79,10 +80,9 @@
             padding: 0.3rem 0.4rem !important;
             letter-spacing: -0.02em;
         }
-        /* Specific column width adjustments for compact mode to ensure visibility */
-        .compact-mode th:nth-child(1), .compact-mode td:nth-child(1) { width: 10%; } /* Date */
-        .compact-mode th:nth-child(2), .compact-mode td:nth-child(2) { width: 15%; } /* Name */
-        .compact-mode th:nth-child(10), .compact-mode td:nth-child(10) { width: 8%; } /* Status */
+        .compact-mode th:nth-child(1), .compact-mode td:nth-child(1) { width: 10%; } 
+        .compact-mode th:nth-child(2), .compact-mode td:nth-child(2) { width: 15%; } 
+        .compact-mode th:nth-child(10), .compact-mode td:nth-child(10) { width: 8%; } 
 
         .loader {
             border: 3px solid #e2e8f0; border-top: 3px solid var(--accent); border-radius: 50%;
@@ -148,12 +148,10 @@
             .mobile-hide { display: none; }
         }
 
-        /* Dashboard Pulse for 0 records */
         .pulse-soft { animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
-        /* Status Highlighting Classes */
-        .row-late { background-color: #fef2f2 !important; } /* Soft red */
+        .row-late { background-color: #fef2f2 !important; } 
         .row-late:hover { background-color: #fee2e2 !important; }
         .text-late { color: #dc2626 !important; font-weight: 700; }
     </style>
@@ -238,6 +236,7 @@
                     <div class="flex gap-1 bg-slate-800/50 p-1 rounded-xl border border-slate-700 overflow-x-auto">
                         <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide tab-active-main">Call Log</button>
                         <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide">Pinjaman ICT</button>
+                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide">Ringkasan</button>
                     </div>
                 </div>
 
@@ -272,7 +271,6 @@
             
             <!-- CALL LOG MODULE -->
             <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
-                
                 <!-- TOP DASHBOARD SUMMARY -->
                 <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
                     <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
@@ -609,6 +607,56 @@
                     </div>
                 </div>
             </div>
+
+            <!-- SUMMARY MODULE -->
+            <div id="summary-module" class="hidden-section w-full space-y-8 md:space-y-12">
+                <div class="card-modern p-6 md:p-10 flex flex-col items-center">
+                    <div class="text-center mb-8">
+                        <h2 class="text-xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Statistik Bulanan <span id="summary-year-display"></span></h2>
+                        <p class="text-slate-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-widest">Klik baris jadual untuk melihat carta bulanan terperinci</p>
+                    </div>
+
+                    <div class="w-full max-w-4xl mx-auto mb-12 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                        <canvas id="summaryChart" class="max-h-[400px]"></canvas>
+                    </div>
+
+                    <div class="w-full space-y-4">
+                        <div class="flex items-center justify-between px-2">
+                            <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
+                                <i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i>
+                                Jadual Statistik Tahunan
+                            </h3>
+                            <button onclick="Summary.init()" class="bg-slate-100 p-2 rounded-lg hover:bg-indigo-100 text-indigo-600 transition-all"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="table-container shadow-2xl shadow-slate-200/50 border border-slate-100">
+                            <table id="summary-table" class="data-table">
+                                <thead class="bg-slate-50 border-b border-slate-100 text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-500">
+                                    <tr>
+                                        <th class="p-4 text-center">BIL</th>
+                                        <th class="p-4 text-left">Perkara</th>
+                                        <th class="p-4 text-center">JAN</th>
+                                        <th class="p-4 text-center">FEB</th>
+                                        <th class="p-4 text-center">MAR</th>
+                                        <th class="p-4 text-center">APR</th>
+                                        <th class="p-4 text-center">MEI</th>
+                                        <th class="p-4 text-center">JUN</th>
+                                        <th class="p-4 text-center">JUL</th>
+                                        <th class="p-4 text-center">OGO</th>
+                                        <th class="p-4 text-center">SEP</th>
+                                        <th class="p-4 text-center">OKT</th>
+                                        <th class="p-4 text-center">NOV</th>
+                                        <th class="p-4 text-center">DIS</th>
+                                        <th class="p-4 text-center bg-indigo-50 text-indigo-700">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="summary-table-body" class="text-[10px] md:text-xs font-bold text-slate-600">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -830,12 +878,20 @@
 
         const Navigation = {
             switchModule: (mod) => {
-                const isCl = mod === 'call-log';
-                document.getElementById('call-log-module').classList.toggle('hidden-section', !isCl);
-                document.getElementById('loan-module').classList.toggle('hidden-section', isCl);
-                document.getElementById('nav-call-log').className = isCl ? 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide tab-active-main' : 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide';
-                document.getElementById('nav-loan').className = !isCl ? 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide tab-active-main' : 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide';
-                if (!isCl) Loan.loadData();
+                const modules = ['call-log', 'loan', 'summary'];
+                modules.forEach(m => {
+                    const el = document.getElementById(m + '-module');
+                    if(el) el.classList.toggle('hidden-section', m !== mod);
+                    
+                    const btn = document.getElementById('nav-' + m);
+                    if(btn) {
+                        if(m === mod) btn.className = 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide tab-active-main';
+                        else btn.className = 'whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide';
+                    }
+                });
+
+                if (mod === 'loan') Loan.loadData();
+                else if (mod === 'summary') Summary.init();
                 else Dashboard.refresh();
             },
             switchSubTab: (mod, tab) => {
@@ -846,7 +902,7 @@
                     document.getElementById('tab-cl-input').className = isInput ? 'whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all tab-active-sub' : 'whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all text-slate-400';
                     document.getElementById('tab-cl-records').className = !isInput ? 'whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all tab-active-sub' : 'whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all text-slate-400';
                     if (!isInput) Records.init();
-                } else {
+                } else if (mod === 'loan') {
                     ['borrow','return','admin','history'].forEach(t => {
                         const el = document.getElementById(`loan-${t}-section`);
                         if(el) el.classList.toggle('hidden-section', t !== tab);
@@ -1181,20 +1237,13 @@
                     const today = Utils.getToday();
                     tb.innerHTML = data?.map(l => {
                         const actualReturnDate = l.return_date ? new Date(l.return_date).toISOString().split('T')[0] : null;
-                        
-                        // Scenario 1: Still Active but past due date
                         const isLateActive = l.status === 'Active' && l.end_date < today;
-                        
-                        // Scenario 2: Returned but was returned past the due date
                         const isLateReturned = l.status === 'Returned' && actualReturnDate && actualReturnDate > l.end_date;
-
                         const isLate = isLateActive || isLateReturned;
                         const rowClass = isLate ? 'row-late' : 'border-b border-slate-50';
                         const textClass = isLate ? 'text-late' : '';
-
                         const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
                         const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
-
                         return `<tr class="${rowClass} hover:bg-slate-50 transition-all">
                             <td class="p-4 text-slate-400">${Utils.formatDate(l.created_at)}</td>
                             <td class="p-4 font-bold uppercase">${l.user_name}</td>
@@ -1257,13 +1306,8 @@
                 const user = loans[0].user_name;
                 const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
                 const msg = `Salam sejahtera ${user},\n\nSistem mengesan peminjaman aset IT berikut masih belum dipulangkan:\n\n${assetList}\n\nTerima kasih.`;
-                document.getElementById('reminder-text-area').innerText = msg;
-                document.getElementById('reminder-modal').classList.remove('hidden');
-                document.getElementById('copy-reminder-btn').onclick = async () => {
-                    const rawEmail = STATE.userEmails[user.toUpperCase()];
-                    if (rawEmail) { await EmailService.sendNoReply(rawEmail, user, msg); Utils.showToast("Dihantar."); } else EmailService.sendNoReply(null, user, msg);
-                    document.getElementById('reminder-modal').classList.add('hidden');
-                };
+                const rawEmail = STATE.userEmails[user.toUpperCase()];
+                if (rawEmail) { await EmailService.sendNoReply(rawEmail, user, msg); Utils.showToast("Peringatan dihantar."); }
             },
             blastBundleReminders: async (grouped) => {
                 let processed = 0;
@@ -1300,6 +1344,106 @@
                     if(error) throw error;
                     Utils.showToast("Aset didaftarkan"); Loan.loadData();
                 } catch(err) { alert(err.message); }
+            }
+        };
+
+        const Summary = {
+            chart: null,
+            init: async () => {
+                const year = new Date().getFullYear();
+                document.getElementById('summary-year-display').innerText = year;
+                const tb = document.getElementById('summary-table-body');
+                tb.innerHTML = '<tr><td colspan="15" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
+
+                try {
+                    const { data: calls } = await sbClient.from('rekod').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+
+                    const processMonths = (items) => {
+                        const counts = new Array(12).fill(0);
+                        items?.forEach(item => {
+                            const month = new Date(item.created_at).getMonth();
+                            counts[month]++;
+                        });
+                        return counts;
+                    };
+
+                    const callCounts = processMonths(calls);
+                    const loanCounts = processMonths(loans);
+                    
+                    const callTotal = callCounts.reduce((a, b) => a + b, 0);
+                    const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+
+                    tb.innerHTML = '';
+                    
+                    const renderRow = (bil, title, counts, total) => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                        let html = `<td class="p-4 text-center text-slate-400 font-bold">${bil}</td><td class="p-4 font-black uppercase text-slate-800">${title}</td>`;
+                        counts.forEach(c => {
+                            html += `<td class="p-4 text-center font-bold text-slate-600">${c}</td>`;
+                        });
+                        html += `<td class="p-4 text-center bg-indigo-50 text-indigo-700 font-black">${total}</td>`;
+                        tr.innerHTML = html;
+                        tr.onclick = () => Summary.renderChart(counts, title);
+                        tb.appendChild(tr);
+                    };
+
+                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
+                    renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+
+                    // Default chart: Call Log
+                    Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+
+                } catch (e) {
+                    tb.innerHTML = `<tr><td colspan="15" class="p-10 text-rose-500 font-bold text-center">Ralat memuatkan data ringkasan: ${e.message}</td></tr>`;
+                }
+            },
+            renderChart: (dataArray, label) => {
+                const ctx = document.getElementById('summaryChart').getContext('2d');
+                if (Summary.chart) Summary.chart.destroy();
+
+                const isCallLog = label.toLowerCase().includes('panggilan');
+
+                Summary.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'],
+                        datasets: [{
+                            label: label,
+                            data: dataArray,
+                            backgroundColor: isCallLog ? '#6366f1' : '#10b981',
+                            borderRadius: 6,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 12, weight: 'bold', family: "'Inter', sans-serif" },
+                                    color: '#475569'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#f1f5f9' },
+                                ticks: { font: { weight: 'bold' } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
             }
         };
 
