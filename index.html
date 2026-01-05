@@ -565,6 +565,7 @@
                                                 <tr>
                                                     <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
                                                     <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Aset</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">No. Siri</th>
                                                     <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tarikh Pemulangan</th>
                                                     <th class="p-4 text-left font-extrabold uppercase tracking-widest">Lokasi Kegunaan</th>
                                                 </tr>
@@ -592,6 +593,7 @@
                                             <th class="p-4 text-left">Masa Rekod</th>
                                             <th class="p-4 text-left">Nama Peminjam</th>
                                             <th class="p-4 text-left">Tag Aset</th>
+                                            <th class="p-4 text-left">No. Siri</th>
                                             <th class="p-4 text-left">Tempoh Pinjaman</th>
                                             <th class="p-4 text-left">Tujuan</th>
                                             <th class="p-4 text-left">Pegawai (Pengeluar)</th>
@@ -706,7 +708,7 @@
             emailjsTemplateID: 'template_overdue' 
         };
 
-        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {}, userEmails: {}, currentViewMode: 'default' };
+        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {}, userEmails: {}, currentViewMode: 'default', deviceMap: {} };
         const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
         const Utils = {
@@ -1176,17 +1178,26 @@
                             if (val) { const o = document.createElement('option'); o.value = val; dl.appendChild(o); }
                         });
                     }
+
+                    // Pre-load device map for SN lookups
+                    const { data: allDev } = await sbClient.from('device_inventory').select('tag, serial');
+                    STATE.deviceMap = {};
+                    allDev?.forEach(d => { if(d.tag) STATE.deviceMap[d.tag] = d.serial || 'N/A'; });
+
                     const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag', { ascending: true });
                     const ds = document.getElementById('deviceSelect'); 
                     if (ds) {
                         ds.innerHTML = '<option disabled selected>-- Pilih Peranti --</option>';
-                        d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
+                        d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type} [S/N: ${i.serial || '-'}]`, i.tag)));
                     }
                     const { data: ac } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
                     const rs = document.getElementById('returnSelect'); 
                     if (rs) {
                         rs.innerHTML = '<option disabled selected>-- Pilih untuk Pulangan --</option>';
-                        ac?.forEach(l => rs.appendChild(new Option(`${l.device_tag} [${l.user_name}]`, l.device_tag)));
+                        ac?.forEach(l => {
+                            const sn = STATE.deviceMap[l.device_tag] || '-';
+                            rs.appendChild(new Option(`${l.device_tag} [S/N: ${sn}] - ${l.user_name}`, l.device_tag));
+                        });
                     }
                     Loan.loadActive();
                 } catch (e) {}
@@ -1198,9 +1209,11 @@
                 if (body) {
                     body.innerHTML = data?.map(l => {
                         const isLate = l.end_date < today;
+                        const sn = STATE.deviceMap[l.device_tag] || '-';
                         return `<tr class="${isLate ? 'row-late' : 'border-b border-slate-50'} hover:bg-slate-50 transition-all">
                             <td class="p-4 uppercase font-bold text-slate-700">${l.user_name}</td>
                             <td class="p-4 font-black text-indigo-600 tracking-widest">${l.device_tag}</td>
+                            <td class="p-4 text-slate-400 font-bold">${sn}</td>
                             <td class="p-4 ${isLate ? 'text-late' : ''}">${l.end_date} ${isLate ? '(lewat)' : ''}</td>
                             <td class="p-4 text-slate-400 font-bold">${l.usage_type}</td>
                         </tr>`;
@@ -1230,7 +1243,7 @@
                 } catch(e) { alert(e.message); }
             },
             loadHistory: async () => {
-                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="9" class="p-16 text-center"><div class="loader mx-auto"></div></td></tr>';
+                const tb = document.getElementById('loan-history-body'); tb.innerHTML = '<tr><td colspan="10" class="p-16 text-center"><div class="loader mx-auto"></div></td></tr>';
                 try {
                     const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
                     Loan.currentHistory = data || [];
@@ -1244,10 +1257,12 @@
                         const textClass = isLate ? 'text-late' : '';
                         const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
                         const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
+                        const sn = STATE.deviceMap[l.device_tag] || '-';
                         return `<tr class="${rowClass} hover:bg-slate-50 transition-all">
                             <td class="p-4 text-slate-400">${Utils.formatDate(l.created_at)}</td>
                             <td class="p-4 font-bold uppercase">${l.user_name}</td>
                             <td class="p-4 text-indigo-600 font-bold">${l.device_tag}</td>
+                            <td class="p-4 font-medium text-slate-400">${sn}</td>
                             <td class="p-4 ${textClass}">${l.start_date} → ${l.end_date} ${isLateActive ? '<span class="text-[10px] block font-bold">(lewat dipulangkan)</span>' : ''}</td>
                             <td class="p-4">${l.usage_type}</td>
                             <td class="p-4">${opIn}</td>
@@ -1256,16 +1271,18 @@
                             <td class="p-4 font-bold ${textClass}">${l.status}</td>
                         </tr>`;
                     }).join('') || '';
-                } catch(e) { tb.innerHTML = '<tr><td colspan="9" class="p-10 text-rose-500">History Load Error.</td></tr>'; }
+                } catch(e) { tb.innerHTML = '<tr><td colspan="10" class="p-10 text-rose-500">History Load Error.</td></tr>'; }
             },
             exportExcel: async () => {
                 const formatted = Loan.currentHistory.map(l => {
                     const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by || '-';
                     const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by || '-';
+                    const sn = STATE.deviceMap[l.device_tag] || '-';
                     return {
                         'Masa Rekod': Utils.formatDate(l.created_at),
                         'Nama Peminjam': l.user_name,
                         'Tag Aset': l.device_tag,
+                        'No. Siri': sn,
                         'Tempoh Pinjaman': `${l.start_date} hingga ${l.end_date}`,
                         'Tujuan': l.usage_type,
                         'Pegawai (Pengeluar)': opIn,
@@ -1328,7 +1345,7 @@
                 const n = document.getElementById('newUserName').value.trim(); 
                 let e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return;
-                if (!e.includes('@')) e = `${e}@moe.gov.my`;
+               // if (!e.includes('@')) e = `${e}@moe.gov.my`;
                 const finalEmail = e.toLowerCase();
                 try {
                     const { error } = await sbClient.from('user_ba').insert([{ id: crypto.randomUUID(), name: n.toUpperCase(), emel: finalEmail }]); 
@@ -1338,9 +1355,10 @@
             },
             addDevice: async () => {
                 const t = document.getElementById('newTag').value.trim(); const tp = document.getElementById('newType').value.trim();
+                const sn = document.getElementById('newSerial').value.trim();
                 if(!t) return;
                 try {
-                    const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, status: 'Tersedia', created_at: new Date().toISOString() }]); 
+                    const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia', created_at: new Date().toISOString() }]); 
                     if(error) throw error;
                     Utils.showToast("Aset didaftarkan"); Loan.loadData();
                 } catch(err) { alert(err.message); }
