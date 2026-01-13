@@ -1365,7 +1365,7 @@
             }
         };
 
-        const Summary = {
+const Summary = {
             chart: null,
             init: async () => {
                 const year = new Date().getFullYear();
@@ -1374,8 +1374,16 @@
                 tb.innerHTML = '<tr><td colspan="15" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
 
                 try {
-                    const { data: calls } = await sbClient.from('rekod').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    // 1. UPDATE: Added 'sistem, komunikasi' to the select query to allow filtering
+                    const { data: calls } = await sbClient.from('rekod')
+                        .select('created_at, sistem, komunikasi') 
+                        .gte('created_at', `${year}-01-01`)
+                        .lte('created_at', `${year}-12-31`);
+                        
+                    const { data: loans } = await sbClient.from('rekod_pinjaman')
+                        .select('created_at')
+                        .gte('created_at', `${year}-01-01`)
+                        .lte('created_at', `${year}-12-31`);
 
                     const processMonths = (items) => {
                         const counts = new Array(12).fill(0);
@@ -1386,15 +1394,25 @@
                         return counts;
                     };
 
+                    // 2. LOGIC: Filter calls for SOLMAN (Check both 'sistem' and 'komunikasi')
+                    const solmanItems = calls?.filter(r => 
+                        (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
+                        (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
+                    ) || [];
+
+                    // Calculate Counts
                     const callCounts = processMonths(calls);
                     const loanCounts = processMonths(loans);
+                    const solmanCounts = processMonths(solmanItems); // Process SOLMAN specific counts
                     
+                    // Calculate Totals
                     const callTotal = callCounts.reduce((a, b) => a + b, 0);
                     const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0);
 
                     tb.innerHTML = '';
                     
-                    const renderRow = (bil, title, counts, total) => {
+                    const renderRow = (bil, title, counts, total, isCustom = false) => {
                         const tr = document.createElement('tr');
                         tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
                         let html = `<td class="p-4 text-center text-slate-400 font-bold">${bil}</td><td class="p-4 font-black uppercase text-slate-800">${title}</td>`;
@@ -1403,25 +1421,31 @@
                         });
                         html += `<td class="p-4 text-center bg-indigo-50 text-indigo-700 font-black">${total}</td>`;
                         tr.innerHTML = html;
-                        tr.onclick = () => Summary.renderChart(counts, title);
+                        // Determine chart color based on row type
+                        tr.onclick = () => Summary.renderChart(counts, title, isCustom ? '#f59e0b' : null);
                         tb.appendChild(tr);
                     };
 
+                    // 3. RENDER: Add the rows
                     renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
                     renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, true); // Added BIL 3
 
-                    // Default chart: Call Log
+                    // Default chart
                     Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
 
                 } catch (e) {
                     tb.innerHTML = `<tr><td colspan="15" class="p-10 text-rose-500 font-bold text-center">Ralat memuatkan data ringkasan: ${e.message}</td></tr>`;
                 }
             },
-            renderChart: (dataArray, label) => {
+            renderChart: (dataArray, label, customColor = null) => {
                 const ctx = document.getElementById('summaryChart').getContext('2d');
                 if (Summary.chart) Summary.chart.destroy();
 
                 const isCallLog = label.toLowerCase().includes('panggilan');
+                // Default logic: Purple for calls, Green for loans, or use customColor (Amber for SOLMAN)
+                let barColor = isCallLog ? '#6366f1' : '#10b981';
+                if (customColor) barColor = customColor;
 
                 Summary.chart = new Chart(ctx, {
                     type: 'bar',
@@ -1430,7 +1454,7 @@
                         datasets: [{
                             label: label,
                             data: dataArray,
-                            backgroundColor: isCallLog ? '#6366f1' : '#10b981',
+                            backgroundColor: barColor,
                             borderRadius: 6,
                             borderWidth: 0
                         }]
