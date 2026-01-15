@@ -1366,130 +1366,148 @@
         };
 
 const Summary = {
-            chart: null,
-            init: async () => {
-                const year = new Date().getFullYear();
-                document.getElementById('summary-year-display').innerText = year;
-                const tb = document.getElementById('summary-table-body');
-                tb.innerHTML = '<tr><td colspan="15" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
+    chart: null,
+    init: async () => {
+        const year = new Date().getFullYear();
+        document.getElementById('summary-year-display').innerText = year;
+        const tb = document.getElementById('summary-table-body');
+        tb.innerHTML = '<tr><td colspan="15" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
 
-                try {
-                    // 1. UPDATE: Added 'sistem, komunikasi' to the select query to allow filtering
-                    const { data: calls } = await sbClient.from('rekod')
-                        .select('created_at, sistem, komunikasi') 
-                        .gte('created_at', `${year}-01-01`)
-                        .lte('created_at', `${year}-12-31`);
-                        
-                    const { data: loans } = await sbClient.from('rekod_pinjaman')
-                        .select('created_at')
-                        .gte('created_at', `${year}-01-01`)
-                        .lte('created_at', `${year}-12-31`);
+        try {
+            // 1. FETCH DATA
+            const { data: calls } = await sbClient.from('rekod')
+                .select('created_at, sistem, komunikasi') 
+                .gte('created_at', `${year}-01-01`)
+                .lte('created_at', `${year}-12-31`);
+                
+            const { data: loans } = await sbClient.from('rekod_pinjaman')
+                .select('created_at')
+                .gte('created_at', `${year}-01-01`)
+                .lte('created_at', `${year}-12-31`);
 
-                    const processMonths = (items) => {
-                        const counts = new Array(12).fill(0);
-                        items?.forEach(item => {
-                            const month = new Date(item.created_at).getMonth();
-                            counts[month]++;
-                        });
-                        return counts;
-                    };
+            const processMonths = (items) => {
+                const counts = new Array(12).fill(0);
+                items?.forEach(item => {
+                    const month = new Date(item.created_at).getMonth();
+                    counts[month]++;
+                });
+                return counts;
+            };
 
-                    // 2. LOGIC: Filter calls for SOLMAN (Check both 'sistem' and 'komunikasi')
-                    const solmanItems = calls?.filter(r => 
-                        (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
-                        (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
-                    ) || [];
+            // 2. FILTER LOGIC
+            // BIL 3: SOLMAN
+            const solmanItems = calls?.filter(r => 
+                (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
+                (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
+            ) || [];
 
-                    // Calculate Counts
-                    const callCounts = processMonths(calls);
-                    const loanCounts = processMonths(loans);
-                    const solmanCounts = processMonths(solmanItems); // Process SOLMAN specific counts
-                    
-                    // Calculate Totals
-                    const callTotal = callCounts.reduce((a, b) => a + b, 0);
-                    const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
-                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0);
+            // BIL 4: SPMP (MYGOVUC3.0\GMAIL)
+            // Note: We use \\ to escape the backslash in the string
+            const spmpItems = calls?.filter(r => 
+                r.sistem && r.sistem.includes('SPMP (MYGOVUC3.0\\GMAIL)')
+            ) || [];
 
-                    tb.innerHTML = '';
-                    
-                    const renderRow = (bil, title, counts, total, isCustom = false) => {
-                        const tr = document.createElement('tr');
-                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
-                        let html = `<td class="p-4 text-center text-slate-400 font-bold">${bil}</td><td class="p-4 font-black uppercase text-slate-800">${title}</td>`;
-                        counts.forEach(c => {
-                            html += `<td class="p-4 text-center font-bold text-slate-600">${c}</td>`;
-                        });
-                        html += `<td class="p-4 text-center bg-indigo-50 text-indigo-700 font-black">${total}</td>`;
-                        tr.innerHTML = html;
-                        // Determine chart color based on row type
-                        tr.onclick = () => Summary.renderChart(counts, title, isCustom ? '#f59e0b' : null);
-                        tb.appendChild(tr);
-                    };
+            // BIL 5: AD (DOMAIN)
+            const adItems = calls?.filter(r => 
+                r.sistem && r.sistem.includes('AD (DOMAIN)')
+            ) || [];
 
-                    // 3. RENDER: Add the rows
-                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
-                    renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, true); // Added BIL 3
+            // 3. CALCULATE COUNTS
+            const callCounts = processMonths(calls);
+            const loanCounts = processMonths(loans);
+            const solmanCounts = processMonths(solmanItems);
+            const spmpCounts = processMonths(spmpItems);
+            const adCounts = processMonths(adItems);
+            
+            // 4. CALCULATE TOTALS
+            const callTotal = callCounts.reduce((a, b) => a + b, 0);
+            const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+            const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0);
+            const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0);
+            const adTotal = adCounts.reduce((a, b) => a + b, 0);
 
-                    // Default chart
-                    Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+            // 5. RENDER ROWS
+            tb.innerHTML = '';
+            
+            const renderRow = (bil, title, counts, total, colorCode = null) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                let html = `<td class="p-4 text-center text-slate-400 font-bold">${bil}</td><td class="p-4 font-black uppercase text-slate-800">${title}</td>`;
+                counts.forEach(c => {
+                    html += `<td class="p-4 text-center font-bold text-slate-600">${c}</td>`;
+                });
+                html += `<td class="p-4 text-center bg-indigo-50 text-indigo-700 font-black">${total}</td>`;
+                tr.innerHTML = html;
+                
+                // Determine chart color: Purple (Default), Green (Loan), Amber (Solman), Cyan (SPMP), Rose (AD)
+                let chartColor = '#6366f1'; 
+                if (title.includes('Pinjaman')) chartColor = '#10b981';
+                else if (colorCode) chartColor = colorCode;
 
-                } catch (e) {
-                    tb.innerHTML = `<tr><td colspan="15" class="p-10 text-rose-500 font-bold text-center">Ralat memuatkan data ringkasan: ${e.message}</td></tr>`;
-                }
+                tr.onclick = () => Summary.renderChart(counts, title, chartColor);
+                tb.appendChild(tr);
+            };
+
+            renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
+            renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+            renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); // Amber
+            renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4'); // Cyan
+            renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); // Rose
+
+            // Default chart load
+            Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+
+        } catch (e) {
+            tb.innerHTML = `<tr><td colspan="15" class="p-10 text-rose-500 font-bold text-center">Ralat memuatkan data ringkasan: ${e.message}</td></tr>`;
+        }
+    },
+    renderChart: (dataArray, label, customColor = null) => {
+        const ctx = document.getElementById('summaryChart').getContext('2d');
+        if (Summary.chart) Summary.chart.destroy();
+
+        let barColor = customColor || '#6366f1';
+
+        Summary.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'],
+                datasets: [{
+                    label: label,
+                    data: dataArray,
+                    backgroundColor: barColor,
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
             },
-            renderChart: (dataArray, label, customColor = null) => {
-                const ctx = document.getElementById('summaryChart').getContext('2d');
-                if (Summary.chart) Summary.chart.destroy();
-
-                const isCallLog = label.toLowerCase().includes('panggilan');
-                // Default logic: Purple for calls, Green for loans, or use customColor (Amber for SOLMAN)
-                let barColor = isCallLog ? '#6366f1' : '#10b981';
-                if (customColor) barColor = customColor;
-
-                Summary.chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'],
-                        datasets: [{
-                            label: label,
-                            data: dataArray,
-                            backgroundColor: barColor,
-                            borderRadius: 6,
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    padding: 20,
-                                    font: { size: 12, weight: 'bold', family: "'Inter', sans-serif" },
-                                    color: '#475569'
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: '#f1f5f9' },
-                                ticks: { font: { weight: 'bold' } }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: { font: { weight: 'bold' } }
-                            }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            font: { size: 12, weight: 'bold', family: "'Inter', sans-serif" },
+                            color: '#475569'
                         }
                     }
-                });
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { weight: 'bold' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { weight: 'bold' } }
+                    }
+                }
             }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
+        });
+    }
+};        document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
