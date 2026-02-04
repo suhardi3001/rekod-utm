@@ -1344,7 +1344,7 @@
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'p-4 text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2';
                     loadingDiv.innerText = 'Mencari...'; dd.appendChild(loadingDiv);
-                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
+                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(20);
                     dd.innerHTML = '';
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
