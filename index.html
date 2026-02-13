@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT UTM | MOE Edition</title>
+    <title>Sistem Rekod UTM | MOE Edition</title>
     
 <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co https://cdn.sheetjs.com; 
@@ -1543,7 +1543,8 @@
                             const tdSn = document.createElement('td'); tdSn.className = "p-4 text-slate-400 font-bold"; tdSn.innerText = sn;
                             const tdDate = document.createElement('td'); tdDate.className = `p-4 ${isLate ? 'text-late' : ''}`; tdDate.innerText = `${l.end_date} ${isLate ? '(lewat)' : ''}`;
                             const tdUse = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_type;
-                            tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdSn); tr.appendChild(tdDate); tr.appendChild(tdUse); body.appendChild(tr);
+                            const tdDetails = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_details;
+                            tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdSn); tr.appendChild(tdDate); tr.appendChild(tdUse); tr.appendChild(tdDetails); body.appendChild(tr);
                         });
                     }
                 }
