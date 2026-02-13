@@ -1543,7 +1543,7 @@
                             const tdSn = document.createElement('td'); tdSn.className = "p-4 text-slate-400 font-bold"; tdSn.innerText = sn;
                             const tdDate = document.createElement('td'); tdDate.className = `p-4 ${isLate ? 'text-late' : ''}`; tdDate.innerText = `${l.end_date} ${isLate ? '(lewat)' : ''}`;
                             const tdUse = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_type;
-                            const tdDetails = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_details;
+                            const tdDetails = document.createElement('td'); tdDetails.className = "p-4 text-slate-400 font-bold"; tdDetails.innerText = l.usage_details;
                             tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdSn); tr.appendChild(tdDate); tr.appendChild(tdUse); tr.appendChild(tdDetails); body.appendChild(tr);
                         });
                     }
