@@ -682,6 +682,7 @@
                                         <th class="p-4 text-left">Status</th>
                                         <th class="p-4 text-left">Pengguna Dahulu</th>
                                         <th class="p-4 text-center">Tindakan</th>
+                                        <th class="p-4 text-center">Editor</th>
                                     </tr>
                                 </thead>
                                 <tbody id="asset-table-body" class="text-slate-600 text-[10px] md:text-xs font-medium"></tbody>
@@ -1192,6 +1193,7 @@
                     else if(s === 'Perlu Dibaiki' || s === 'PERLU DIBAIKI') statusClass = 'bg-amber-100 text-amber-800';
                     else if(s === 'Perlu Disemak') statusClass = 'bg-blue-100 text-blue-800';
                     else if(s === 'Dalam Proses Pelupusan') statusClass = 'bg-rose-100 text-rose-800';
+                    else if(s === 'Dipulangkan') statusClass = 'bg-rose-100 text-rose-800';
                     statusSpan.className += ` ${statusClass}`;
                     statusSpan.innerText = s || '-';
                     tdStatus.appendChild(statusSpan);
