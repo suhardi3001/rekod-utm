@@ -1771,36 +1771,14 @@ const LoanStats = {
             }
         };
         
+const Summary = {
+    chart: null,
 
-        const Summary = {
-            chart: null,
-            init: async () => {
-                const year = new Date().getFullYear(); document.getElementById('summary-year-display').innerText = year;
-                const tb = document.getElementById('summary-table-body'); tb.innerHTML = '';
-                const trLoad = document.createElement('tr'); const tdLoad = document.createElement('td'); tdLoad.colSpan = 15; tdLoad.className = "p-10 text-center";
-                const divLoad = document.createElement('div'); divLoad.className = "loader mx-auto"; tdLoad.appendChild(divLoad); trLoad.appendChild(tdLoad); tb.appendChild(trLoad);
-                try {
-                    const { data: calls } = await sbClient.from('rekod').select('created_at, sistem, komunikasi').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-                    const processMonths = (items) => { const counts = new Array(12).fill(0); items?.forEach(item => { const month = new Date(item.created_at).getMonth(); counts[month]++; }); return counts; };
-                    const callCounts = processMonths(calls); const loanCounts = processMonths(loans);
-                    const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
-                    const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP (MYGOVUC3.0\\GMAIL)')));
-                    const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
-                    const callTotal = callCounts.reduce((a, b) => a + b, 0); const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
-                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); const adTotal = adCounts.reduce((a, b) => a + b, 0);
-                    tb.innerHTML = '';
-                    const renderRow = (bil, title, counts, total, colorCode = null) => {
-                        const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
-                        const tdBil = document.createElement('td'); tdBil.className = "p-4 text-center text-slate-400 font-bold"; tdBil.innerText = bil; tr.appendChild(tdBil);
-                        const tdTitle = document.createElement('td'); tdTitle.className = "p-4 font-black uppercase text-slate-800"; tdTitle.innerText = title; tr.appendChild(tdTitle);
-                        counts.forEach(c => { const tdCount = document.createElement('td'); tdCount.className = "p-4 text-center font-bold text-slate-600"; tdCount.innerText = c; tr.appendChild(tdCount); });
-                        const tdTotal = document.createElement('td'); tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; tdTotal.innerText = total; tr.appendChild(tdTotal);
-                        let chartColor = '#6366f1'; if (title.includes('Pinjaman')) chartColor = '#10b981'; else if (colorCode) chartColor = colorCode;
-                        tr.onclick = () => Summary.renderChart(counts, title, chartColor); tb.appendChild(tr);
-                    };
-                    exportExcel: () => {
+    // NEW: Function to export Table to Excel
+    exportExcel: () => {
         const table = document.getElementById('summary-table');
+        if (!table) return Utils.showToast("Ralat: Jadual tidak dijumpai");
+        
         const ws = XLSX.utils.table_to_sheet(table);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Tahunan");
@@ -1808,44 +1786,159 @@ const LoanStats = {
         Utils.showToast("Excel berjaya dimuat turun");
     },
 
+    // NEW: Function to export Dashboard to PDF
     exportPDF: async () => {
         const { jsPDF } = window.jspdf;
         Utils.showToast("Menjana PDF... Sila tunggu.");
         
+        // Target the container that holds both the chart and the table
         const element = document.getElementById('summary-module');
-        const canvas = await html2canvas(element, {
-            scale: 2, // Higher quality
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-        });
         
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2, // High resolution
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+            pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
+            Utils.showToast("PDF berjaya dimuat turun");
+        } catch (err) {
+            console.error(err);
+            Utils.showToast("Ralat menjana PDF");
+        }
+    },
+
+    init: async () => {
+        const year = new Date().getFullYear(); 
+        document.getElementById('summary-year-display').innerText = year;
+        const tb = document.getElementById('summary-table-body'); 
+        tb.innerHTML = '';
         
-        pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-        pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
-        Utils.showToast("PDF berjaya dimuat turun");
-                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
-                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
-                } catch (e) { tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; }
-            },
-            renderChart: (dataArray, label, customColor = null) => {
-                const ctx = document.getElementById('summaryChart').getContext('2d'); if (Summary.chart) Summary.chart.destroy();
-                let barColor = customColor || '#6366f1';
-                Summary.chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], datasets: [{ label: label, data: dataArray, backgroundColor: barColor, borderRadius: 6, borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top', labels: { padding: 20, font: { size: 12, weight: 'bold', family: "'Inter', sans-serif" }, color: '#475569' } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 'bold' } } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } } } }
+        const trLoad = document.createElement('tr'); 
+        const tdLoad = document.createElement('td'); 
+        tdLoad.colSpan = 15; 
+        tdLoad.className = "p-10 text-center";
+        const divLoad = document.createElement('div'); 
+        divLoad.className = "loader mx-auto"; 
+        tdLoad.appendChild(divLoad); 
+        trLoad.appendChild(tdLoad); 
+        tb.appendChild(trLoad);
+
+        try {
+            const { data: calls } = await sbClient.from('rekod').select('created_at, sistem, komunikasi').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+            const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+            
+            const processMonths = (items) => { 
+                const counts = new Array(12).fill(0); 
+                items?.forEach(item => { 
+                    const month = new Date(item.created_at).getMonth(); 
+                    counts[month]++; 
+                }); 
+                return counts; 
+            };
+
+            const callCounts = processMonths(calls); 
+            const loanCounts = processMonths(loans);
+            const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
+            const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP')));
+            const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
+            
+            const callTotal = callCounts.reduce((a, b) => a + b, 0); 
+            const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+            const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); 
+            const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); 
+            const adTotal = adCounts.reduce((a, b) => a + b, 0);
+            
+            tb.innerHTML = '';
+
+            const renderRow = (bil, title, counts, total, colorCode = null) => {
+                const tr = document.createElement('tr'); 
+                tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                const tdBil = document.createElement('td'); 
+                tdBil.className = "p-4 text-center text-slate-400 font-bold"; 
+                tdBil.innerText = bil; 
+                tr.appendChild(tdBil);
+                
+                const tdTitle = document.createElement('td'); 
+                tdTitle.className = "p-4 font-black uppercase text-slate-800"; 
+                tdTitle.innerText = title; 
+                tr.appendChild(tdTitle);
+                
+                counts.forEach(c => { 
+                    const tdCount = document.createElement('td'); 
+                    tdCount.className = "p-4 text-center font-bold text-slate-600"; 
+                    tdCount.innerText = c; 
+                    tr.appendChild(tdCount); 
                 });
+                
+                const tdTotal = document.createElement('td'); 
+                tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; 
+                tdTotal.innerText = total; 
+                tr.appendChild(tdTotal);
+                
+                let chartColor = '#6366f1'; 
+                if (title.includes('Pinjaman')) chartColor = '#10b981'; 
+                else if (colorCode) chartColor = colorCode;
+                
+                tr.onclick = () => Summary.renderChart(counts, title, chartColor); 
+                tb.appendChild(tr);
+            };
+
+            renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); 
+            renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+            renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
+            renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
+            renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
+            
+            Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+        } catch (e) { 
+            tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; 
+        }
+    },
+
+    renderChart: (dataArray, label, customColor = null) => {
+        const ctx = document.getElementById('summaryChart').getContext('2d'); 
+        if (Summary.chart) Summary.chart.destroy();
+        let barColor = customColor || '#6366f1';
+        Summary.chart = new Chart(ctx, {
+            type: 'bar',
+            data: { 
+                labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], 
+                datasets: [{ 
+                    label: label, 
+                    data: dataArray, 
+                    backgroundColor: barColor, 
+                    borderRadius: 6, 
+                    borderWidth: 0 
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { 
+                        display: true, 
+                        position: 'top', 
+                        labels: { padding: 20, font: { size: 12, weight: 'bold' }, color: '#475569' } 
+                    } 
+                }, 
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
+                    x: { grid: { display: false } } 
+                } 
             }
-        };        
-        
-        document.addEventListener('DOMContentLoaded', () => {
+        });
+    }
+};
+ document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
