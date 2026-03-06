@@ -1799,6 +1799,36 @@ const LoanStats = {
                         let chartColor = '#6366f1'; if (title.includes('Pinjaman')) chartColor = '#10b981'; else if (colorCode) chartColor = colorCode;
                         tr.onclick = () => Summary.renderChart(counts, title, chartColor); tb.appendChild(tr);
                     };
+                    exportExcel: () => {
+        const table = document.getElementById('summary-table');
+        const ws = XLSX.utils.table_to_sheet(table);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Tahunan");
+        XLSX.writeFile(wb, `Ringkasan_Statistik_UTM_${new Date().getFullYear()}.xlsx`);
+        Utils.showToast("Excel berjaya dimuat turun");
+    },
+
+    exportPDF: async () => {
+        const { jsPDF } = window.jspdf;
+        Utils.showToast("Menjana PDF... Sila tunggu.");
+        
+        const element = document.getElementById('summary-module');
+        const canvas = await html2canvas(element, {
+            scale: 2, // Higher quality
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+        pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
+        Utils.showToast("PDF berjaya dimuat turun");
                     renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
                     renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
                     renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
