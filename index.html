@@ -521,6 +521,9 @@
                         <div id="loan-admin-section" class="hidden-section">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div class="lg:col-span-4 space-y-6 md:space-y-8">
+<button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
+    <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
+</button>
                                     <button onclick="Loan.checkOverdueLoans(true)" class="btn-hover w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-rose-100 flex items-center justify-center gap-3 tracking-widest uppercase text-xs md:text-sm">
                                         <i data-lucide="alert-triangle" class="w-5 h-5"></i> Semak Pinjaman Lewat
                                     </button>
@@ -554,18 +557,17 @@
                                     </div>
                                     <div class="table-container m-0 border-none rounded-none">
                                         <table class="w-full data-table">
-                                            <thead class="bg-white border-b border-slate-100">
-                                                <tr>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Aset</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">No. Siri</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tarikh Pemulangan</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Lokasi Kegunaan</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tujuan Kegunaan</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="active-loans-body"></tbody>
-                                        </table>
+    <thead class="bg-white border-b border-slate-100">
+        <tr class="text-[10px] md:text-xs">
+            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Laptop/Aset</th>
+            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
+            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Group</th>
+            <th class="p-4 text-center font-extrabold uppercase tracking-widest">Availability</th>
+            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tujuan</th>
+        </tr>
+    </thead>
+    <tbody id="active-loans-body" class="text-[10px] md:text-xs"></tbody>
+</table>
                                     </div>
                                 </div>
                             </div>
@@ -1555,26 +1557,87 @@
                     Loan.loadActive();
                 } catch (e) {}
             },
-            loadActive: async () => {
-                const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                const body = document.getElementById('active-loans-body'); const today = Utils.getToday();
-                if (body) {
-                    body.innerHTML = '';
-                    if (data) {
-                        data.forEach(l => {
-                            const isLate = l.end_date < today; const sn = STATE.deviceMap[l.device_tag] || '-';
-                            const tr = document.createElement('tr'); tr.className = isLate ? 'row-late hover:bg-slate-50 transition-all' : 'border-b border-slate-50 hover:bg-slate-50 transition-all';
-                            const tdName = document.createElement('td'); tdName.className = "p-4 uppercase font-bold text-slate-700"; tdName.innerText = l.user_name;
-                            const tdTag = document.createElement('td'); tdTag.className = "p-4 font-black text-indigo-600 tracking-widest"; tdTag.innerText = l.device_tag;
-                            const tdSn = document.createElement('td'); tdSn.className = "p-4 text-slate-400 font-bold"; tdSn.innerText = sn;
-                            const tdDate = document.createElement('td'); tdDate.className = `p-4 ${isLate ? 'text-late' : ''}`; tdDate.innerText = `${l.end_date} ${isLate ? '(lewat)' : ''}`;
-                            const tdUse = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_type;
-                            const tdDetails = document.createElement('td'); tdDetails.className = "p-4 text-slate-400 font-bold"; tdDetails.innerText = l.usage_details;
-                            tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdSn); tr.appendChild(tdDate); tr.appendChild(tdUse); tr.appendChild(tdDetails); body.appendChild(tr);
-                        });
-                    }
-                }
-            },
+
+
+loadActive: async () => {
+    try {
+        // 1. Fetch ALL inventory first
+        const { data: allInventory, error: invError } = await sbClient
+            .from('device_inventory')
+            .select('*')
+            .order('tag', { ascending: true });
+
+        if (invError) throw invError;
+
+        // 2. Client-side filtering
+        const inventory = allInventory.filter(device => {
+            const status = (device.status || "").toUpperCase();
+            const tag = (device.tag || "");
+            
+            if (status.includes('RETURN') || status.includes('DELETE')) return false;
+            
+            const excludedTags = [
+                'Laptop No.11', 'Laptop No.12', 'Laptop No.13', 
+                'Laptop No.14', 'Laptop No.15', 'Laptop No.16', 'Laptop No.17'
+            ];
+            if (excludedTags.includes(tag)) return false;
+
+            return true;
+        });
+
+        const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('*').eq('status', 'Active');
+        
+        const body = document.getElementById('active-loans-body');
+        if (!body) return;
+        body.innerHTML = '';
+
+        const getGroupName = (tag) => {
+            if (tag.startsWith('HP09') || tag.startsWith('HP10') || tag.startsWith('HP11') || tag.startsWith('HP12')) return 'POOL NAZIRAN';
+            if (tag.startsWith('HP13') || tag.startsWith('HP14') || tag.startsWith('HP15')) return 'POOL SP';
+            return 'OPEN';
+        };
+
+        inventory.forEach(device => {
+            const loan = activeLoans?.find(l => l.device_tag === device.tag);
+            const isUsed = !!loan;
+            const group = getGroupName(device.tag);
+            const sn = device.serial || '-TIADA-';
+
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
+
+            let groupClass = "p-4 font-bold ";
+            if (group === 'POOL NAZIRAN') groupClass += "bg-cyan-50 text-cyan-700";
+            else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
+            else groupClass += "text-slate-500";
+
+            // Logic for Due Date display
+            const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${loan.end_date}</div>` : '';
+
+            tr.innerHTML = `
+                <td class="p-4">
+                    <div class="font-bold text-slate-700">${device.tag}</div>
+                    <div class="text-[12px] text-slate-400 font-mono uppercase">${sn}</div>
+                </td>
+                <td class="p-4">
+                    <div class="font-bold text-slate-900 uppercase">${isUsed ? loan.user_name : ''}</div>
+                    ${dueDateDisplay}
+                </td>
+                <td class="${groupClass}">${group}</td>
+                <td class="p-4 text-center">
+                    <span class="px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}">
+                        ${isUsed ? 'IN USED' : 'AVAILABLE'}
+                    </span>
+                </td>
+                <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? (loan.usage_details || loan.usage_type) : ''}</td>
+            `;
+            body.appendChild(tr);
+        });
+    } catch (e) {
+        console.error("Visual status error:", e);
+    }
+},
+
             submit: async () => {
                 const p = { user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email, created_at: new Date().toISOString() };
                 if(!p.user_name || !p.device_tag || !p.start_date || !p.end_date) return Utils.showToast("Sila lengkapkan maklumat.");
@@ -1692,8 +1755,93 @@
                     const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia', created_at: new Date().toISOString() }]); 
                     if(error) throw error; Utils.showToast("Aset didaftarkan"); Loan.loadData();
                 } catch(err) { alert(err.message); }
-            }
-        };
+            
+        },
+
+copyStatusScreenshot: async () => {
+    const targetTags = [
+        'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
+        'HP11', 'HP12', 'HP13', 'HP14', 'HP15', 'Laptop No.01', 'Laptop No.02', 
+        'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 'Laptop No.06', 'Laptop No.07', 
+        'Laptop No.08', 'Laptop No.09', 'Laptop No.10'
+    ];
+
+    Utils.showToast("Menjana Screenshot... Sila tunggu.");
+
+    const tempContainer = document.createElement('div');
+    // Width set to auto to allow the table to expand as needed for long names
+    tempContainer.style.cssText = 'position:fixed; left:-9999px; top:0; min-width:850px; background:white; padding:15px; font-family:Arial, sans-serif;';
+    
+    const header = document.createElement('div');
+    header.innerHTML = `<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>`;
+    tempContainer.appendChild(header);
+
+    const tempTable = document.createElement('table');
+    // table-layout: auto allows the column to grow based on the name length
+    tempTable.style.cssText = 'width:100%; border-collapse:collapse; font-size:11px; border:1px solid black; table-layout: auto;';
+    
+    tempTable.innerHTML = `
+        <thead>
+            <tr style="background:#f1f5f9; font-weight:bold;">
+                <th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th>
+                <th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th>
+                <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th>
+                <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th>
+                <th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th>
+            </tr>
+        </thead>
+        <tbody id="temp-body"></tbody>
+    `;
+    
+    const tempBody = tempTable.querySelector('#temp-body');
+    const allRows = document.querySelectorAll('#active-loans-body tr');
+
+    allRows.forEach(row => {
+        const tagCell = row.querySelector('td:first-child');
+        if (!tagCell) return;
+
+        const tagText = tagCell.innerText.trim().split('\n')[0];
+        if (targetTags.includes(tagText)) {
+            const cells = row.querySelectorAll('td');
+            const isUsed = cells[3].innerText.includes('IN USED');
+            const groupText = cells[2].innerText;
+            
+            let groupBg = '#ffffff';
+            if(groupText.includes('NAZIRAN')) groupBg = '#d9ead3'; 
+            else if(groupText.includes('POOL SP')) groupBg = '#cfe2f3'; 
+            
+            const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${tagText}</td>
+                <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${cells[1].innerText || ''}</td>
+                <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${groupText}</td>
+                <td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:${statusBg}; vertical-align:middle; text-align:center; white-space: nowrap;">${isUsed ? 'IN USED' : 'AVAILABLE'}</td>
+                <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${cells[4].innerText || ''}</td>
+            `;
+            tempBody.appendChild(newRow);
+        }
+    });
+
+    tempContainer.appendChild(tempTable);
+    document.body.appendChild(tempContainer);
+
+    try {
+        const canvas = await html2canvas(tempContainer, { scale: 2 });
+        canvas.toBlob(async (blob) => {
+            const item = new ClipboardItem({ "image/png": blob });
+            await navigator.clipboard.write([item]);
+            Utils.showToast("Screenshot Berjaya Disalin!");
+        });
+    } catch (err) {
+        Utils.showToast("Gagal menyalin screenshot.");
+    } finally {
+        document.body.removeChild(tempContainer);
+    }
+
+ } // Closing brace for copyStatusScreenshot
+}; // Closing brace for the entire Loan object
 
 const LoanStats = {
             currentStats: [],
