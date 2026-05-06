@@ -1271,36 +1271,40 @@
                 document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
                 document.getElementById('asset-form-overlay').classList.remove('hidden');
             },
-            handleSubmit: async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('asset-id').value;
-                const payload = {
-                    nama_pengguna: document.getElementById('inp-nama').value,
-                    jenis_aset: document.getElementById('inp-jenis').value,
-                    seksyen: document.getElementById('inp-seksyen').value,
-                    no_dhm: document.getElementById('inp-dhm').value,
-                    no_siri: document.getElementById('inp-siri').value,
-                    model: document.getElementById('inp-model').value,
-                    status: document.getElementById('inp-status').value,
-                    pengguna_terdahulu: document.getElementById('inp-prevUser').value,
-                    editor: STATE.currentUser.email,
-                    last_updated: new Date()
-                };
-                let error;
-                if (id) {
-                    const res = await sbClient.from('aset').update(payload).eq('uuid', id);
-                    error = res.error;
-                } else {
-                    const res = await sbClient.from('aset').insert([payload]);
-                    error = res.error;
-                }
-                if (error) alert("Ralat Simpanan: " + error.message);
-                else {
-                    Utils.showToast("Data aset berjaya disimpan!");
-                    Assets.fetchData(); 
-                    Assets.toggleForm(false);
-                }
+handleSubmit: async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('asset-id').value;
+            const payload = {
+                nama_pengguna: document.getElementById('inp-nama').value,
+                jenis_aset: document.getElementById('inp-jenis').value,
+                seksyen: document.getElementById('inp-seksyen').value,
+                no_dhm: document.getElementById('inp-dhm').value,
+                no_siri: document.getElementById('inp-siri').value,
+                model: document.getElementById('inp-model').value,
+                status: document.getElementById('inp-status').value,
+                pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                editor: STATE.currentUser.email,
+                last_updated: new Date()
+            };
+            
+            let error;
+            if (id) {
+                const res = await sbClient.from('aset').update(payload).eq('uuid', id);
+                error = res.error;
+            } else {
+                const res = await sbClient.from('aset').insert([payload]);
+                error = res.error;
             }
+            
+            if (error) {
+                alert("Ralat Simpanan: " + error.message);
+            } else {
+                Utils.showToast("Data aset berjaya disimpan!");
+                // CHANGE HERE: Await the data fetch before hiding the form and rendering
+                await Assets.fetchData(); 
+                Assets.toggleForm(false);
+            }
+        }
         };
 
         const CallLog = {
