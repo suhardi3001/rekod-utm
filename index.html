@@ -1288,23 +1288,47 @@ handleSubmit: async (e) => {
             };
             
             let error;
+            let returnedData = null;
+
             if (id) {
-                const res = await sbClient.from('aset').update(payload).eq('uuid', id);
+                // FORCE SUPABASE TO RETURN THE MODIFIED ROW IMMEDIATELY
+                const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
                 error = res.error;
+                returnedData = res.data;
             } else {
-                const res = await sbClient.from('aset').insert([payload]);
+                const res = await sbClient.from('aset').insert([payload]).select();
                 error = res.error;
+                returnedData = res.data;
             }
             
             if (error) {
                 alert("Ralat Simpanan: " + error.message);
             } else {
                 Utils.showToast("Data aset berjaya disimpan!");
-                // CHANGE HERE: Await the data fetch before hiding the form and rendering
-                await Assets.fetchData(); 
+                
+                // If we got valid data back, update local cache directly to ensure UI updates instantly
+                if (returnedData && returnedData.length > 0) {
+                    if (id) {
+                        // Replace the old row with the freshly updated server row
+                        const index = Assets.allData.findIndex(r => r.uuid === id);
+                        if (index !== -1) {
+                            Assets.allData[index] = returnedData[0];
+                        }
+                    } else {
+                        // Append new rows to the top or bottom
+                        Assets.allData.push(returnedData[0]);
+                    }
+                    
+                    // Sync the search filter with the new state change
+                    Assets.handleSearch();
+                } else {
+                    // Fallback to network call if something went wrong with the return payload
+                    await Assets.fetchData();
+                }
+                
                 Assets.toggleForm(false);
             }
-        }
+        } 
         };
 
         const CallLog = {
