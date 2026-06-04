@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod UTM | MOE Edition</title>
+    <title>Sistem Rekod UTM | MOE Edition (Secured)</title>
     
 <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co https://cdn.sheetjs.com; 
+    default-src 'self'; 
     style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; 
     script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.sheetjs.com;
-    connect-src 'self' https://*.supabase.co https://api.emailjs.com https://cdn.jsdelivr.net https://unpkg.com;
+    connect-src 'self' https://ftjmbalkooihipuewqqb.supabase.co https://api.emailjs.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
 ">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -130,12 +133,6 @@
         
         th.draggable-header { cursor: grab; position: relative; transition: background-color 0.2s; }
         th.drag-over { border-left: 3px solid var(--accent); background-color: #f5f3ff; }
-        
-        #debug-console { 
-            background: #0f172a; color: #10b981; font-family: 'Fira Code', monospace; 
-            height: 120px; overflow-y: auto; font-size: 11px; padding: 12px; 
-            border-radius: 0.75rem; border: 1px solid #1e293b;
-        }
 
         .btn-hover { transition: transform 0.1s ease, background-color 0.2s ease; }
         .btn-hover:active { transform: scale(0.97); }
@@ -215,7 +212,6 @@
                     <button type="button" onclick="Auth.toggleForm('login')" class="text-slate-400 text-sm font-bold hover:text-slate-600">Kembali ke Log Masuk</button>
                 </div>
             </form>
-            <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
 
@@ -263,8 +259,7 @@
                 </div>
             </div>
         </nav>
-
-        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
+<main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
             <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
                 <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
                     <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
@@ -298,6 +293,20 @@
                         </div>
                         <div id="stat-total-personnel" class="text-xl md:text-2xl font-black text-slate-800">0</div>
                     </div>
+                </div>
+
+                <div class="flex items-center gap-3 p-4 bg-white shadow-sm rounded-xl border border-slate-100">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
+                    
+                    <button id="btn-insert-excel" type="button" class="btn-hover flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 text-xs font-bold uppercase tracking-wide">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        Insert Excel (SAP)
+                    </button>
+
+                    <button id="btn-sync-supabase" type="button" class="btn-hover flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 text-xs font-bold uppercase tracking-wide">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        Sync to Database
+                    </button>
                 </div>
 
                 <div class="flex items-center justify-between mb-2">
@@ -445,7 +454,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="loan-module" class="hidden-section w-full space-y-4 md:space-y-6">
                 <div class="card-modern p-1">
                     <div class="p-6 md:p-8 border-b border-slate-50 flex items-center gap-4">
@@ -521,9 +529,9 @@
                         <div id="loan-admin-section" class="hidden-section">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div class="lg:col-span-4 space-y-6 md:space-y-8">
-<button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
-    <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
-</button>
+                                    <button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
+                                        <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
+                                    </button>
                                     <button onclick="Loan.checkOverdueLoans(true)" class="btn-hover w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-rose-100 flex items-center justify-center gap-3 tracking-widest uppercase text-xs md:text-sm">
                                         <i data-lucide="alert-triangle" class="w-5 h-5"></i> Semak Pinjaman Lewat
                                     </button>
@@ -557,23 +565,22 @@
                                     </div>
                                     <div class="table-container m-0 border-none rounded-none">
                                         <table class="w-full data-table">
-    <thead class="bg-white border-b border-slate-100">
-        <tr class="text-[10px] md:text-xs">
-            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Laptop/Aset</th>
-            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
-            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Group</th>
-            <th class="p-4 text-center font-extrabold uppercase tracking-widest">Availability</th>
-            <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tujuan</th>
-        </tr>
-    </thead>
-    <tbody id="active-loans-body" class="text-[10px] md:text-xs"></tbody>
-</table>
+                                            <thead class="bg-white border-b border-slate-100">
+                                                <tr class="text-[10px] md:text-xs">
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Laptop/Aset</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Group</th>
+                                                    <th class="p-4 text-center font-extrabold uppercase tracking-widest">Availability</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tujuan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="active-loans-body" class="text-[10px] md:text-xs"></tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div id="loan-history-section" class="hidden-section space-y-6">
+<div id="loan-history-section" class="hidden-section space-y-6">
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h6 class="font-extrabold text-slate-800 text-base md:text-lg tracking-tight">Arkib Rekod Pinjaman</h6>
@@ -777,25 +784,20 @@
 
             <div id="summary-module" class="hidden-section w-full space-y-8 md:space-y-12">
                 <div class="card-modern p-6 md:p-10 flex flex-col items-center">
-                    <div class="flex items-center justify-between px-2">
-
-    <div class="flex gap-2">
-        <button onclick="Summary.exportExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-emerald-700 transition-all shadow-sm uppercase tracking-wide">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel
-        </button>
-        <button onclick="Summary.exportPDF()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-rose-700 transition-all shadow-sm uppercase tracking-wide">
-            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-        </button>
-        <button onclick="Summary.init()" class="bg-slate-100 p-2 rounded-lg hover:bg-indigo-100 text-indigo-600 transition-all">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
-    </div>
-</div>
-                        <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
-        <i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i>
-        Jadual Statistik Tahunan
-    </h3>
-                    <div class="text-center mb-8">
+                    <div class="flex items-center justify-between px-2 w-full max-w-4xl">
+                        <div class="flex gap-2 ml-auto">
+                            <button onclick="Summary.exportExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-emerald-700 transition-all shadow-sm uppercase tracking-wide">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel
+                            </button>
+                            <button onclick="Summary.exportPDF()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-rose-700 transition-all shadow-sm uppercase tracking-wide">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                            </button>
+                            <button onclick="Summary.init()" class="bg-slate-100 p-2 rounded-lg hover:bg-indigo-100 text-indigo-600 transition-all">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mb-8 mt-4">
                         <h2 class="text-xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Statistik Bulanan <span id="summary-year-display"></span></h2>
                         <p class="text-slate-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-widest">Klik baris jadual untuk melihat carta bulanan terperinci</p>
                     </div>
@@ -804,7 +806,7 @@
                         <canvas id="summaryChart" class="max-h-[400px]"></canvas>
                     </div>
 
-                    <div class="w-full space-y-4">
+                    <div class="w-full max-w-4xl space-y-4">
                         <div class="flex items-center justify-between px-2">
                             <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
                                 <i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i>
@@ -878,11 +880,12 @@
             </div>
         </div>
     </div>
-
     <script>
         const CONFIG = { 
-            supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', 
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ianhmZ29zYXRtYXNqamlma2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTI1MDYsImV4cCI6MjA4MDU4ODUwNn0.Y6nVvZLbqXu4yvDaL1xXrbN7Kdl73Z-Y5HC5z56vzmw',
+            // SECURITY NOTE: In a real environment, DO NOT expose sensitive keys.
+            // RLS (Row Level Security) MUST be properly configured in Supabase to protect data!
+            supabaseUrl: 'objxfgosatmasjjifkkg', 
+            supabaseKey: 'sb_publishable_UJ86SYk1Kk5nBVnpjNXcpA_NSiZzsAO',
             emailjsKey: null,
             emailjsServiceID: null,
             emailjsTemplateID: null
@@ -893,13 +896,8 @@
 
         const Utils = {
             log: (msg) => { 
-                const c = document.getElementById('debug-console'); 
-                if(c) { 
-                    const div = document.createElement('div');
-                    div.innerText = `> ${msg}`;
-                    c.appendChild(div);
-                    c.scrollTop = c.scrollHeight; 
-                }
+                // Console logging only for debugging instead of appending to visible DOM
+                console.log(`System Log: ${msg}`);
             },
             escapeHTML: (str) => {
                 if (!str) return '';
@@ -998,7 +996,7 @@
                     const { count: personnelCount } = await sbClient.from('personnel').select('*', { count: 'exact', head: true });
                     document.getElementById('stat-total-personnel').innerText = personnelCount || 0;
                 } catch (e) {
-                    Utils.log("Dashboard Error: " + e.message);
+                    Utils.log("Dashboard Error");
                 }
             }
         };
@@ -1024,7 +1022,7 @@
                 e.preventDefault();
                 const btn = document.getElementById('login-btn'); btn.classList.add('loading');
                 const { data, error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
-                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
+                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = "Akses Ditolak / Ralat Log Masuk"; document.getElementById('login-error').classList.remove('hidden'); }
                 else Auth.onAuth(data.user);
             },
             register: async (e) => {
@@ -1037,7 +1035,7 @@
                 btn.classList.remove('loading');
                 if (error) {
                     const errDiv = document.getElementById('reg-error');
-                    errDiv.innerText = error.message;
+                    errDiv.innerText = "Ralat pendaftaran berlaku.";
                     errDiv.classList.remove('hidden');
                 } else {
                     const succDiv = document.getElementById('reg-success');
@@ -1150,7 +1148,7 @@
                 tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
                 const { data, error } = await sbClient.from('aset').select('*').order('created_at', { ascending: true });
                 if (error) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Ralat memuatkan rekod.</td></tr>`;
                 } else {
                     Assets.allData = data || [];
                     Assets.filteredData = Assets.allData;
@@ -1186,7 +1184,7 @@
                 }
                 document.getElementById('asset-record-count').innerText = `${displayData.length}/${Assets.filteredData.length}`;
                 if (displayData.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='10' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
+                    tbody.innerHTML = DOMPurify.sanitize("<tr><td colspan='10' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>");
                     return;
                 }
                 displayData.forEach((row, index) => {
@@ -1195,7 +1193,7 @@
                     const createCell = (text, className) => {
                         const td = document.createElement('td');
                         td.className = className || "p-4";
-                        td.innerText = text || '-';
+                        td.innerText = text || '-'; // innerText is inherently safe against XSS
                         return td;
                     };
                     tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
@@ -1271,64 +1269,58 @@
                 document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
                 document.getElementById('asset-form-overlay').classList.remove('hidden');
             },
-handleSubmit: async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('asset-id').value;
-            const payload = {
-                nama_pengguna: document.getElementById('inp-nama').value,
-                jenis_aset: document.getElementById('inp-jenis').value,
-                seksyen: document.getElementById('inp-seksyen').value,
-                no_dhm: document.getElementById('inp-dhm').value,
-                no_siri: document.getElementById('inp-siri').value,
-                model: document.getElementById('inp-model').value,
-                status: document.getElementById('inp-status').value,
-                pengguna_terdahulu: document.getElementById('inp-prevUser').value,
-                editor: STATE.currentUser.email,
-                last_updated: new Date()
-            };
-            
-            let error;
-            let returnedData = null;
-
-            if (id) {
-                // FORCE SUPABASE TO RETURN THE MODIFIED ROW IMMEDIATELY
-                const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
-                error = res.error;
-                returnedData = res.data;
-            } else {
-                const res = await sbClient.from('aset').insert([payload]).select();
-                error = res.error;
-                returnedData = res.data;
-            }
-            
-            if (error) {
-                alert("Ralat Simpanan: " + error.message);
-            } else {
-                Utils.showToast("Data aset berjaya disimpan!");
+            handleSubmit: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('asset-id').value;
+                const payload = {
+                    nama_pengguna: document.getElementById('inp-nama').value,
+                    jenis_aset: document.getElementById('inp-jenis').value,
+                    seksyen: document.getElementById('inp-seksyen').value,
+                    no_dhm: document.getElementById('inp-dhm').value,
+                    no_siri: document.getElementById('inp-siri').value,
+                    model: document.getElementById('inp-model').value,
+                    status: document.getElementById('inp-status').value,
+                    pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                    editor: STATE.currentUser.email,
+                    last_updated: new Date()
+                };
                 
-                // If we got valid data back, update local cache directly to ensure UI updates instantly
-                if (returnedData && returnedData.length > 0) {
-                    if (id) {
-                        // Replace the old row with the freshly updated server row
-                        const index = Assets.allData.findIndex(r => r.uuid === id);
-                        if (index !== -1) {
-                            Assets.allData[index] = returnedData[0];
-                        }
-                    } else {
-                        // Append new rows to the top or bottom
-                        Assets.allData.push(returnedData[0]);
-                    }
-                    
-                    // Sync the search filter with the new state change
-                    Assets.handleSearch();
+                let error;
+                let returnedData = null;
+
+                if (id) {
+                    const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
+                    error = res.error;
+                    returnedData = res.data;
                 } else {
-                    // Fallback to network call if something went wrong with the return payload
-                    await Assets.fetchData();
+                    const res = await sbClient.from('aset').insert([payload]).select();
+                    error = res.error;
+                    returnedData = res.data;
                 }
                 
-                Assets.toggleForm(false);
-            }
-        } 
+                if (error) {
+                    Utils.showToast("Ralat Simpanan. Sila cuba sebentar lagi.");
+                } else {
+                    Utils.showToast("Data aset berjaya disimpan!");
+                    
+                    if (returnedData && returnedData.length > 0) {
+                        if (id) {
+                            const index = Assets.allData.findIndex(r => r.uuid === id);
+                            if (index !== -1) {
+                                Assets.allData[index] = returnedData[0];
+                            }
+                        } else {
+                            Assets.allData.push(returnedData[0]);
+                        }
+                        
+                        Assets.handleSearch();
+                    } else {
+                        await Assets.fetchData();
+                    }
+                    
+                    Assets.toggleForm(false);
+                }
+            } 
         };
 
         const CallLog = {
@@ -1405,7 +1397,7 @@ handleSubmit: async (e) => {
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
                         addNew.className = "p-4 text-indigo-600 font-black cursor-pointer hover:bg-indigo-50 rounded-xl m-1 transition-all";
-                        addNew.innerText = `+ Rekod Baru "${q}"?`;
+                        addNew.innerText = `+ Rekod Baru "${Utils.escapeHTML(q)}"?`;
                         addNew.onclick = () => CallLog.prepareNew(q);
                         dd.appendChild(addNew);
                     } else {
@@ -1463,6 +1455,8 @@ handleSubmit: async (e) => {
                 if(!error) { 
                     CallLog.updateMasterData(); Utils.showToast("Rekod disimpan"); 
                     document.getElementById('data-form').reset(); CallLog.checkValidity(); Dashboard.refresh();
+                } else {
+                    Utils.showToast("Ralat penyimpanan rekod.");
                 }
             }
         };
@@ -1586,85 +1580,106 @@ handleSubmit: async (e) => {
                 } catch (e) {}
             },
 
+            loadActive: async () => {
+                try {
+                    const { data: allInventory, error: invError } = await sbClient
+                        .from('device_inventory')
+                        .select('*')
+                        .order('tag', { ascending: true });
 
-loadActive: async () => {
-    try {
-        // 1. Fetch ALL inventory first
-        const { data: allInventory, error: invError } = await sbClient
-            .from('device_inventory')
-            .select('*')
-            .order('tag', { ascending: true });
+                    if (invError) throw invError;
 
-        if (invError) throw invError;
+                    const inventory = allInventory.filter(device => {
+                        const status = (device.status || "").toUpperCase();
+                        const tag = (device.tag || "");
+                        
+                        if (status.includes('RETURN') || status.includes('DELETE')) return false;
+                        
+                        const excludedTags = [
+                            'Laptop No.11', 'Laptop No.12', 'Laptop No.13', 
+                            'Laptop No.14', 'Laptop No.15', 'Laptop No.16', 'Laptop No.17'
+                        ];
+                        if (excludedTags.includes(tag)) return false;
 
-        // 2. Client-side filtering
-        const inventory = allInventory.filter(device => {
-            const status = (device.status || "").toUpperCase();
-            const tag = (device.tag || "");
-            
-            if (status.includes('RETURN') || status.includes('DELETE')) return false;
-            
-            const excludedTags = [
-                'Laptop No.11', 'Laptop No.12', 'Laptop No.13', 
-                'Laptop No.14', 'Laptop No.15', 'Laptop No.16', 'Laptop No.17'
-            ];
-            if (excludedTags.includes(tag)) return false;
+                        return true;
+                    });
 
-            return true;
-        });
+                    const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('*').eq('status', 'Active');
+                    
+                    const body = document.getElementById('active-loans-body');
+                    if (!body) return;
+                    body.innerHTML = '';
 
-        const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('*').eq('status', 'Active');
-        
-        const body = document.getElementById('active-loans-body');
-        if (!body) return;
-        body.innerHTML = '';
+                    const getGroupName = (tag) => {
+                        if (tag.startsWith('HP09') || tag.startsWith('HP10') || tag.startsWith('HP11') || tag.startsWith('HP12')) return 'POOL NAZIRAN';
+                        if (tag.startsWith('HP13') || tag.startsWith('HP14') || tag.startsWith('HP15')) return 'POOL SP';
+                        return 'OPEN';
+                    };
 
-        const getGroupName = (tag) => {
-            if (tag.startsWith('HP09') || tag.startsWith('HP10') || tag.startsWith('HP11') || tag.startsWith('HP12')) return 'POOL NAZIRAN';
-            if (tag.startsWith('HP13') || tag.startsWith('HP14') || tag.startsWith('HP15')) return 'POOL SP';
-            return 'OPEN';
-        };
+                    inventory.forEach(device => {
+                        const loan = activeLoans?.find(l => l.device_tag === device.tag);
+                        const isUsed = !!loan;
+                        const group = getGroupName(device.tag);
+                        const sn = device.serial || '-TIADA-';
 
-        inventory.forEach(device => {
-            const loan = activeLoans?.find(l => l.device_tag === device.tag);
-            const isUsed = !!loan;
-            const group = getGroupName(device.tag);
-            const sn = device.serial || '-TIADA-';
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
 
-            const tr = document.createElement('tr');
-            tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
+                        let groupClass = "p-4 font-bold ";
+                        if (group === 'POOL NAZIRAN') groupClass += "bg-cyan-50 text-cyan-700";
+                        else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
+                        else groupClass += "text-slate-500";
 
-            let groupClass = "p-4 font-bold ";
-            if (group === 'POOL NAZIRAN') groupClass += "bg-cyan-50 text-cyan-700";
-            else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
-            else groupClass += "text-slate-500";
+                        const td1 = document.createElement('td');
+                        td1.className = "p-4";
+                        const dTag = document.createElement('div');
+                        dTag.className = "font-bold text-slate-700";
+                        dTag.innerText = device.tag;
+                        const dSn = document.createElement('div');
+                        dSn.className = "text-[12px] text-slate-400 font-mono uppercase";
+                        dSn.innerText = sn;
+                        td1.appendChild(dTag);
+                        td1.appendChild(dSn);
+                        tr.appendChild(td1);
 
-            // Logic for Due Date display
-            const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${loan.end_date}</div>` : '';
+                        const td2 = document.createElement('td');
+                        td2.className = "p-4";
+                        const dUser = document.createElement('div');
+                        dUser.className = "font-bold text-slate-900 uppercase";
+                        dUser.innerText = isUsed ? loan.user_name : '';
+                        td2.appendChild(dUser);
+                        if(isUsed) {
+                            const dDue = document.createElement('div');
+                            dDue.className = "text-[10px] text-rose-500 font-bold mt-1";
+                            dDue.innerText = `PULANG: ${loan.end_date}`;
+                            td2.appendChild(dDue);
+                        }
+                        tr.appendChild(td2);
 
-            tr.innerHTML = `
-                <td class="p-4">
-                    <div class="font-bold text-slate-700">${device.tag}</div>
-                    <div class="text-[12px] text-slate-400 font-mono uppercase">${sn}</div>
-                </td>
-                <td class="p-4">
-                    <div class="font-bold text-slate-900 uppercase">${isUsed ? loan.user_name : ''}</div>
-                    ${dueDateDisplay}
-                </td>
-                <td class="${groupClass}">${group}</td>
-                <td class="p-4 text-center">
-                    <span class="px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}">
-                        ${isUsed ? 'IN USED' : 'AVAILABLE'}
-                    </span>
-                </td>
-                <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? (loan.usage_details || loan.usage_type) : ''}</td>
-            `;
-            body.appendChild(tr);
-        });
-    } catch (e) {
-        console.error("Visual status error:", e);
-    }
-},
+                        const td3 = document.createElement('td');
+                        td3.className = groupClass;
+                        td3.innerText = group;
+                        tr.appendChild(td3);
+
+                        const td4 = document.createElement('td');
+                        td4.className = "p-4 text-center";
+                        const sAvail = document.createElement('span');
+                        sAvail.className = `px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}`;
+                        sAvail.innerText = isUsed ? 'IN USED' : 'AVAILABLE';
+                        td4.appendChild(sAvail);
+                        tr.appendChild(td4);
+
+                        const td5 = document.createElement('td');
+                        td5.className = "p-4 font-medium text-slate-500 uppercase";
+                        td5.innerText = isUsed ? (loan.usage_details || loan.usage_type) : '';
+                        tr.appendChild(td5);
+
+                        body.appendChild(tr);
+                    });
+                } catch (e) {
+                    console.error("Visual status error:", e);
+                }
+            },
 
             submit: async () => {
                 const p = { user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email, created_at: new Date().toISOString() };
@@ -1673,7 +1688,7 @@ loadActive: async () => {
                     const { error } = await sbClient.from('rekod_pinjaman').insert([p]); if(error) throw error;
                     await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', p.device_tag);
                     Utils.showToast("Transaksi Berjaya"); document.getElementById('loanForm').reset(); Loan.loadData();
-                } catch(e) { alert(e.message); }
+                } catch(e) { Utils.showToast("Ralat menyimpan transaksi."); }
             },
             submitReturn: async () => {
                 const t = document.getElementById('returnSelect').value; if(!t) return;
@@ -1684,7 +1699,7 @@ loadActive: async () => {
                         if(error) throw error; await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t);
                         Utils.showToast("Aset dipulangkan"); Loan.loadData();
                     }
-                } catch(e) { alert(e.message); }
+                } catch(e) { Utils.showToast("Ralat kemaskini pulangan."); }
             },
             loadHistory: async () => {
                 const tb = document.getElementById('loan-history-body'); tb.innerHTML = '';
@@ -1713,7 +1728,7 @@ loadActive: async () => {
                             tr.appendChild(tdPulang); addTd(l.status, `p-4 font-bold ${isLate ? 'text-late' : ''}`); tb.appendChild(tr);
                         });
                     }
-                } catch(e) { tb.innerHTML = 'History Load Error.'; }
+                } catch(e) { tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="10" class="p-10 text-center text-rose-500">History Load Error.</td></tr>'); }
             },
             exportExcel: async () => {
                 const formatted = Loan.currentHistory.map(l => {
@@ -1749,7 +1764,13 @@ loadActive: async () => {
             },
             sendSoftReminder: async (loans) => {
                 const user = loans[0].user_name; const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
-                const msg = `Salam sejahtera ${user},\n\nSistem mengesan peminjaman aset IT berikut masih belum dipulangkan:\n\n${assetList}\n\nTerima kasih.`;
+                const msg = `Salam sejahtera ${user},
+
+Sistem mengesan peminjaman aset IT berikut masih belum dipulangkan:
+
+${assetList}
+
+Terima kasih.`;
                 const rawEmail = STATE.userEmails[user.toUpperCase().trim()];
                 if (rawEmail) { await EmailService.sendNoReply(rawEmail, user, msg); Utils.showToast(`Peringatan dihantar ke ${rawEmail}`); }
                 else Utils.showToast(`Gagal: Emel untuk ${user} tidak dijumpai.`);
@@ -1760,7 +1781,13 @@ loadActive: async () => {
                     const userKey = user.toUpperCase().trim(); const rawEmail = STATE.userEmails[userKey];
                     if (rawEmail) {
                         const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
-                        const msg = `Salam sejahtera ${user},\n\nIni adalah peringatan mesra automatik bagi pemulangan aset IT yang tamat tempoh:\n\n${assetList}\n\nTerima kasih.`;
+                        const msg = `Salam sejahtera ${user},
+
+Ini adalah peringatan mesra automatik bagi pemulangan aset IT yang tamat tempoh:
+
+${assetList}
+
+Terima kasih.`;
                         try { await EmailService.sendNoReply(rawEmail, user, msg); processed++; } catch (e) { failed++; }
                         await new Promise(r => setTimeout(r, 1200));
                     } else failed++;
@@ -1774,7 +1801,7 @@ loadActive: async () => {
                 try {
                     const { error } = await sbClient.from('user_ba').insert([{ id: crypto.randomUUID(), name: n.toUpperCase(), emel: finalEmail }]); 
                     if(error) throw error; Utils.showToast("Didaftarkan"); Loan.loadData();
-                } catch(err) { alert(err.message); }
+                } catch(err) { Utils.showToast("Ralat mendaftar pengguna."); }
             },
             addDevice: async () => {
                 const t = document.getElementById('newTag').value.trim(); const tp = document.getElementById('newType').value.trim();
@@ -1782,115 +1809,94 @@ loadActive: async () => {
                 try {
                     const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia', created_at: new Date().toISOString() }]); 
                     if(error) throw error; Utils.showToast("Aset didaftarkan"); Loan.loadData();
-                } catch(err) { alert(err.message); }
-            
-        },
+                } catch(err) { Utils.showToast("Ralat mendaftar peranti."); }
+            },
 
-copyStatusScreenshot: async () => {
-    const targetTags = [
-        'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
-        'HP11', 'HP12', 'HP13', 'HP14', 'HP15', 'Laptop No.01', 'Laptop No.02', 
-        'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 'Laptop No.06', 'Laptop No.07', 
-        'Laptop No.08', 'Laptop No.09', 'Laptop No.10'
-    ];
+            copyStatusScreenshot: async () => {
+                const targetTags = [
+                    'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
+                    'HP11', 'HP12', 'HP13', 'HP14', 'HP15', 'Laptop No.01', 'Laptop No.02', 
+                    'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 'Laptop No.06', 'Laptop No.07', 
+                    'Laptop No.08', 'Laptop No.09', 'Laptop No.10'
+                ];
 
-    Utils.showToast("Menjana Screenshot... Sila tunggu.");
+                Utils.showToast("Menjana Screenshot... Sila tunggu.");
 
-    const tempContainer = document.createElement('div');
-    // Width set to auto to allow the table to expand as needed for long names
-    tempContainer.style.cssText = 'position:fixed; left:-9999px; top:0; min-width:850px; background:white; padding:15px; font-family:Arial, sans-serif;';
-    
-    const header = document.createElement('div');
-    header.innerHTML = `<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>`;
-    tempContainer.appendChild(header);
+                const tempContainer = document.createElement('div');
+                tempContainer.style.cssText = 'position:fixed; left:-9999px; top:0; min-width:850px; background:white; padding:15px; font-family:Arial, sans-serif;';
+                
+                const header = document.createElement('div');
+                header.innerHTML = DOMPurify.sanitize('<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>');
+                tempContainer.appendChild(header);
 
-    const tempTable = document.createElement('table');
-    // table-layout: auto allows the column to grow based on the name length
-    tempTable.style.cssText = 'width:100%; border-collapse:collapse; font-size:11px; border:1px solid black; table-layout: auto;';
-    
-    tempTable.innerHTML = `
-        <thead>
-            <tr style="background:#f1f5f9; font-weight:bold;">
-                <th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th>
-                <th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th>
-                <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th>
-                <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th>
-                <th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th>
-            </tr>
-        </thead>
-        <tbody id="temp-body"></tbody>
-    `;
-    
-    const tempBody = tempTable.querySelector('#temp-body');
-    const allRows = document.querySelectorAll('#active-loans-body tr');
+                const tempTable = document.createElement('table');
+                tempTable.style.cssText = 'width:100%; border-collapse:collapse; font-size:11px; border:1px solid black; table-layout: auto;';
+                
+                tempTable.innerHTML = DOMPurify.sanitize('<thead><tr style="background:#f1f5f9; font-weight:bold;"><th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th></tr></thead><tbody id="temp-body"></tbody>');
+                
+                const tempBody = tempTable.querySelector('#temp-body');
+                const allRows = document.querySelectorAll('#active-loans-body tr');
 
-    allRows.forEach(row => {
-        const tagCell = row.querySelector('td:first-child');
-        if (!tagCell) return;
+                allRows.forEach(row => {
+                    const tagCell = row.querySelector('td:first-child');
+                    if (!tagCell) return;
 
-        const tagText = tagCell.innerText.trim().split('\n')[0];
-        if (targetTags.includes(tagText)) {
-            const cells = row.querySelectorAll('td');
-            const isUsed = cells[3].innerText.includes('IN USED');
-            const groupText = cells[2].innerText;
-            
-            let groupBg = '#ffffff';
-            if(groupText.includes('NAZIRAN')) groupBg = '#d9ead3'; 
-            else if(groupText.includes('POOL SP')) groupBg = '#cfe2f3'; 
-            
-            const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
+                    const tagText = tagCell.innerText.trim().split('\n')[0];
+                    if (targetTags.includes(tagText)) {
+                        const cells = row.querySelectorAll('td');
+                        const isUsed = cells[3].innerText.includes('IN USED');
+                        const groupText = cells[2].innerText;
+                        
+                        let groupBg = '#ffffff';
+                        if(groupText.includes('NAZIRAN')) groupBg = '#d9ead3'; 
+                        else if(groupText.includes('POOL SP')) groupBg = '#cfe2f3'; 
+                        
+                        const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
 
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${tagText}</td>
-                <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${cells[1].innerText || ''}</td>
-                <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${groupText}</td>
-                <td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:${statusBg}; vertical-align:middle; text-align:center; white-space: nowrap;">${isUsed ? 'IN USED' : 'AVAILABLE'}</td>
-                <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${cells[4].innerText || ''}</td>
-            `;
-            tempBody.appendChild(newRow);
-        }
-    });
+                        const newRow = document.createElement('tr');
+                        
+                        newRow.innerHTML = DOMPurify.sanitize('<td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(tagText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">' + Utils.escapeHTML(cells[1].innerText || '') + '</td><td style="padding:3px 5px; border:1px solid black; text-align:center; background:' + groupBg + '; font-weight:bold; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(groupText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:' + statusBg + '; vertical-align:middle; text-align:center; white-space: nowrap;">' + (isUsed ? 'IN USED' : 'AVAILABLE') + '</td><td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">' + Utils.escapeHTML(cells[4].innerText || '') + '</td>');
+                        
+                        tempBody.appendChild(newRow);
+                    }
+                });
 
-    tempContainer.appendChild(tempTable);
-    document.body.appendChild(tempContainer);
+                tempContainer.appendChild(tempTable);
+                document.body.appendChild(tempContainer);
 
-    try {
-        const canvas = await html2canvas(tempContainer, { scale: 2 });
-        canvas.toBlob(async (blob) => {
-            const item = new ClipboardItem({ "image/png": blob });
-            await navigator.clipboard.write([item]);
-            Utils.showToast("Screenshot Berjaya Disalin!");
-        });
-    } catch (err) {
-        Utils.showToast("Gagal menyalin screenshot.");
-    } finally {
-        document.body.removeChild(tempContainer);
-    }
+                try {
+                    const canvas = await html2canvas(tempContainer, { scale: 2 });
+                    canvas.toBlob(async (blob) => {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        Utils.showToast("Screenshot Berjaya Disalin!");
+                    });
+                } catch (err) {
+                    Utils.showToast("Gagal menyalin screenshot.");
+                } finally {
+                    document.body.removeChild(tempContainer);
+                }
 
- } // Closing brace for copyStatusScreenshot
-}; // Closing brace for the entire Loan object
+             }
+        }; 
 
-const LoanStats = {
+        const LoanStats = {
             currentStats: [],
             init: async () => {
                 const tb = document.getElementById('loan-stats-body'); 
                 tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
                 const currentYear = new Date().getFullYear();
                 try {
-                    // Fetch both inventory and loan records to ensure ALL devices are listed
                     const { data: inventory } = await sbClient.from('device_inventory').select('tag').order('tag', { ascending: true });
                     const { data: loans } = await sbClient.from('rekod_pinjaman').select('device_tag, created_at').gte('created_at', `${currentYear}-01-01`);
                     
-                    if (!inventory) return tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>';
+                    if (!inventory) return tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>');
 
                     const statsMap = {};
-                    // Initialize every device from inventory with 0s
                     inventory.forEach(item => {
                         statsMap[item.tag] = new Array(12).fill(0);
                     });
 
-                    // Populate counts from loan history
                     loans?.forEach(l => {
                         if (statsMap[l.device_tag]) {
                             const month = new Date(l.created_at).getMonth();
@@ -1904,7 +1910,6 @@ const LoanStats = {
                     LoanStats.currentStats = sortedTags.map((tag, index) => {
                         const row = { tag, months: statsMap[tag], total: statsMap[tag].reduce((a,b)=>a+b, 0) };
                         const tr = document.createElement('tr');
-                        // Added 'bg-slate-50/50' to even rows for color separation
                         tr.className = `border-b border-slate-50 hover:bg-indigo-50/30 transition-all ${index % 2 === 0 ? '' : 'bg-slate-50/50'}`;
                         
                         const tdTag = document.createElement('td'); 
@@ -1915,7 +1920,7 @@ const LoanStats = {
                         row.months.forEach(m => { 
                             const td = document.createElement('td'); 
                             td.className = `p-4 text-center font-bold ${m > 0 ? 'text-indigo-600' : 'text-slate-300'}`; 
-                            td.innerText = m; // Shows 0 if not loaned
+                            td.innerText = m; 
                             tr.appendChild(td); 
                         });
 
@@ -1929,7 +1934,7 @@ const LoanStats = {
                     });
                 } catch (e) { 
                     console.error(e);
-                    tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center text-rose-500">Ralat memuatkan statistik.</td></tr>'; 
+                    tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="14" class="p-10 text-center text-rose-500">Ralat memuatkan statistik.</td></tr>'); 
                 }
             },
             exportExcel: () => {
@@ -1947,180 +1952,302 @@ const LoanStats = {
             }
         };
         
-const Summary = {
-    chart: null,
+        const Summary = {
+            chart: null,
 
-    // NEW: Function to export Table to Excel
-    exportExcel: () => {
-        const table = document.getElementById('summary-table');
-        if (!table) return Utils.showToast("Ralat: Jadual tidak dijumpai");
-        
-        const ws = XLSX.utils.table_to_sheet(table);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Tahunan");
-        XLSX.writeFile(wb, `Ringkasan_Statistik_UTM_${new Date().getFullYear()}.xlsx`);
-        Utils.showToast("Excel berjaya dimuat turun");
-    },
-
-    // NEW: Function to export Dashboard to PDF
-    exportPDF: async () => {
-        const { jsPDF } = window.jspdf;
-        Utils.showToast("Menjana PDF... Sila tunggu.");
-        
-        // Target the container that holds both the chart and the table
-        const element = document.getElementById('summary-module');
-        
-        try {
-            const canvas = await html2canvas(element, {
-                scale: 2, // High resolution
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-            
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-            pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
-            Utils.showToast("PDF berjaya dimuat turun");
-        } catch (err) {
-            console.error(err);
-            Utils.showToast("Ralat menjana PDF");
-        }
-    },
-
-    init: async () => {
-        const year = new Date().getFullYear(); 
-        document.getElementById('summary-year-display').innerText = year;
-        const tb = document.getElementById('summary-table-body'); 
-        tb.innerHTML = '';
-        
-        const trLoad = document.createElement('tr'); 
-        const tdLoad = document.createElement('td'); 
-        tdLoad.colSpan = 15; 
-        tdLoad.className = "p-10 text-center";
-        const divLoad = document.createElement('div'); 
-        divLoad.className = "loader mx-auto"; 
-        tdLoad.appendChild(divLoad); 
-        trLoad.appendChild(tdLoad); 
-        tb.appendChild(trLoad);
-
-        try {
-            const { data: calls } = await sbClient.from('rekod').select('created_at, sistem, komunikasi').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-            const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-            
-            const processMonths = (items) => { 
-                const counts = new Array(12).fill(0); 
-                items?.forEach(item => { 
-                    const month = new Date(item.created_at).getMonth(); 
-                    counts[month]++; 
-                }); 
-                return counts; 
-            };
-
-            const callCounts = processMonths(calls); 
-            const loanCounts = processMonths(loans);
-            const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
-            const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP')));
-            const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
-            
-            const callTotal = callCounts.reduce((a, b) => a + b, 0); 
-            const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
-            const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); 
-            const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); 
-            const adTotal = adCounts.reduce((a, b) => a + b, 0);
-            
-            tb.innerHTML = '';
-
-            const renderRow = (bil, title, counts, total, colorCode = null) => {
-                const tr = document.createElement('tr'); 
-                tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
-                const tdBil = document.createElement('td'); 
-                tdBil.className = "p-4 text-center text-slate-400 font-bold"; 
-                tdBil.innerText = bil; 
-                tr.appendChild(tdBil);
+            exportExcel: () => {
+                const table = document.getElementById('summary-table');
+                if (!table) return Utils.showToast("Ralat: Jadual tidak dijumpai");
                 
-                const tdTitle = document.createElement('td'); 
-                tdTitle.className = "p-4 font-black uppercase text-slate-800"; 
-                tdTitle.innerText = title; 
-                tr.appendChild(tdTitle);
-                
-                counts.forEach(c => { 
-                    const tdCount = document.createElement('td'); 
-                    tdCount.className = "p-4 text-center font-bold text-slate-600"; 
-                    tdCount.innerText = c; 
-                    tr.appendChild(tdCount); 
-                });
-                
-                const tdTotal = document.createElement('td'); 
-                tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; 
-                tdTotal.innerText = total; 
-                tr.appendChild(tdTotal);
-                
-                let chartColor = '#6366f1'; 
-                if (title.includes('Pinjaman')) chartColor = '#10b981'; 
-                else if (colorCode) chartColor = colorCode;
-                
-                tr.onclick = () => Summary.renderChart(counts, title, chartColor); 
-                tb.appendChild(tr);
-            };
-
-            renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); 
-            renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-            renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
-            renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
-            renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
-            
-            Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
-        } catch (e) { 
-            tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; 
-        }
-    },
-
-    renderChart: (dataArray, label, customColor = null) => {
-        const ctx = document.getElementById('summaryChart').getContext('2d'); 
-        if (Summary.chart) Summary.chart.destroy();
-        let barColor = customColor || '#6366f1';
-        Summary.chart = new Chart(ctx, {
-            type: 'bar',
-            data: { 
-                labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], 
-                datasets: [{ 
-                    label: label, 
-                    data: dataArray, 
-                    backgroundColor: barColor, 
-                    borderRadius: 6, 
-                    borderWidth: 0 
-                }] 
+                const ws = XLSX.utils.table_to_sheet(table);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Tahunan");
+                XLSX.writeFile(wb, `Ringkasan_Statistik_UTM_${new Date().getFullYear()}.xlsx`);
+                Utils.showToast("Excel berjaya dimuat turun");
             },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { 
-                        display: true, 
-                        position: 'top', 
-                        labels: { padding: 20, font: { size: 12, weight: 'bold' }, color: '#475569' } 
-                    } 
-                }, 
-                scales: { 
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
-                    x: { grid: { display: false } } 
-                } 
+
+            exportPDF: async () => {
+                const { jsPDF } = window.jspdf;
+                Utils.showToast("Menjana PDF... Sila tunggu.");
+                
+                const element = document.getElementById('summary-module');
+                
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2, 
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('l', 'mm', 'a4'); 
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+                    pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
+                    Utils.showToast("PDF berjaya dimuat turun");
+                } catch (err) {
+                    console.error(err);
+                    Utils.showToast("Ralat menjana PDF");
+                }
+            },
+
+            init: async () => {
+                const year = new Date().getFullYear(); 
+                document.getElementById('summary-year-display').innerText = year;
+                const tb = document.getElementById('summary-table-body'); 
+                tb.innerHTML = '';
+                
+                const trLoad = document.createElement('tr'); 
+                const tdLoad = document.createElement('td'); 
+                tdLoad.colSpan = 15; 
+                tdLoad.className = "p-10 text-center";
+                const divLoad = document.createElement('div'); 
+                divLoad.className = "loader mx-auto"; 
+                tdLoad.appendChild(divLoad); 
+                trLoad.appendChild(tdLoad); 
+                tb.appendChild(trLoad);
+
+                try {
+                    const { data: calls } = await sbClient.from('rekod').select('created_at, sistem, komunikasi').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    
+                    const processMonths = (items) => { 
+                        const counts = new Array(12).fill(0); 
+                        items?.forEach(item => { 
+                            const month = new Date(item.created_at).getMonth(); 
+                            counts[month]++; 
+                        }); 
+                        return counts; 
+                    };
+
+                    const callCounts = processMonths(calls); 
+                    const loanCounts = processMonths(loans);
+                    const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
+                    const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP')));
+                    const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
+                    
+                    const callTotal = callCounts.reduce((a, b) => a + b, 0); 
+                    const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); 
+                    const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); 
+                    const adTotal = adCounts.reduce((a, b) => a + b, 0);
+                    
+                    tb.innerHTML = '';
+
+                    const renderRow = (bil, title, counts, total, colorCode = null) => {
+                        const tr = document.createElement('tr'); 
+                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                        const tdBil = document.createElement('td'); 
+                        tdBil.className = "p-4 text-center text-slate-400 font-bold"; 
+                        tdBil.innerText = bil; 
+                        tr.appendChild(tdBil);
+                        
+                        const tdTitle = document.createElement('td'); 
+                        tdTitle.className = "p-4 font-black uppercase text-slate-800"; 
+                        tdTitle.innerText = title; 
+                        tr.appendChild(tdTitle);
+                        
+                        counts.forEach(c => { 
+                            const tdCount = document.createElement('td'); 
+                            tdCount.className = "p-4 text-center font-bold text-slate-600"; 
+                            tdCount.innerText = c; 
+                            tr.appendChild(tdCount); 
+                        });
+                        
+                        const tdTotal = document.createElement('td'); 
+                        tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; 
+                        tdTotal.innerText = total; 
+                        tr.appendChild(tdTotal);
+                        
+                        let chartColor = '#6366f1'; 
+                        if (title.includes('Pinjaman')) chartColor = '#10b981'; 
+                        else if (colorCode) chartColor = colorCode;
+                        
+                        tr.onclick = () => Summary.renderChart(counts, title, chartColor); 
+                        tb.appendChild(tr);
+                    };
+
+                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); 
+                    renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
+                    renderRow(4, "SPMP (MYGOVUC3.0\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
+                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
+                    
+                    Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+                } catch (e) { 
+                    tb.innerHTML = DOMPurify.sanitize(`<tr><td colspan="15" class="p-10 text-center text-rose-500">Ralat memuatkan data ringkasan.</td></tr>`); 
+                }
+            },
+
+            renderChart: (dataArray, label, customColor = null) => {
+                const ctx = document.getElementById('summaryChart').getContext('2d'); 
+                if (Summary.chart) Summary.chart.destroy();
+                let barColor = customColor || '#6366f1';
+                Summary.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { 
+                        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], 
+                        datasets: [{ 
+                            label: label, 
+                            data: dataArray, 
+                            backgroundColor: barColor, 
+                            borderRadius: 6, 
+                            borderWidth: 0 
+                        }] 
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { 
+                                display: true, 
+                                position: 'top', 
+                                labels: { padding: 20, font: { size: 12, weight: 'bold' }, color: '#475569' } 
+                            } 
+                        }, 
+                        scales: { 
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
+                            x: { grid: { display: false } } 
+                        } 
+                    }
+                });
             }
-        });
-    }
-};
- document.addEventListener('DOMContentLoaded', () => {
+        };
+
+        const PersonnelSync = {
+            dataToSync: [],
+
+            init: function() {
+                document.getElementById('btn-insert-excel').addEventListener('click', () => {
+                    document.getElementById('excel-file-input').click();
+                });
+                document.getElementById('excel-file-input').addEventListener('change', this.handleFileRead.bind(this));
+                document.getElementById('btn-sync-supabase').addEventListener('click', this.syncData.bind(this));
+            },
+
+            handleFileRead: function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Security Fix: Prevent large file processing to avoid browser crashes (Max 5MB)
+                const MAX_FILE_SIZE = 5 * 1024 * 1024;
+                if (file.size > MAX_FILE_SIZE) {
+                    Utils.showToast("Fail terlalu besar. Saiz maksimum adalah 5MB.");
+                    event.target.value = "";
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    this.dataToSync = json.map(row => ({
+                        // Security Fix: Sanitize incoming external data using DOMPurify and Escape logic
+                        ic_number: row['User name'] ? DOMPurify.sanitize(String(row['User name']).trim()) : null,
+                        nama: row['Complete name'] ? DOMPurify.sanitize(String(row['Complete name']).trim()) : null,
+                        telefon: row['Telephone'] ? DOMPurify.sanitize(String(row['Telephone']).trim()) : null,
+                        emel: row['E-Mail Address'] ? DOMPurify.sanitize(String(row['E-Mail Address']).trim()) : null,
+                        gred: row['Job Grade'] ? DOMPurify.sanitize(String(row['Job Grade']).trim()) : null,
+                        kod_ptj: row['Functional Area'] ? DOMPurify.sanitize(String(row['Functional Area']).trim()) : null,
+                        department: row['Department'] ? DOMPurify.sanitize(String(row['Department']).trim()) : null
+                    })).filter(row => row.ic_number !== null && row.ic_number !== ""); 
+
+                    Utils.showToast(`Berjaya memuat naik ${this.dataToSync.length} baris dari Excel. Klik 'Sync to Database' untuk sambung.`);
+                    document.getElementById('excel-file-input').value = "";
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            syncData: async function() {
+                if (this.dataToSync.length === 0) {
+                    Utils.showToast("Tiada data untuk disegerakkan. Sila muat naik Excel terlebih dahulu.");
+                    return;
+                }
+
+                try {
+                    const syncBtn = document.getElementById('btn-sync-supabase');
+                    const originalText = syncBtn.innerHTML;
+                    syncBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Syncing...';
+                    syncBtn.disabled = true;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                    const uniqueExcelData = [];
+                    const seenInExcel = new Set();
+                    
+                    for (const row of this.dataToSync) {
+                        if (!seenInExcel.has(row.ic_number)) {
+                            seenInExcel.add(row.ic_number);
+                            uniqueExcelData.push(row);
+                        }
+                    }
+                    
+                    const excelIcs = Array.from(seenInExcel);
+                    const existingIcsInDb = new Set();
+
+                    const chunkSize = 200; 
+                    for (let i = 0; i < excelIcs.length; i += chunkSize) {
+                        const chunk = excelIcs.slice(i, i + chunkSize);
+                        
+                        const { data: matchedData, error: fetchError } = await sbClient
+                            .from('personnel')
+                            .select('ic_number')
+                            .in('ic_number', chunk);
+                            
+                        if (fetchError) throw fetchError;
+                        
+                        matchedData.forEach(row => existingIcsInDb.add(String(row.ic_number).trim()));
+                    }
+
+                    const newRecords = uniqueExcelData.filter(row => !existingIcsInDb.has(row.ic_number));
+                    const duplicateCount = this.dataToSync.length - newRecords.length;
+
+                    if (newRecords.length > 0) {
+                        const { error: insertError } = await sbClient
+                            .from('personnel')
+                            .insert(newRecords);
+
+                        if (insertError) throw insertError;
+                        
+                        Utils.showToast(`Berjaya! Memasukkan ${newRecords.length} rekod baru. Abaikan ${duplicateCount} pendua.`);
+                        Dashboard.refresh(); 
+                    } else {
+                        Utils.showToast(`Tiada rekod baru. Semua ${duplicateCount} rekod telah wujud.`);
+                    }
+
+                    this.dataToSync = []; 
+                    
+                    syncBtn.innerHTML = originalText;
+                    syncBtn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                } catch (error) {
+                    console.error("Error syncing to Supabase:", error);
+                    Utils.showToast("Ralat menyegerakkan data.");
+                    
+                    const syncBtn = document.getElementById('btn-sync-supabase');
+                    syncBtn.innerHTML = '<i data-lucide="upload-cloud" class="w-4 h-4"></i> Sync to Database';
+                    syncBtn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
             document.getElementById('login-form').addEventListener('submit', Auth.login);
             document.getElementById('register-form').addEventListener('submit', Auth.register);
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
+            
+            PersonnelSync.init();
         });
     </script>
 </body>
