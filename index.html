@@ -1835,7 +1835,7 @@ Terima kasih.`;
                 
                 tempTable.innerHTML = DOMPurify.sanitize('<thead><tr style="background:#f1f5f9; font-weight:bold;"><th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th></tr></thead><tbody id="temp-body"></tbody>');
                 
-                const tempBody = tempTable.querySelector('#temp-body');
+                const tempBody = tempTable.querySelector('tbody');
                 const allRows = document.querySelectorAll('#active-loans-body tr');
 
                 allRows.forEach(row => {
