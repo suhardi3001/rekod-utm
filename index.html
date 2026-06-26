@@ -15,7 +15,7 @@
 ">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -893,8 +893,11 @@
         };
 
         const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {}, userEmails: {}, currentViewMode: 'default', deviceMap: {} };
-        const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
-
+if (!window.supabase) {
+    alert("System Error: Failed to load database drivers. Please disable your adblocker or VPN and refresh.");
+    throw new Error("Supabase library not loaded.");
+}
+const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
         const Utils = {
             log: (msg) => { 
                 // Console logging only for debugging instead of appending to visible DOM
