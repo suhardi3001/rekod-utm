@@ -1525,25 +1525,56 @@ const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabas
                 await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); 
                 Utils.showToast("Status dikemaskini"); Records.fetch(); Dashboard.refresh();
             },
-            exportExcel: () => {
-                const formatted = Records.currentData.map(r => {
-                    const row = {};
-                    Records.columns.forEach(col => {
-                        let val = "";
-                        if(col.id === 'created_at') val = Utils.formatDate(r.created_at);
-                        else if(col.id === 'nama_ic') val = `${r.nama} (${r.ic_number})`;
-                        else if(col.id === 'perekod') val = STATE.userMap[r.perekod?.toLowerCase()] || r.perekod || '-';
-                        else if(col.id === 'updated_at') val = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
-                        else if(col.id === 'updated_by') val = STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by || '-';
-                        else if(col.id === 'status') val = r.confirmation || 'TIDAK';
-                        else val = r[col.id] || '-';
-                        row[col.label] = val;
+exportExcel: async () => {
+                Utils.showToast("Menjana fail Excel... Sila tunggu.");
+                
+                const currentYear = new Date().getFullYear();
+                
+                try {
+                    // Fetch all records for the current year directly from Supabase
+                    const { data: fullData, error } = await sbClient
+                        .from('rekod')
+                        .select('*')
+                        .gte('created_at', `${currentYear}-01-01`)
+                        .lte('created_at', `${currentYear}-12-31`)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    if (!fullData || fullData.length === 0) {
+                        Utils.showToast(`Tiada rekod dijumpai untuk tahun ${currentYear}.`);
+                        return;
+                    }
+
+                    // Format the full dataset using your existing columns mapping
+                    const formatted = fullData.map(r => {
+                        const row = {};
+                        Records.columns.forEach(col => {
+                            let val = "";
+                            if(col.id === 'created_at') val = Utils.formatDate(r.created_at);
+                            else if(col.id === 'nama_ic') val = `${r.nama} (${r.ic_number})`;
+                            else if(col.id === 'perekod') val = STATE.userMap[r.perekod?.toLowerCase()] || r.perekod || '-';
+                            else if(col.id === 'updated_at') val = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
+                            else if(col.id === 'updated_by') val = STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by || '-';
+                            else if(col.id === 'status') val = r.confirmation || 'TIDAK';
+                            else val = r[col.id] || '-';
+                            row[col.label] = val;
+                        });
+                        return row;
                     });
-                    return row;
-                });
-                const ws = XLSX.utils.json_to_sheet(formatted);
-                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Archive");
-                XLSX.writeFile(wb, "UTM_CallLog_Archive.xlsx");
+
+                    // Generate and download the Excel file
+                    const ws = XLSX.utils.json_to_sheet(formatted);
+                    const wb = XLSX.utils.book_new(); 
+                    XLSX.utils.book_append_sheet(wb, ws, `Archive_${currentYear}`);
+                    XLSX.writeFile(wb, `UTM_CallLog_Archive_${currentYear}.xlsx`);
+                    
+                    Utils.showToast("Excel berjaya dimuat turun!");
+                    
+                } catch (err) {
+                    console.error("Export Error: ", err);
+                    Utils.showToast("Ralat ketika memuat turun data.");
+                }
             }
         };
 
