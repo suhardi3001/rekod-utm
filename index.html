@@ -1847,12 +1847,20 @@ Terima kasih.`;
                 } catch(err) { Utils.showToast("Ralat mendaftar peranti."); }
             },
 
-            copyStatusScreenshot: async () => {
+copyStatusScreenshot: async () => {
+                // Senarai tag peranti yang akan dimasukkan ke dalam screenshot
                 const targetTags = [
+                    // HP Series (HP01 - HP15)
                     'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
-                    'HP11', 'HP12', 'HP13', 'HP14', 'HP15', 'Laptop No.01', 'Laptop No.02', 
-                    'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 'Laptop No.06', 'Laptop No.07', 
-                    'Laptop No.08', 'Laptop No.09', 'Laptop No.10'
+                    'HP11', 'HP12', 'HP13', 'HP14', 'HP15',
+                    // Laptop Series (No.01 - No.10)
+                    'Laptop No.01', 'Laptop No.02', 'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 
+                    'Laptop No.06', 'Laptop No.07', 'Laptop No.08', 'Laptop No.09', 'Laptop No.10',
+                    // KWASpool & KWSSpool Series
+                    'KWASpool1', 'KWASpool2', 'KWASpool3',
+                    'KWSSpool1', 'KWSSpool2', 'KWSSpool3',
+                    // Macbook Series (termasuk variasi nombor 01/02 & 1/2)
+                    'Macbook No.1', 'Macbook No.2', 'Macbook No.01', 'Macbook No.02'
                 ];
 
                 Utils.showToast("Menjana Screenshot... Sila tunggu.");
@@ -1911,10 +1919,8 @@ Terima kasih.`;
                 } finally {
                     document.body.removeChild(tempContainer);
                 }
-
-             }
-        }; 
-
+            }
+        };
         const LoanStats = {
             currentStats: [],
             init: async () => {
