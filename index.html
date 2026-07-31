@@ -529,7 +529,7 @@
                         <div id="loan-admin-section" class="hidden-section">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div class="lg:col-span-4 space-y-6 md:space-y-8">
-                                    <button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
+                                    <button onclick="Loan.()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
                                         <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
                                     </button>
                                     <button onclick="Loan.checkOverdueLoans(true)" class="btn-hover w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-rose-100 flex items-center justify-center gap-3 tracking-widest uppercase text-xs md:text-sm">
@@ -1859,7 +1859,7 @@ copyStatusScreenshot: async () => {
                     // KWASpool & KWSSpool Series
                     'KWASpool1', 'KWASpool2', 'KWASpool3',
                     // Macbook Series (termasuk variasi nombor 01/02 & 1/2)
-                    'MACBOOK NO.01', 'MACBOOK NO.02'
+                    'MACBOOK NO.1', 'MACBOOK NO.2'
                 ];
 
                 Utils.showToast("Menjana Screenshot... Sila tunggu.");
