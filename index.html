@@ -259,7 +259,7 @@
                 </div>
             </div>
         </nav>
-<main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
+        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
             <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
                 <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
                     <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
@@ -529,7 +529,7 @@
                         <div id="loan-admin-section" class="hidden-section">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div class="lg:col-span-4 space-y-6 md:space-y-8">
-                                    <button onclick="Loan.()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
+                                    <button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
                                         <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
                                     </button>
                                     <button onclick="Loan.checkOverdueLoans(true)" class="btn-hover w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-rose-100 flex items-center justify-center gap-3 tracking-widest uppercase text-xs md:text-sm">
@@ -882,8 +882,6 @@
     </div>
     <script>
         const CONFIG = { 
-            // SECURITY NOTE: In a real environment, DO NOT expose sensitive keys.
-            // RLS (Row Level Security) MUST be properly configured in Supabase to protect data!
             supabaseUrl: 'https://objxfgosatmasjjifkkg.supabase.co', 
             supabaseKey: 'sb_publishable_UJ86SYk1Kk5nBVnpjNXcpA_NSiZzsAO',
 
@@ -900,7 +898,6 @@ if (!window.supabase) {
 const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
         const Utils = {
             log: (msg) => { 
-                // Console logging only for debugging instead of appending to visible DOM
                 console.log(`System Log: ${msg}`);
             },
             escapeHTML: (str) => {
@@ -1197,7 +1194,7 @@ const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabas
                     const createCell = (text, className) => {
                         const td = document.createElement('td');
                         td.className = className || "p-4";
-                        td.innerText = text || '-'; // innerText is inherently safe against XSS
+                        td.innerText = text || '-'; 
                         return td;
                     };
                     tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
@@ -1234,7 +1231,6 @@ const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabas
                     tr.appendChild(tdAction);
                     tr.appendChild(createCell(row.editor, "p-4 text-slate-400"));
                     tbody.appendChild(tr);
-                    
                 });
             },
             exportExcel: () => {
@@ -1525,13 +1521,10 @@ const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabas
                 await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); 
                 Utils.showToast("Status dikemaskini"); Records.fetch(); Dashboard.refresh();
             },
-exportExcel: async () => {
+            exportExcel: async () => {
                 Utils.showToast("Menjana fail Excel... Sila tunggu.");
-                
                 const currentYear = new Date().getFullYear();
-                
                 try {
-                    // Fetch all records for the current year directly from Supabase
                     const { data: fullData, error } = await sbClient
                         .from('rekod')
                         .select('*')
@@ -1546,7 +1539,6 @@ exportExcel: async () => {
                         return;
                     }
 
-                    // Format the full dataset using your existing columns mapping
                     const formatted = fullData.map(r => {
                         const row = {};
                         Records.columns.forEach(col => {
@@ -1563,14 +1555,12 @@ exportExcel: async () => {
                         return row;
                     });
 
-                    // Generate and download the Excel file
                     const ws = XLSX.utils.json_to_sheet(formatted);
                     const wb = XLSX.utils.book_new(); 
                     XLSX.utils.book_append_sheet(wb, ws, `Archive_${currentYear}`);
                     XLSX.writeFile(wb, `UTM_CallLog_Archive_${currentYear}.xlsx`);
                     
                     Utils.showToast("Excel berjaya dimuat turun!");
-                    
                 } catch (err) {
                     console.error("Export Error: ", err);
                     Utils.showToast("Ralat ketika memuat turun data.");
@@ -1580,6 +1570,25 @@ exportExcel: async () => {
 
         const Loan = {
             currentHistory: [],
+            getGroupInfo: (tag) => {
+                const t = (tag || "").trim();
+                if (['HP01', 'HP02', 'HP03'].includes(t)) {
+                    return { name: 'SP\\POOL MEETING', className: 'bg-slate-200 text-slate-800', bgHex: '#ddebf7' };
+                }
+                if (['HP04', 'HP05', 'HP06', 'HP07'].includes(t)) {
+                    return { name: 'Seksyen Perundingan', className: 'bg-purple-100 text-purple-800', bgHex: '#e1d5e7' };
+                }
+                if (['HP08', 'HP09', 'HP10', 'HP11'].includes(t)) {
+                    return { name: 'Seksyen Pemantauan', className: 'bg-green-100 text-green-800', bgHex: '#d5e8d4' };
+                }
+                if (['HP12', 'HP13', 'HP14', 'HP15', 'KWASpool3'].includes(t) || t.startsWith('Laptop No.')) {
+                    return { name: 'SPK', className: 'bg-blue-100 text-blue-800', bgHex: '#dae8fc' };
+                }
+                if (['KWASpool1', 'KWASpool2'].includes(t)) {
+                    return { name: 'SAS', className: 'bg-orange-100 text-orange-800', bgHex: '#ffe6cc' };
+                }
+                return { name: 'OPEN', className: 'text-slate-500 bg-white', bgHex: '#ffffff' };
+            },
             loadData: async () => {
                 const startEl = document.getElementById('loanStartDate'); const endEl = document.getElementById('loanEndDate');
                 if (startEl) {
@@ -1645,25 +1654,15 @@ exportExcel: async () => {
                     if (!body) return;
                     body.innerHTML = '';
 
-                    const getGroupName = (tag) => {
-                        if (tag.startsWith('HP09') || tag.startsWith('HP10') || tag.startsWith('HP11') || tag.startsWith('HP12')) return 'POOL NAZIRAN';
-                        if (tag.startsWith('HP13') || tag.startsWith('HP14') || tag.startsWith('HP15')) return 'POOL SP';
-                        return 'OPEN';
-                    };
-
                     inventory.forEach(device => {
                         const loan = activeLoans?.find(l => l.device_tag === device.tag);
                         const isUsed = !!loan;
-                        const group = getGroupName(device.tag);
+                        const groupInfo = Loan.getGroupInfo(device.tag);
+                        const group = groupInfo.name;
                         const sn = device.serial || '-TIADA-';
 
                         const tr = document.createElement('tr');
                         tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
-
-                        let groupClass = "p-4 font-bold ";
-                        if (group === 'POOL NAZIRAN') groupClass += "bg-cyan-50 text-cyan-700";
-                        else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
-                        else groupClass += "text-slate-500";
 
                         const td1 = document.createElement('td');
                         td1.className = "p-4";
@@ -1692,7 +1691,7 @@ exportExcel: async () => {
                         tr.appendChild(td2);
 
                         const td3 = document.createElement('td');
-                        td3.className = groupClass;
+                        td3.className = `p-4 font-bold ${groupInfo.className}`;
                         td3.innerText = group;
                         tr.appendChild(td3);
 
@@ -1847,18 +1846,13 @@ Terima kasih.`;
                 } catch(err) { Utils.showToast("Ralat mendaftar peranti."); }
             },
 
-copyStatusScreenshot: async () => {
-                // Senarai tag peranti yang akan dimasukkan ke dalam screenshot
+            copyStatusScreenshot: async () => {
                 const targetTags = [
-                    // HP Series (HP01 - HP15)
                     'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
                     'HP11', 'HP12', 'HP13', 'HP14', 'HP15',
-                    // Laptop Series (No.01 - No.10)
                     'Laptop No.01', 'Laptop No.02', 'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 
                     'Laptop No.06', 'Laptop No.07', 'Laptop No.08', 'Laptop No.09', 'Laptop No.10',
-                    // KWASpool Series
                     'KWASpool1', 'KWASpool2', 'KWASpool3',
-                    // Macbook Series (termasuk variasi nombor 01/02 & 1/2)
                     'MACBOOK NO.1', 'MACBOOK NO.2','Macbook No.1', 'Macbook No.2', 'Macbook No.01', 'Macbook No.02','MACBOOK NO.01', 'MACBOOK NO.02',
                 ];
 
@@ -1887,17 +1881,14 @@ copyStatusScreenshot: async () => {
                     if (targetTags.includes(tagText)) {
                         const cells = row.querySelectorAll('td');
                         const isUsed = cells[3].innerText.includes('IN USED');
-                        const groupText = cells[2].innerText;
-                        
-                        let groupBg = '#ffffff';
-                        if(groupText.includes('NAZIRAN')) groupBg = '#d9ead3'; 
-                        else if(groupText.includes('POOL SP')) groupBg = '#cfe2f3'; 
-                        
+                        const groupInfo = Loan.getGroupInfo(tagText);
+                        const groupTextDisplay = groupInfo.name;
+                        const groupBg = groupInfo.bgHex;
                         const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
 
                         const newRow = document.createElement('tr');
                         
-                        newRow.innerHTML = '<td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(tagText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">' + Utils.escapeHTML(cells[1].innerText || '') + '</td><td style="padding:3px 5px; border:1px solid black; text-align:center; background:' + groupBg + '; font-weight:bold; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(groupText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:' + statusBg + '; vertical-align:middle; text-align:center; white-space: nowrap;">' + (isUsed ? 'IN USED' : 'AVAILABLE') + '</td><td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">' + Utils.escapeHTML(cells[4].innerText || '') + '</td>';
+                        newRow.innerHTML = '<td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(tagText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">' + Utils.escapeHTML(cells[1].innerText || '') + '</td><td style="padding:3px 5px; border:1px solid black; text-align:center; background:' + groupBg + '; font-weight:bold; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(groupTextDisplay) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:' + statusBg + '; vertical-align:middle; text-align:center; white-space: nowrap;">' + (isUsed ? 'IN USED' : 'AVAILABLE') + '</td><td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">' + Utils.escapeHTML(cells[4].innerText || '') + '</td>';
                         
                         tempBody.appendChild(newRow);
                     }
@@ -2172,7 +2163,6 @@ copyStatusScreenshot: async () => {
                 const file = event.target.files[0];
                 if (!file) return;
 
-                // Security Fix: Prevent large file processing to avoid browser crashes (Max 5MB)
                 const MAX_FILE_SIZE = 5 * 1024 * 1024;
                 if (file.size > MAX_FILE_SIZE) {
                     Utils.showToast("Fail terlalu besar. Saiz maksimum adalah 5MB.");
@@ -2190,7 +2180,6 @@ copyStatusScreenshot: async () => {
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
                     this.dataToSync = json.map(row => ({
-                        // Security Fix: Sanitize incoming external data using DOMPurify and Escape logic
                         ic_number: row['User name'] ? DOMPurify.sanitize(String(row['User name']).trim()) : null,
                         nama: row['Complete name'] ? DOMPurify.sanitize(String(row['Complete name']).trim()) : null,
                         telefon: row['Telephone'] ? DOMPurify.sanitize(String(row['Telephone']).trim()) : null,
